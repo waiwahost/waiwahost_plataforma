@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - waiwa-net
+
+  # 2. Backend API
+  backend:
+    build: ./backend/plataforma_backend
+    restart: always
+    environment:
+      PORT: 3001
+      HOST: '0.0.0.0'
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - db
+    networks:
+      - waiwa-net
+
+  # 3. Frontend Principal
+  frontend:
+    build: ./frontend/plataforma_frontend
+    restart: always
+    environment:
+      INTERNAL_API_URL: http://backend:3001
+      NEXT_PUBLIC_API_URL: https://api.tu-dominio.com
+    networks:
+      - waiwa-net
+
+  # 4. Frontend Formulario
+  formulario:
+    build: ./frontend-formulario/formulario
+    restart: always
+    networks:
+      - waiwa-net
+
+  # 5. Nginx (Proxy Inverso)
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      # - "443:443" # Descomentar cuando configures SSL
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - backend
+      - frontend
+      - formulario
+    networks:
+      - waiwa-net
+
+volumes:
+  db_data:
+
+networks:
+  waiwa-net:
