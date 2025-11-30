@@ -12,9 +12,9 @@ interface PropietariosTableProps {
   canDelete?: boolean;
 }
 
-const PropietariosTable: React.FC<PropietariosTableProps> = ({ 
-  propietarios, 
-  onEdit, 
+const PropietariosTable: React.FC<PropietariosTableProps> = ({
+  propietarios = [],
+  onEdit,
   onDelete,
   onViewDetail,
   onInmuebleClick,
@@ -106,11 +106,10 @@ const PropietariosTable: React.FC<PropietariosTableProps> = ({
                     <button
                       onClick={() => onEdit(propietario)}
                       disabled={!canEdit}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canEdit
+                      className={`inline-flex items-center p-2 rounded-md transition-colors ${canEdit
                           ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
                           : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                        }`}
                       title={canEdit ? 'Editar propietario' : 'No tienes permisos para editar'}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -118,11 +117,10 @@ const PropietariosTable: React.FC<PropietariosTableProps> = ({
                     <button
                       onClick={() => onDelete(propietario)}
                       disabled={!canDelete}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canDelete
+                      className={`inline-flex items-center p-2 rounded-md transition-colors ${canDelete
                           ? 'text-red-600 hover:bg-red-50 hover:text-red-800'
                           : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                        }`}
                       title={canDelete ? 'Eliminar propietario' : 'No tienes permisos para eliminar'}
                     >
                       <Trash2 className="h-4 w-4" />

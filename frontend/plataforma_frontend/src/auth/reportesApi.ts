@@ -27,11 +27,16 @@ export const getReportePorPlataforma = async (
   fechaFin: string
 ): Promise<IReportePlataformaResponse> => {
   try {
-    const response: IReportePlataformaResponse = await apiFetch(
-      `/api/reportes/porPlataforma?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`,
+    const data = await apiFetch(
+      `/api/reportes/por-plataforma?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`,
       { method: 'GET' }
     );
-    return response;
+
+    return {
+      success: true,
+      data: data,
+      message: 'Reporte por plataforma obtenido exitosamente'
+    };
   } catch (error) {
     console.error('❌ Error al obtener reporte por plataforma:', error);
     return {
