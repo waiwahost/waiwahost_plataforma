@@ -27,11 +27,11 @@ export interface ReservasFilters {
 export const getReservasApi = async (filters?: ReservasFilters): Promise<IReservaTableData[]> => {
   try {
     console.log('🔄 Llamando API getReservas...', filters ? 'con filtros:' : 'sin filtros', filters);
-    
+
     // Construir URL con parámetros de query
-    let url = '/api/reservas/getReservas';
+    let url = '/api/reservas';
     const queryParams = new URLSearchParams();
-    
+
     if (filters) {
       if (filters.estado) {
         queryParams.append('estado', filters.estado);
@@ -46,12 +46,12 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
         queryParams.append('fecha_fin', filters.fecha_fin);
       }
     }
-    
+
     const queryString = queryParams.toString();
     if (queryString) {
       url += `?${queryString}`;
     }
-    
+
     const response: ReservaApiResponse<IReservaTableData[]> = await apiFetch(url, {
       method: 'GET',
     });
@@ -62,7 +62,7 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
 
     console.log('✅ Reservas obtenidas exitosamente:', response.data.length);
     return response.data;
-    
+
   } catch (error) {
     console.error('❌ Error en getReservasApi:', error);
     throw error instanceof Error ? error : new Error('Error al obtener reservas');
@@ -75,8 +75,8 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
 export const getReservaDetalleApi = async (id: number): Promise<IReservaTableData> => {
   try {
     console.log('🔄 Llamando API getReservaDetalle para ID:', id);
-    
-    const response: ReservaApiResponse<IReservaTableData> = await apiFetch(`/api/reservas/getReservaDetalle?id=${id}`, {
+
+    const response: ReservaApiResponse<IReservaTableData> = await apiFetch(`/api/reservas/${id}`, {
       method: 'GET',
     });
 
@@ -86,7 +86,7 @@ export const getReservaDetalleApi = async (id: number): Promise<IReservaTableDat
 
     console.log('✅ Detalle de reserva obtenido exitosamente:', response.data.codigo_reserva);
     return response.data;
-    
+
   } catch (error) {
     console.error('❌ Error en getReservaDetalleApi:', error);
     throw error instanceof Error ? error : new Error('Error al obtener detalle de reserva');
@@ -99,8 +99,8 @@ export const getReservaDetalleApi = async (id: number): Promise<IReservaTableDat
 export const createReservaApi = async (reservaData: IReservaForm): Promise<IReservaTableData> => {
   try {
     console.log('🔄 Llamando API createReserva...');
-    
-    const response: ReservaApiResponse<IReservaTableData> = await apiFetch('/api/reservas/createReserva', {
+
+    const response: ReservaApiResponse<IReservaTableData> = await apiFetch('/api/reservas', {
       method: 'POST',
       body: JSON.stringify(reservaData),
     });
@@ -111,7 +111,7 @@ export const createReservaApi = async (reservaData: IReservaForm): Promise<IRese
 
     console.log('✅ Reserva creada exitosamente:', response.data.codigo_reserva);
     return response.data;
-    
+
   } catch (error) {
     console.error('❌ Error en createReservaApi:', error);
     throw error instanceof Error ? error : new Error('Error al crear reserva');
@@ -124,8 +124,8 @@ export const createReservaApi = async (reservaData: IReservaForm): Promise<IRese
 export const editReservaApi = async (reservaData: IReservaForm & { id: number; codigo_reserva?: string; fecha_creacion?: string; huespedes?: any[] }): Promise<IReservaTableData> => {
   try {
     console.log('🔄 Llamando API editReserva para ID:', reservaData.id);
-    
-    const response: ReservaApiResponse<IReservaTableData> = await apiFetch('/api/reservas/editReserva', {
+
+    const response: ReservaApiResponse<IReservaTableData> = await apiFetch(`/api/reservas/${reservaData.id}`, {
       method: 'PUT',
       body: JSON.stringify(reservaData),
     });
@@ -136,7 +136,7 @@ export const editReservaApi = async (reservaData: IReservaForm & { id: number; c
 
     console.log('✅ Reserva editada exitosamente:', response.data.codigo_reserva);
     return response.data;
-    
+
   } catch (error) {
     console.error('❌ Error en editReservaApi:', error);
     throw error instanceof Error ? error : new Error('Error al editar reserva');
@@ -149,8 +149,8 @@ export const editReservaApi = async (reservaData: IReservaForm & { id: number; c
 export const deleteReservaApi = async (id: number): Promise<{ id: number }> => {
   try {
     console.log('🔄 Llamando API deleteReserva para ID:', id);
-    
-    const response: ReservaApiResponse<{ id: number }> = await apiFetch(`/api/reservas/deleteReserva?id=${id}`, {
+
+    const response: ReservaApiResponse<{ id: number }> = await apiFetch(`/api/reservas/${id}`, {
       method: 'DELETE',
     });
 
@@ -160,7 +160,7 @@ export const deleteReservaApi = async (id: number): Promise<{ id: number }> => {
 
     console.log('✅ Reserva eliminada exitosamente, ID:', response.data.id);
     return response.data;
-    
+
   } catch (error) {
     console.error('❌ Error en deleteReservaApi:', error);
     throw error instanceof Error ? error : new Error('Error al eliminar reserva');
