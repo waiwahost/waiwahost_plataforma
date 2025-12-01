@@ -23,32 +23,41 @@ interface MovimientosInmuebleResponse {
  * Conectado a la API externa a través de API interna
  */
 export const getMovimientosInmuebleApi = async (
-  idInmueble: string, 
+  idInmueble: string,
   fecha: string
 ): Promise<{ ingresos: number; egresos: number; movimientos: IMovimiento[] }> => {
   try {
     console.log('🔄 Obteniendo movimientos para inmueble:', idInmueble, 'fecha:', fecha);
-    
-    const response: MovimientosInmuebleResponse = await apiFetch(
-      `/api/inmuebles/movimientos?id_inmueble=${idInmueble}&fecha=${fecha}`, 
+
+    const response = await apiFetch(
+      `/api/inmuebles/movimientos?id_inmueble=${idInmueble}&fecha=${fecha}`,
       {
         method: 'GET',
       }
     );
 
-    if (!response.success || !response.data) {
+    // apiFetch devuelve directamente la data si la respuesta es exitosa y tiene la propiedad data
+    // Por lo tanto, response ya contiene { ingresos, egresos, movimientos }
+
+    if (!response) {
+      throw new Error('Error al obtener movimientos del inmueble');
+    }
+
+    // Si apiFetch devolvió el objeto completo porque falló algo (ej. success: false)
+    if (response.success === false) {
       throw new Error(response.message || 'Error al obtener movimientos del inmueble');
     }
 
-    const { ingresos, egresos, movimientos } = response.data;
+    const { ingresos, egresos, movimientos } = response;
+
     console.log('✅ Movimientos del inmueble obtenidos exitosamente:', {
-      cantidad: movimientos.length,
+      cantidad: movimientos?.length || 0,
       ingresos,
       egresos
     });
-    
-    return { ingresos, egresos, movimientos };
-    
+
+    return { ingresos, egresos, movimientos: movimientos || [] };
+
   } catch (error) {
     console.error('❌ Error en getMovimientosInmuebleApi:', error);
     throw error instanceof Error ? error : new Error('Error al obtener movimientos del inmueble');

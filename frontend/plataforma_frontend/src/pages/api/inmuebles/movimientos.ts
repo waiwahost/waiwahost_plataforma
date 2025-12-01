@@ -81,19 +81,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     // Si la respuesta es un array (lista de movimientos directa), normalizarla
     if (Array.isArray(responseData)) {
-      const movimientos = responseData;
+      const movimientos = responseData.map((m: any) => ({
+        ...m,
+        monto: Number(m.monto) || 0
+      }));
+
       const ingresos = movimientos
         .filter((m: any) => m.tipo === 'ingreso')
-        .reduce((sum: number, m: any) => sum + (Number(m.monto) || 0), 0);
+        .reduce((sum: number, m: any) => sum + m.monto, 0);
       const egresos = movimientos
         .filter((m: any) => m.tipo === 'egreso')
-        .reduce((sum: number, m: any) => sum + (Number(m.monto) || 0), 0);
+        .reduce((sum: number, m: any) => sum + m.monto, 0);
 
       responseData = {
         movimientos,
         ingresos,
         egresos
       };
+    } else if (responseData && typeof responseData === 'object') {
+      // Si ya es un objeto, asegurarnos de que los montos en movimientos sean números
+      if (Array.isArray(responseData.movimientos)) {
+        responseData.movimientos = responseData.movimientos.map((m: any) => ({
+          ...m,
+          monto: Number(m.monto) || 0
+        }));
+      }
     }
 
     console.log(`✅ Movimientos del inmueble ${id_inmueble} obtenidos exitosamente:`, {
