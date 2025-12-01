@@ -35,7 +35,7 @@ export default async function handler(
 
     if (req.method === 'GET') {
       // Obtener pagos de una reserva
-      const endpoint = `${apiUrl}/v1/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
+      const endpoint = `${apiUrl}/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'GET'
@@ -86,7 +86,7 @@ export default async function handler(
         fecha_pago: pagoData.fecha_pago || new Date().toISOString().split('T')[0]
       };
 
-      const endpoint = `${apiUrl}/v1/pagos`;
+      const endpoint = `${apiUrl}/pagos`;
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'POST',

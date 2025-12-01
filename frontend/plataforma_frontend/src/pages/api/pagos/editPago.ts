@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const empresaId = getEmpresaIdFromToken(token);
 
         // Actualizar pago en la API externa
-        const endpoint = `${apiUrl}/v1/pagos/${pagoId}?empresa_id=${empresaId}`;
+        const endpoint = `${apiUrl}/pagos/${pagoId}?empresa_id=${empresaId}`;
 
         const externalResponse = await externalApiServerFetch(endpoint, {
             method: 'PUT',

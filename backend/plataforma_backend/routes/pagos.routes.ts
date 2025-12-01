@@ -12,11 +12,11 @@ import { authMiddleware } from '../middlewares/authMiddleware';
 
 export default async function pagosRoutes(fastify: FastifyInstance) {
   // Prefijo para todas las rutas de pagos
-  const routePrefix = '/api/v1/pagos';
+  const routePrefix = '/pagos';
 
   /**
    * @swagger
-   * /api/v1/pagos/reserva/{id_reserva}:
+   * /pagos/reserva/{id_reserva}:
    *   get:
    *     tags:
    *       - Pagos
@@ -62,7 +62,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos:
+   * /pagos:
    *   get:
    *     tags:
    *       - Pagos
@@ -120,7 +120,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/{id}:
+   * /pagos/{id}:
    *   get:
    *     tags:
    *       - Pagos
@@ -147,7 +147,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos:
+   * /pagos:
    *   post:
    *     tags:
    *       - Pagos
@@ -182,7 +182,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/{id}:
+   * /pagos/{id}:
    *   put:
    *     tags:
    *       - Pagos
@@ -220,7 +220,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/{id}:
+   * /pagos/{id}:
    *   delete:
    *     tags:
    *       - Pagos
@@ -248,7 +248,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/reserva/{id_reserva}/resumen:
+   * /pagos/reserva/{id_reserva}/resumen:
    *   get:
    *     tags:
    *       - Pagos
@@ -286,7 +286,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/fecha:
+   * /pagos/fecha:
    *   get:
    *     tags:
    *       - Pagos
@@ -308,7 +308,7 @@ export default async function pagosRoutes(fastify: FastifyInstance) {
 
   /**
    * @swagger
-   * /api/v1/pagos/estadisticas/metodos-pago:
+   * /pagos/estadisticas/metodos-pago:
    *   get:
    *     tags:
    *       - Pagos
