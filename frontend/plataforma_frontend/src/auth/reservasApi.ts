@@ -29,7 +29,7 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
     console.log('🔄 Llamando API getReservas...', filters ? 'con filtros:' : 'sin filtros', filters);
 
     // Construir URL con parámetros de query
-    let url = '/api/reservas';
+    let url = '/api/reservas/getReservas';
     const queryParams = new URLSearchParams();
 
     if (filters) {
