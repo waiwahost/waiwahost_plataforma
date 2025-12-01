@@ -14,10 +14,10 @@ export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: st
   try {
     console.log('🔄 Obteniendo movimientos por fecha:', fecha, plataformaOrigen ? `con filtro de plataforma: ${plataformaOrigen}` : 'sin filtro de plataforma');
 
-    // Construir URL con parámetro opcional de plataforma
-    let url = `/api/movimientos/fecha/${fecha}`;
+    // Construir URL con parámetros de consulta
+    let url = `/api/movimientos/getMovimientosByFecha?fecha=${fecha}`;
     if (plataformaOrigen) {
-      url += `?plataforma_origen=${plataformaOrigen}`;
+      url += `&plataforma_origen=${plataformaOrigen}`;
     }
 
     const data = await apiFetch(url, {
@@ -52,7 +52,7 @@ export const getResumenDiario = async (fecha: string): Promise<{ success: boolea
     console.log('🔄 Obteniendo resumen diario:', fecha);
 
     const data = await apiFetch(
-      `/api/movimientos/resumen/${fecha}`,
+      `/api/movimientos/getResumenDiario?fecha=${fecha}`,
       {
         method: 'GET',
       }
@@ -83,7 +83,7 @@ export const createMovimiento = async (movimientoData: IMovimientoForm): Promise
   try {
     console.log('🔄 Creando movimiento:', movimientoData);
 
-    const data = await apiFetch('/api/movimientos', {
+    const data = await apiFetch('/api/movimientos/createMovimiento', {
       method: 'POST',
       body: JSON.stringify(movimientoData),
     });
@@ -113,7 +113,7 @@ export const updateMovimiento = async (id: string, movimientoData: Partial<IMovi
   try {
     console.log('🔄 Actualizando movimiento:', { id, data: movimientoData });
 
-    const data = await apiFetch(`/api/movimientos/${id}`, {
+    const data = await apiFetch(`/api/movimientos/updateMovimiento?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify(movimientoData),
     });
@@ -143,7 +143,7 @@ export const deleteMovimiento = async (id: string): Promise<IMovimientoApiRespon
   try {
     console.log('🔄 Eliminando movimiento:', id);
 
-    const data = await apiFetch(`/api/movimientos/${id}`, {
+    const data = await apiFetch(`/api/movimientos/deleteMovimiento?id=${id}`, {
       method: 'DELETE',
     });
 
@@ -173,7 +173,7 @@ export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma:
     console.log('🔄 Filtrando movimientos por plataforma:', { fecha, plataforma });
 
     const data = await apiFetch(
-      `/api/movimientos/filtrar-por-plataforma?fecha=${fecha}&plataforma=${plataforma}`,
+      `/api/movimientos/filtrarPorPlataforma?fecha=${fecha}&plataforma=${plataforma}`,
       {
         method: 'GET',
       }
@@ -204,7 +204,7 @@ export const getMovimientoById = async (id: string): Promise<IMovimientoApiRespo
   try {
     console.log('🔄 Obteniendo movimiento por ID:', id);
 
-    const data = await apiFetch(`/api/movimientos/${id}`, {
+    const data = await apiFetch(`/api/movimientos/getMovimientoById?id=${id}`, {
       method: 'GET',
     });
 

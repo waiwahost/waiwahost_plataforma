@@ -186,6 +186,14 @@ INSERT INTO permissions (key, description) VALUES
 ('ver_disponibilidad', 'Ver disponibilidad'),
 ('ver_huespedes', 'Ver huespedes');
 
+INSERT INTO public.permissions (key, description)
+VALUES ('ver_egresos','Ver egresos'),
+('ver_ingresos','Ver ingresos'),
+('eliminar_usuarios','Eliminar usuarios'),
+('crear_usuarios','Crear usuario'),
+('eliminar_usuario','Eliminar usuarios'),
+('crear_usuario','Crear usuario');
+
 -- SUPERUSUARIO: acceso total
 INSERT INTO roles_permissions (id_rol, id_permission)
 SELECT 1, id_permission FROM permissions;
