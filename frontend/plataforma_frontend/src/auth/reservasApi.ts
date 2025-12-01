@@ -73,7 +73,7 @@ export const getReservaDetalleApi = async (id: number): Promise<IReservaTableDat
   try {
     console.log('🔄 Llamando API getReservaDetalle para ID:', id);
 
-    const data = await apiFetch(`/api/reservas/${id}`, {
+    const data = await apiFetch(`/api/reservas/getReservaDetalle?id=${id}`, {
       method: 'GET',
     });
 
@@ -93,7 +93,7 @@ export const createReservaApi = async (reservaData: IReservaForm): Promise<IRese
   try {
     console.log('🔄 Llamando API createReserva...');
 
-    const data = await apiFetch('/api/reservas', {
+    const data = await apiFetch('/api/reservas/createReserva', {
       method: 'POST',
       body: JSON.stringify(reservaData),
     });
@@ -114,7 +114,7 @@ export const editReservaApi = async (reservaData: IReservaForm & { id: number; c
   try {
     console.log('🔄 Llamando API editReserva para ID:', reservaData.id);
 
-    const data = await apiFetch(`/api/reservas/${reservaData.id}`, {
+    const data = await apiFetch(`/api/reservas/editReserva/${reservaData.id}`, {
       method: 'PUT',
       body: JSON.stringify(reservaData),
     });
@@ -135,7 +135,7 @@ export const deleteReservaApi = async (id: number): Promise<{ id: number }> => {
   try {
     console.log('🔄 Llamando API deleteReserva para ID:', id);
 
-    const data = await apiFetch(`/api/reservas/${id}`, {
+    const data = await apiFetch(`/api/reservas/deleteReserva?id=${id}`, {
       method: 'DELETE',
     });
 
