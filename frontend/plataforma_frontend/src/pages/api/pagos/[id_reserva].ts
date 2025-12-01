@@ -27,7 +27,6 @@ export default async function handler(
         message: 'ID de reserva es requerido'
       });
     }
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
 
     // Extraer token y empresa_id
     const token = extractTokenFromRequest(req);
@@ -35,7 +34,8 @@ export default async function handler(
 
     if (req.method === 'GET') {
       // Obtener pagos de una reserva
-      const endpoint = `${apiUrl}/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
+      // FIX: Usar path relativo, externalApiServerFetch agrega el API_URL
+      const endpoint = `/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'GET'
@@ -86,7 +86,8 @@ export default async function handler(
         fecha_pago: pagoData.fecha_pago || new Date().toISOString().split('T')[0]
       };
 
-      const endpoint = `${apiUrl}/pagos`;
+      // FIX: Usar path relativo, externalApiServerFetch agrega el API_URL
+      const endpoint = '/pagos';
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'POST',

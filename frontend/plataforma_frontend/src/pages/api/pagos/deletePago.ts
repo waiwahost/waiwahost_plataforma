@@ -51,13 +51,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const pagoId = parseInt(id as string);
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+
     // Extraer token y empresa_id
     const token = extractTokenFromRequest(req);
     const empresaId = getEmpresaIdFromToken(token);
 
     // Eliminar pago en la API externa
-    const endpoint = `${apiUrl}/pagos/${pagoId}?empresa_id=${empresaId}`;
+    // FIX: Usar path relativo, externalApiServerFetch agrega el API_URL
+    const endpoint = `/pagos/${pagoId}?empresa_id=${empresaId}`;
 
     const externalResponse = await externalApiServerFetch(endpoint, {
       method: 'DELETE',
