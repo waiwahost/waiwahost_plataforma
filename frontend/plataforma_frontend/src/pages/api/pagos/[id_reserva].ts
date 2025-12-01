@@ -8,6 +8,13 @@ interface PagosResponse {
   error?: string;
 }
 
+interface ExternalApiResponse {
+  isError: boolean;
+  data: any;
+  message?: string;
+}
+
+
 /**
  * API Interna: Obtener pagos por reserva o crear nuevo pago
  * GET /api/pagos/[id_reserva] - Obtener pagos de una reserva
@@ -27,34 +34,71 @@ export default async function handler(
         message: 'ID de reserva es requerido'
       });
     }
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    const token = req.headers.authorization?.replace('Bearer ', '') || '';
+
+
+
+
 
     // Extraer token y empresa_id
-    const token = extractTokenFromRequest(req);
+    //const token = extractTokenFromRequest(req);
     const empresaId = getEmpresaIdFromToken(token);
 
     if (req.method === 'GET') {
       // Obtener pagos de una reserva
       // FIX: Usar path relativo, externalApiServerFetch agrega el API_URL
-      const endpoint = `/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
+      //const endpoint = `/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
 
-      const externalResponse = await externalApiServerFetch(endpoint, {
-        method: 'GET'
-      }, token);
+      //const externalResponse = await externalApiServerFetch(endpoint, {
+      //  method: 'GET'
+      //}, token);
 
-      // Verificar si la respuesta externa es exitosa
-      if (externalResponse.isError) {
-        console.error('❌ Error backend al obtener pagos:', externalResponse);
+
+
+      // Realizar la llamada a la API externa
+      const response = await fetch(`${apiUrl}/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const externalData: ExternalApiResponse = await response.json();
+      console.log('📥 External API response:', {
+        isError: externalData.isError,
+        dataCount: externalData.data?.length || 0,
+        message: externalData.message
+      });
+
+      // Verificar si la API externa retornó error
+      if (externalData.isError) {
         return res.status(400).json({
           success: false,
-          message: externalResponse.message || 'Error al obtener pagos',
-          error: externalResponse.error
+          data: null,
+          message: externalData.message || 'Error desde la API externa'
         });
       }
+
+      // Verificar si la respuesta externa es exitosa
+      //if (externalResponse.isError) {
+      //  console.error('❌ Error backend al obtener pagos:', externalResponse);
+      //  return res.status(400).json({
+      //    success: false,
+      //    message: externalResponse.message || 'Error al obtener pagos',
+      //    error: externalResponse.error
+      //  });
+      //}
 
       // Respuesta exitosa - adaptamos la estructura del backend
       return res.status(200).json({
         success: true,
-        data: externalResponse.data?.pagos || [], // El backend devuelve {pagos: [], resumen: {}}
+        data: externalData.data?.pagos || [], // El backend devuelve {pagos: [], resumen: {}}
         message: 'Pagos obtenidos exitosamente'
       });
 

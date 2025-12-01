@@ -136,6 +136,10 @@ insert into roles (name) values ('superadmin'), ('empresa'),('administrador'),('
 INSERT INTO usuarios (nombre, email, password_hash, id_roles, id_empresa)
 VALUES ('Carlos Torres', 'carlos@adminind.com', 'hashed_pw_1', 3, NULL);
 
+-- Crear empresa 1
+INSERT INTO empresas (nombre, plan_actual)
+VALUES ('Waiwahost', 'Full');
+
 -- Propietarios (dueños de los inmuebles)
 INSERT INTO usuarios (nombre, email, password_hash, id_roles)
 VALUES 
@@ -539,14 +543,14 @@ ADD CONSTRAINT fk_pagos_reserva
 FOREIGN KEY (id_reserva) REFERENCES reservas(id_reserva) ON DELETE CASCADE;
 
 -- Si la tabla empresas existe
--- ALTER TABLE pagos 
--- ADD CONSTRAINT fk_pagos_empresa 
--- FOREIGN KEY (id_empresa) REFERENCES empresas(id) ON DELETE CASCADE;
+ALTER TABLE pagos 
+ADD CONSTRAINT fk_pagos_empresa 
+FOREIGN KEY (id_empresa) REFERENCES empresas(id) ON DELETE CASCADE;
 
 -- Si la tabla users existe
--- ALTER TABLE pagos 
--- ADD CONSTRAINT fk_pagos_usuario 
--- FOREIGN KEY (id_usuario_registro) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE pagos 
+ADD CONSTRAINT fk_pagos_usuario 
+FOREIGN KEY (id_usuario_registro) REFERENCES users(id) ON DELETE SET NULL;
 
 -- ========================================================================
 -- MODIFICACIONES A LA TABLA MOVIMIENTOS (OPCIONAL)

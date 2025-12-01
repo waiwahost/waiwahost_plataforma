@@ -81,6 +81,7 @@ export const getPagosReservaDetalleApi = async (idReserva: number): Promise<IPag
 };
 
 /**
+/**
  * Crea un nuevo pago para una reserva
  * La API interna decide si usar backend externo o mock
  */
@@ -94,7 +95,8 @@ export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Pro
     });
 
     if (!response.success || !response.data) {
-      throw new Error(response.message || 'Error al crear pago');
+      const errorMessage = response.message || (response as any).error?.message || 'Error al crear pago';
+      throw new Error(errorMessage);
     }
 
     const pago = Array.isArray(response.data) ? response.data[0] : response.data;
