@@ -9,13 +9,6 @@ interface MovimientoApiResponse {
   error?: string;
 }
 
-interface ExternalApiResponse {
-  success: boolean;
-  data: any;
-  message?: string;
-  error?: any;
-}
-
 /**
  * Valida los parámetros de entrada
  */
@@ -67,38 +60,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     // Extraer token
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
-    const token = req.headers.authorization?.replace('Bearer ', '') || '';
+    const token = extractTokenFromRequest(req);
 
     // Llamar a la API externa
-    //const endpoint = `/movimientos/inmueble?id_inmueble=${id_inmueble}&fecha=${fecha}`;
-    //const externalResponse = await externalApiServerFetch(endpoint, {
-    //  method: 'GET'
-    //}, token);
-
-    const response = await fetch(`${apiUrl}/movimientos/inmueble?id_inmueble=${id_inmueble}&fecha=${fecha}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const externalData: ExternalApiResponse = await response.json();
+    const endpoint = `/movimientos/inmueble?id_inmueble=${id_inmueble}&fecha=${fecha}`;
+    const externalResponse = await externalApiServerFetch(endpoint, {
+      method: 'GET'
+    }, token);
 
     // Verificar si la respuesta externa es exitosa
-    if (!externalData.success) {
+    if (externalResponse.isError) {
       return res.status(400).json({
         success: false,
-        message: externalData.message || 'Error al obtener movimientos del inmueble',
-        error: externalData.error
+        message: externalResponse.message || 'Error al obtener movimientos del inmueble',
+        error: externalResponse.error
       });
     }
 
-    let responseData = externalData.data;
+    let responseData = externalResponse.data;
 
     // Si la respuesta es un array (lista de movimientos directa), normalizarla
     if (Array.isArray(responseData)) {
