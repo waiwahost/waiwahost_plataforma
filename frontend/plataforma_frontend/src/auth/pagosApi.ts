@@ -36,17 +36,26 @@ export const getPagosReservaApi = async (idReserva: number): Promise<IPago[]> =>
   try {
     console.log('🔄 Obteniendo pagos para reserva ID:', idReserva);
 
-    const response: IPagoApiResponse = await apiFetch(`/api/pagos/${idReserva}`, {
+    const response: any = await apiFetch(`/api/pagos/${idReserva}`, {
       method: 'GET',
     });
 
-    if (!response.success || !response.data) {
+    // apiFetch puede devolver la data directamente si existe la propiedad 'data'
+    if (Array.isArray(response)) {
+      console.log('✅ Pagos obtenidos exitosamente (direct):', response.length);
+      return response;
+    }
+
+    if (response && response.success && Array.isArray(response.data)) {
+      console.log('✅ Pagos obtenidos exitosamente (wrapped):', response.data.length);
+      return response.data;
+    }
+
+    if (response && !response.success) {
       throw new Error(response.message || 'Error al obtener pagos');
     }
 
-    const pagos = Array.isArray(response.data) ? response.data : [];
-    console.log('✅ Pagos obtenidos exitosamente:', pagos.length);
-    return pagos;
+    return [];
 
   } catch (error) {
     console.error('❌ Error en getPagosReservaApi:', error);
@@ -62,9 +71,13 @@ export const getPagosReservaDetalleApi = async (idReserva: number): Promise<IPag
   try {
     console.log('🔄 Obteniendo pagos detalle para reserva ID:', idReserva);
 
-    const response: IPagoApiResponse = await apiFetch(`/api/reservas/pagos-detalle?id_reserva=${idReserva}`, {
+    const response: any = await apiFetch(`/api/reservas/pagos-detalle?id_reserva=${idReserva}`, {
       method: 'GET',
     });
+
+    if (Array.isArray(response)) {
+      return response;
+    }
 
     if (!response.success) {
       throw new Error(response.message || 'Error al obtener pagos');
@@ -88,13 +101,34 @@ export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Pro
   try {
     console.log('🔄 Creando pago para reserva ID:', idReserva, 'Datos:', pagoData);
 
-    const response: IPagoApiResponse = await apiFetch(`/api/pagos/${idReserva}`, {
+    const response: any = await apiFetch(`/api/pagos/${idReserva}`, {
       method: 'POST',
       body: JSON.stringify(pagoData),
     });
 
+    // apiFetch devuelve null si data es null (en caso de error con data: null)
+    if (response === null) {
+      throw new Error('Error al crear pago (respuesta nula)');
+    }
+
+    // Si apiFetch devolvió el objeto pago directamente
+    if (response && (response.id || response.monto)) {
+      const pago = response;
+      console.log('✅ Pago creado exitosamente (direct):', pago);
+
+      // Solo registrar movimiento en modo mock/interno
+      const useExternalApi = process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3001';
+      if (!useExternalApi) {
+        try {
+          await registerPagoAsMovimiento(pago);
+        } catch (e) { console.error(e); }
+      }
+      return pago;
+    }
+
     if (!response.success || !response.data) {
-      throw new Error(response.message || 'Error al crear pago');
+      const errorMessage = response.message || (response as any).error?.message || 'Error al crear pago';
+      throw new Error(errorMessage);
     }
 
     const pago = Array.isArray(response.data) ? response.data[0] : response.data;
