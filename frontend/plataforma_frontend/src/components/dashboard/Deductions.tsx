@@ -13,9 +13,10 @@ interface InmuebleOption {
 }
 
 const Deductions: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const now = new Date();
+    return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  });
   const [selectedInmueble, setSelectedInmueble] = useState<InmuebleOption | null>(null);
   const [egresos, setEgresos] = useState<IEgreso[]>([]);
   const [resumen, setResumen] = useState<IResumenEgresos | null>(null);
