@@ -19,7 +19,7 @@ export default async function handler(
 ) {
   try {
     const { id_reserva } = req.query;
-    
+
     // Validar ID de reserva
     if (!id_reserva || typeof id_reserva !== 'string') {
       return res.status(400).json({
@@ -27,6 +27,7 @@ export default async function handler(
         message: 'ID de reserva es requerido'
       });
     }
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
 
     // Extraer token y empresa_id
     const token = extractTokenFromRequest(req);
@@ -34,7 +35,7 @@ export default async function handler(
 
     if (req.method === 'GET') {
       // Obtener pagos de una reserva
-      const endpoint = `/api/v1/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
+      const endpoint = `${apiUrl}/v1/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'GET'
@@ -42,6 +43,7 @@ export default async function handler(
 
       // Verificar si la respuesta externa es exitosa
       if (externalResponse.isError) {
+        console.error('❌ Error backend al obtener pagos:', externalResponse);
         return res.status(400).json({
           success: false,
           message: externalResponse.message || 'Error al obtener pagos',
@@ -84,7 +86,7 @@ export default async function handler(
         fecha_pago: pagoData.fecha_pago || new Date().toISOString().split('T')[0]
       };
 
-      const endpoint = '/api/v1/pagos';
+      const endpoint = `${apiUrl}/v1/pagos`;
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'POST',

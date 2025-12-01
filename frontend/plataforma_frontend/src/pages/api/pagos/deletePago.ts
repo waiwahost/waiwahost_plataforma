@@ -13,13 +13,13 @@ interface DeletePagoResponse {
  */
 const validatePagoId = (id: any): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   if (!id) {
     errors.push('ID de pago es requerido');
   } else if (isNaN(parseInt(id as string))) {
     errors.push('ID de pago debe ser un número válido');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     const { id } = req.query;
-    
+
     const validation = validatePagoId(id);
     if (!validation.isValid) {
       return res.status(400).json({
@@ -49,15 +49,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         error: validation.errors.join(', ')
       });
     }
-    
+
     const pagoId = parseInt(id as string);
-    
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
     // Extraer token y empresa_id
     const token = extractTokenFromRequest(req);
     const empresaId = getEmpresaIdFromToken(token);
 
     // Eliminar pago en la API externa
-    const endpoint = `/api/v1/pagos/${pagoId}?empresa_id=${empresaId}`;
+    const endpoint = `${apiUrl}/v1/pagos/${pagoId}?empresa_id=${empresaId}`;
 
     const externalResponse = await externalApiServerFetch(endpoint, {
       method: 'DELETE',
@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       success: true,
       message: 'Pago eliminado exitosamente'
     });
-    
+
   } catch (error) {
     console.error('❌ Error en API proxy eliminar pago:', error);
     return res.status(500).json({
