@@ -4,18 +4,21 @@ import { movimientosController } from '../controllers/movimientos.controller';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
 export async function inmueblesRoutes(server: FastifyInstance, opts: FastifyPluginOptions) {
+  // GET /inmuebles/public/:id - Obtener información pública de un inmueble
+  server.get('/public/:id', {}, inmueblesController.getInmueblePublic);
+
   // GET /inmuebles/getInmuebles - Obtener lista de inmuebles o inmueble específico
   server.get('/getInmuebles', { preHandler: [authMiddleware] }, inmueblesController.getInmuebles);
-  
+
   // GET /inmuebles/selector - Obtener inmuebles para selector
   server.get('/selector', { preHandler: [authMiddleware] }, movimientosController.getInmueblesSelector);
-  
+
   // POST /inmuebles/createInmueble - Crear un nuevo inmueble
   server.post('/createInmueble', { preHandler: [authMiddleware] }, inmueblesController.createInmueble);
-  
+
   // PUT /inmuebles/editInmueble - Editar un inmueble existente
   server.put('/editInmueble', { preHandler: [authMiddleware] }, inmueblesController.editInmueble);
-  
+
   // DELETE /inmuebles/deleteInmueble - Eliminar un inmueble (eliminación lógica)
   server.delete('/deleteInmueble', { preHandler: [authMiddleware] }, inmueblesController.deleteInmueble);
 

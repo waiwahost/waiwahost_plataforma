@@ -9,9 +9,9 @@ interface HuespedesTableProps {
   canEdit?: boolean;
 }
 
-const HuespedesTable: React.FC<HuespedesTableProps> = ({ 
-  huespedes, 
-  onEdit, 
+const HuespedesTable: React.FC<HuespedesTableProps> = ({
+  huespedes,
+  onEdit,
   onViewDetail,
   canEdit = true
 }) => {
@@ -76,21 +76,29 @@ const HuespedesTable: React.FC<HuespedesTableProps> = ({
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => onViewDetail(huesped)}
-                      className="inline-flex items-center p-2 rounded-md text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
-                      title="Ver detalle del huésped"
+                      //onClick={() => onViewDetail(huesped)}
+                      //className="inline-flex items-center p-2 rounded-md text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
+                      //title="Ver detalle del huésped"
+                      onClick={() => { }}
+                      disabled={true}
+                      className="inline-flex items-center p-2 rounded-md text-gray-400 cursor-not-allowed"
+                      title="Ver detalle del huésped (Deshabilitado)"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => onEdit(huesped)}
-                      disabled={!canEdit}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canEdit
-                          ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
-                          : 'text-gray-400 cursor-not-allowed'
-                      }`}
-                      title={canEdit ? 'Editar huésped' : 'No tienes permisos para editar'}
+                      //onClick={() => onEdit(huesped)}
+                      //disabled={!canEdit}
+                      //className={`inline-flex items-center p-2 rounded-md transition-colors ${
+                      //  canEdit
+                      //    ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
+                      //    : 'text-gray-400 cursor-not-allowed'
+                      //}`}
+                      //title={canEdit ? 'Editar huésped' : 'No tienes permisos para editar'}
+                      onClick={() => { }}
+                      disabled={true}
+                      className="inline-flex items-center p-2 rounded-md text-gray-400 cursor-not-allowed"
+                      title="Editar huésped (Deshabilitado)"
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>

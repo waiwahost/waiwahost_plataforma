@@ -136,6 +136,10 @@ insert into roles (name) values ('superadmin'), ('empresa'),('administrador'),('
 INSERT INTO usuarios (nombre, email, password_hash, id_roles, id_empresa)
 VALUES ('Carlos Torres', 'carlos@adminind.com', 'hashed_pw_1', 3, NULL);
 
+-- Crear empresa 1
+INSERT INTO empresas (nombre, plan_actual)
+VALUES ('Waiwahost', 'Full');
+
 -- Propietarios (dueños de los inmuebles)
 INSERT INTO usuarios (nombre, email, password_hash, id_roles)
 VALUES 
@@ -182,20 +186,34 @@ INSERT INTO permissions (key, description) VALUES
 ('ver_disponibilidad', 'Ver disponibilidad'),
 ('ver_huespedes', 'Ver huespedes');
 
+INSERT INTO public.permissions (key, description)
+VALUES ('ver_egresos','Ver egresos'),
+('ver_ingresos','Ver ingresos'),
+('eliminar_usuarios','Eliminar usuarios'),
+('crear_usuarios','Crear usuario'),
+('eliminar_usuario','Eliminar usuarios'),
+('crear_usuario','Crear usuario');
+
 -- SUPERUSUARIO: acceso total
 INSERT INTO roles_permissions (id_rol, id_permission)
 SELECT 1, id_permission FROM permissions;
 
+INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 16);
+INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 17);
 INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 18);
+INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 19);
+INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 20);
+INSERT INTO roles_permissions (id_rol, id_permission) VALUES (1, 21);
 
 -- ADMINISTRADOR
 INSERT INTO roles_permissions (id_rol, id_permission)
 SELECT 3, id_permission FROM permissions
 WHERE key IN (
     'ver_dashboard',
-    'ver_inmuebles', 'crear_inmueble', 'editar_inmueble',
-    'ver_reservas', 'crear_reserva', 'editar_reserva',
-    'ver_reportes', 'ver_caja', 'ver_propietarios'
+    'ver_inmuebles',
+    'ver_reservas', 'crear_reserva', 'editar_reserva', 'eliminar_reserva',
+    'ver_reportes', 'ver_caja', 'ver_propietarios', 'ver_ingresos', 'ver_egresos',
+    'ver_disponibilidad', 'ver_huespedes', 'ver_usuarios'
 );
 
 -- PROPIETARIO
@@ -539,14 +557,14 @@ ADD CONSTRAINT fk_pagos_reserva
 FOREIGN KEY (id_reserva) REFERENCES reservas(id_reserva) ON DELETE CASCADE;
 
 -- Si la tabla empresas existe
--- ALTER TABLE pagos 
--- ADD CONSTRAINT fk_pagos_empresa 
--- FOREIGN KEY (id_empresa) REFERENCES empresas(id) ON DELETE CASCADE;
+ALTER TABLE pagos 
+ADD CONSTRAINT fk_pagos_empresa 
+FOREIGN KEY (id_empresa) REFERENCES empresas(id) ON DELETE CASCADE;
 
 -- Si la tabla users existe
--- ALTER TABLE pagos 
--- ADD CONSTRAINT fk_pagos_usuario 
--- FOREIGN KEY (id_usuario_registro) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE pagos 
+ADD CONSTRAINT fk_pagos_usuario 
+FOREIGN KEY (id_usuario_registro) REFERENCES users(id) ON DELETE SET NULL;
 
 -- ========================================================================
 -- MODIFICACIONES A LA TABLA MOVIMIENTOS (OPCIONAL)

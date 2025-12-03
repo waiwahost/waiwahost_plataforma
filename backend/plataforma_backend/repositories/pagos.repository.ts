@@ -1,8 +1,8 @@
 import pool from '../libs/db';
-import { 
-  Pago, 
-  CreatePagoData, 
-  EditPagoData, 
+import {
+  Pago,
+  CreatePagoData,
+  EditPagoData,
   PagosQueryParams,
   ResumenPagosReserva,
   ValidacionPago,
@@ -13,7 +13,7 @@ import {
 import { updateTotalesReservaService } from '../services/reservas/updateTotalesReservaService';
 
 export class PagosRepository {
-  
+
   /**
    * Obtiene todos los pagos de una reserva específica
    */
@@ -38,7 +38,7 @@ export class PagosRepository {
       WHERE p.id_reserva = $1
       ORDER BY p.fecha_pago DESC, p.fecha_creacion DESC
     `;
-    
+
     const { rows } = await pool.query(query, [idReserva]);
     return rows;
   }
@@ -46,7 +46,7 @@ export class PagosRepository {
   /**
    * Obtiene pagos con filtros y paginación
    */
-  static async getPagosWithFilters(params: PagosQueryParams): Promise<{pagos: Pago[], total: number}> {
+  static async getPagosWithFilters(params: PagosQueryParams): Promise<{ pagos: Pago[], total: number }> {
     let whereConditions: string[] = [];
     let queryParams: any[] = [];
     let paramIndex = 1;
@@ -150,7 +150,7 @@ export class PagosRepository {
       INNER JOIN reservas r ON p.id_reserva = r.id_reserva
       WHERE p.id = $1
     `;
-    
+
     const { rows } = await pool.query(query, [id]);
     return rows.length > 0 ? rows[0] : null;
   }
@@ -164,17 +164,20 @@ export class PagosRepository {
     if (!reservaInfo) {
       throw new Error('La reserva especificada no existe');
     }
-
-    // Validar que la reserva pertenece a la empresa
-    //if (reservaInfo.id_empresa !== data.id_empresa) {
-    //  throw new Error('La reserva no pertenece a la empresa especificada');
-    //}
-
     // Obtener el total ya pagado para esta reserva
     const totalPagadoActual = await this.getTotalPagadoReserva(data.id_reserva);
 
+    console.log(`[DEBUG] createPago validation:
+      Monto a pagar: ${data.monto} (type: ${typeof data.monto})
+      Total Reserva: ${reservaInfo.total_reserva} (type: ${typeof reservaInfo.total_reserva})
+      Total Pagado: ${totalPagadoActual} (type: ${typeof totalPagadoActual})
+    `);
+
+    // Asegurar que total_reserva sea número
+    const totalReserva = parseFloat(reservaInfo.total_reserva as any);
+
     // Validar el monto del pago
-    const validacion = validarMontoPago(data.monto, reservaInfo.total_reserva, totalPagadoActual);
+    const validacion = validarMontoPago(data.monto, totalReserva, totalPagadoActual);
     if (!validacion.es_valido) {
       throw new Error(`Validación de pago fallida: ${validacion.errores.join(', ')}`);
     }
@@ -191,7 +194,7 @@ export class PagosRepository {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       RETURNING id
     `;
-    
+
     const values = [
       data.id_reserva,
       data.monto,
@@ -200,10 +203,10 @@ export class PagosRepository {
       data.concepto,
       data.descripcion,
       data.comprobante,
-      data.id_empresa,
+      reservaInfo.id_empresa,
       data.id_usuario_registro
     ];
-    
+
     const { rows } = await pool.query(query, values);
     const pagoId = rows[0].id;
 
@@ -243,7 +246,7 @@ export class PagosRepository {
 
       // Calcular total pagado excluyendo este pago
       const totalPagadoOtros = await this.getTotalPagadoReservaExcluding(pagoExistente.id_reserva, id);
-      
+
       const validacion = validarMontoPago(data.monto, reservaInfo.total_reserva, totalPagadoOtros);
       if (!validacion.es_valido) {
         throw new Error(`Validación de pago fallida: ${validacion.errores.join(', ')}`);
@@ -296,7 +299,7 @@ export class PagosRepository {
     `;
 
     const { rowCount } = await pool.query(query, values);
-    
+
     if (rowCount === 0) {
       throw new Error('No se pudo actualizar el pago');
     }
@@ -330,7 +333,7 @@ export class PagosRepository {
 
     const query = 'DELETE FROM pagos WHERE id = $1';
     const { rowCount } = await pool.query(query, [id]);
-    
+
     if (rowCount === 0) {
       throw new Error('Pago no encontrado o ya eliminado');
     }
@@ -364,9 +367,9 @@ export class PagosRepository {
       WHERE r.id_reserva = $1
       GROUP BY r.id_reserva, r.codigo_reserva, r.total_reserva
     `;
-    
+
     const { rows } = await pool.query(query, [idReserva]);
-    
+
     if (rows.length === 0) {
       return null;
     }
@@ -403,14 +406,14 @@ export class PagosRepository {
   /**
    * Obtiene información básica de una reserva
    */
-  private static async getReservaInfo(idReserva: number): Promise<{id: number, codigo_reserva: string, total_reserva: number, id_empresa: number} | null> {
+  private static async getReservaInfo(idReserva: number): Promise<{ id: number, codigo_reserva: string, total_reserva: number, id_empresa: number } | null> {
     const query = `
       SELECT r.id_reserva as id, r.codigo_reserva, r.total_reserva, i.id_empresa
       FROM reservas r
       INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
       WHERE r.id_reserva = $1
     `;
-    
+
     const { rows } = await pool.query(query, [idReserva]);
     return rows.length > 0 ? rows[0] : null;
   }
@@ -424,7 +427,7 @@ export class PagosRepository {
       FROM pagos 
       WHERE id_reserva = $1
     `;
-    
+
     const { rows } = await pool.query(query, [idReserva]);
     return parseFloat(rows[0].total_pagado);
   }
@@ -438,7 +441,7 @@ export class PagosRepository {
       FROM pagos 
       WHERE id_reserva = $1 AND id != $2
     `;
-    
+
     const { rows } = await pool.query(query, [idReserva, excludePagoId]);
     return parseFloat(rows[0].total_pagado);
   }
@@ -452,7 +455,7 @@ export class PagosRepository {
       INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
       WHERE r.id_reserva = $1 AND i.id_empresa = $2
     `;
-    
+
     const { rows } = await pool.query(query, [reservaId, empresaId]);
     return rows.length > 0;
   }
@@ -467,7 +470,7 @@ export class PagosRepository {
       INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
       WHERE p.id = $1 AND i.id_empresa = $2
     `;
-    
+
     const { rows } = await pool.query(query, [pagoId, empresaId]);
     return rows.length > 0;
   }
@@ -496,7 +499,7 @@ export class PagosRepository {
       WHERE p.id_empresa = $1 AND p.fecha_pago = $2
       ORDER BY p.fecha_creacion DESC
     `;
-    
+
     const { rows } = await pool.query(query, [empresaId, fecha]);
     return rows;
   }
@@ -516,7 +519,7 @@ export class PagosRepository {
       INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
       WHERE i.id_empresa = $1
     `;
-    
+
     const params: any[] = [empresaId];
     let paramIndex = 2;
 
@@ -533,7 +536,7 @@ export class PagosRepository {
     query += ` GROUP BY p.metodo_pago ORDER BY total_monto DESC`;
 
     const { rows } = await pool.query(query, params);
-    
+
     return rows.map(row => ({
       metodo_pago: row.metodo_pago,
       cantidad_pagos: parseInt(row.cantidad_pagos),

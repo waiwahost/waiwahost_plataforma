@@ -157,7 +157,7 @@ export function validarMontoPago(montoNuevoPago: number, totalReserva: number, t
 
   if (totalDespuesPago > totalReserva) {
     const exceso = totalDespuesPago - totalReserva;
-    errores.push(`El pago excede el monto pendiente por $${exceso.toLocaleString('es-CO')}`);
+    errores.push(`El pago excede el monto pendiente por $${exceso.toLocaleString('es-CO')} (Total Reserva: ${totalReserva}, Pagado: ${totalPagadoActual}, Nuevo: ${montoNuevoPago})`);
   }
 
   if (montoNuevoPago > montoPendiente && montoPendiente > 0) {
@@ -176,11 +176,11 @@ export function validarMontoPago(montoNuevoPago: number, totalReserva: number, t
  */
 export function formatearPagoDescripcion(pago: Pago): string {
   const fecha = new Date(pago.fecha_pago).toLocaleDateString('es-CO');
-  const monto = pago.monto.toLocaleString('es-CO', { 
-    style: 'currency', 
+  const monto = pago.monto.toLocaleString('es-CO', {
+    style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0
   });
-  
+
   return `${fecha} - ${monto} (${pago.metodo_pago}) - ${pago.concepto}`;
 }

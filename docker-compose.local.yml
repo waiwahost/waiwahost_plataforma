@@ -10,11 +10,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data_local:/var/lib/postgresql/data
     networks:
-      - waiwa-net
+      - waiwa-net-local
 
   # 2. Backend API
   backend:
@@ -35,7 +35,7 @@ services:
     depends_on:
       - db
     networks:
-      - waiwa-net
+      - waiwa-net-local
 
   # 3. Frontend Principal
   frontend:
@@ -46,7 +46,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost/api
       API_URL: http://backend:3001
     networks:
-      - waiwa-net
+      - waiwa-net-local
 
   # 4. Frontend Formulario
   formulario:
@@ -57,7 +57,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
     networks:
-      - waiwa-net
+      - waiwa-net-local
 
   # 5. Nginx (Proxy Inverso)
   nginx:
@@ -65,19 +65,18 @@ services:
     restart: always
     ports:
       - "80:80"
-      # - "443:443" # Descomentar cuando configures SSL
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/conf.d/local.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - backend
       - frontend
       - formulario
     networks:
-      - waiwa-net
+      - waiwa-net-local
 
 volumes:
-  db_data:
+  db_data_local:
 
 
 networks:
-  waiwa-net:
+  waiwa-net-local:

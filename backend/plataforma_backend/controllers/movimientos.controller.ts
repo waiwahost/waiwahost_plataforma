@@ -67,8 +67,8 @@ export const movimientosController = {
         );
       }
       // Calcular resumen
-      const totalIngresos = data?.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + m.monto, 0) || 0;
-      const totalEgresos = data?.filter(m => m.tipo === 'egreso').reduce((sum, m) => sum + m.monto, 0) || 0;
+      const totalIngresos = data?.filter(m => m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0) || 0;
+      const totalEgresos = data?.filter(m => m.tipo === 'egreso').reduce((sum, m) => sum + Number(m.monto), 0) || 0;
       const response = {
         ingresos: totalIngresos,
         egresos: totalEgresos,

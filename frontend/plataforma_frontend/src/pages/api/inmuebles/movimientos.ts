@@ -14,11 +14,11 @@ interface MovimientoApiResponse {
  */
 const validateParams = (id_inmueble: any, fecha: any): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   if (!id_inmueble) {
     errors.push('ID de inmueble es requerido');
   }
-  
+
   if (!fecha) {
     errors.push('Fecha es requerida');
   } else {
@@ -28,7 +28,7 @@ const validateParams = (id_inmueble: any, fecha: any): { isValid: boolean; error
       errors.push('Formato de fecha inválido. Use YYYY-MM-DD');
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
   try {
     const { id_inmueble, fecha } = req.query;
-    
+
     const validation = validateParams(id_inmueble, fecha);
     if (!validation.isValid) {
       return res.status(400).json({
@@ -77,16 +77,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
+    let responseData = externalResponse.data;
+
+    // Si la respuesta es un array (lista de movimientos directa), normalizarla
+    if (Array.isArray(responseData)) {
+      const movimientos = responseData.map((m: any) => ({
+        ...m,
+        monto: Number(m.monto) || 0
+      }));
+
+      const ingresos = movimientos
+        .filter((m: any) => m.tipo === 'ingreso')
+        .reduce((sum: number, m: any) => sum + m.monto, 0);
+      const egresos = movimientos
+        .filter((m: any) => m.tipo === 'egreso')
+        .reduce((sum: number, m: any) => sum + m.monto, 0);
+
+      responseData = {
+        movimientos,
+        ingresos,
+        egresos
+      };
+    } else if (responseData && typeof responseData === 'object') {
+      // Si ya es un objeto, asegurarnos de que los montos en movimientos sean números
+      if (Array.isArray(responseData.movimientos)) {
+        responseData.movimientos = responseData.movimientos.map((m: any) => ({
+          ...m,
+          monto: Number(m.monto) || 0
+        }));
+      }
+    }
+
     console.log(`✅ Movimientos del inmueble ${id_inmueble} obtenidos exitosamente:`, {
-      cantidad: externalResponse.data.movimientos?.length || 0,
-      ingresos: externalResponse.data.ingresos,
-      egresos: externalResponse.data.egresos
+      cantidad: responseData.movimientos?.length || 0,
+      ingresos: responseData.ingresos,
+      egresos: responseData.egresos
     });
 
     // Respuesta exitosa
     return res.status(200).json({
       success: true,
-      data: externalResponse.data,
+      data: responseData,
       message: 'Movimientos del inmueble obtenidos exitosamente'
     });
 

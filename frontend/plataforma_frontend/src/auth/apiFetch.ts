@@ -6,7 +6,7 @@
 
 export const apiFetch = async (url: string, options: RequestInit = {}) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
   const baseHeaders = {
     ...(options.headers || {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -15,16 +15,22 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
   // Solo agregar Content-Type para métodos que normalmente tienen body
   const method = options.method?.toUpperCase() || 'GET';
   const hasBody = options.body !== undefined && options.body !== null;
-  
+
   const headers = {
     ...baseHeaders,
     // No agregar Content-Type para DELETE, GET, HEAD a menos que explícitamente tenga body
-    ...(hasBody || (method !== 'DELETE' && method !== 'GET' && method !== 'HEAD') 
-        ? { 'Content-Type': 'application/json' } 
-        : {}),
+    ...(hasBody || (method !== 'DELETE' && method !== 'GET' && method !== 'HEAD')
+      ? { 'Content-Type': 'application/json' }
+      : {}),
   };
 
   const res = await fetch(url, { ...options, headers });
   if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const resJson = await res.json();
+  // Si la respuesta tiene la estructura { data: ... }, devolvemos data
+  // Esto maneja la respuesta directa del backend
+  if (resJson && typeof resJson === 'object' && 'data' in resJson) {
+    return resJson.data;
+  }
+  return resJson;
 };

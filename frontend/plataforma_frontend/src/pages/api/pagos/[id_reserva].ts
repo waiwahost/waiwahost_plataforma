@@ -8,6 +8,13 @@ interface PagosResponse {
   error?: string;
 }
 
+interface ExternalApiResponse {
+  success: boolean;
+  data: any;
+  message?: string;
+  error?: any;
+}
+
 /**
  * API Interna: Obtener pagos por reserva o crear nuevo pago
  * GET /api/pagos/[id_reserva] - Obtener pagos de una reserva
@@ -19,7 +26,7 @@ export default async function handler(
 ) {
   try {
     const { id_reserva } = req.query;
-    
+
     // Validar ID de reserva
     if (!id_reserva || typeof id_reserva !== 'string') {
       return res.status(400).json({
@@ -28,31 +35,46 @@ export default async function handler(
       });
     }
 
-    // Extraer token y empresa_id
-    const token = extractTokenFromRequest(req);
+    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    const token = req.headers.authorization?.replace('Bearer ', '') || '';
     const empresaId = getEmpresaIdFromToken(token);
 
     if (req.method === 'GET') {
       // Obtener pagos de una reserva
-      const endpoint = `/api/v1/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`;
+      // Realizar la llamada a la API externa directamente
+      const response = await fetch(`${apiUrl}/pagos/reserva/${id_reserva}?empresa_id=${empresaId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-      const externalResponse = await externalApiServerFetch(endpoint, {
-        method: 'GET'
-      }, token);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      // Verificar si la respuesta externa es exitosa
-      if (externalResponse.isError) {
+      const externalData: ExternalApiResponse = await response.json();
+      console.log('📥 External API response:', {
+        success: externalData.success,
+        dataCount: externalData.data?.pagos?.length || 0,
+        message: externalData.message
+      });
+
+      // Verificar si la API externa retornó error
+      if (!externalData.success) {
         return res.status(400).json({
           success: false,
-          message: externalResponse.message || 'Error al obtener pagos',
-          error: externalResponse.error
+          data: null,
+          message: externalData.message || 'Error desde la API externa',
+          error: JSON.stringify(externalData.error)
         });
       }
 
       // Respuesta exitosa - adaptamos la estructura del backend
       return res.status(200).json({
         success: true,
-        data: externalResponse.data?.pagos || [], // El backend devuelve {pagos: [], resumen: {}}
+        data: externalData.data?.pagos || [], // El backend devuelve {pagos: [], resumen: {}}
         message: 'Pagos obtenidos exitosamente'
       });
 
@@ -84,7 +106,8 @@ export default async function handler(
         fecha_pago: pagoData.fecha_pago || new Date().toISOString().split('T')[0]
       };
 
-      const endpoint = '/api/v1/pagos';
+      // FIX: Usar path relativo, externalApiServerFetch agrega el API_URL
+      const endpoint = '/pagos';
 
       const externalResponse = await externalApiServerFetch(endpoint, {
         method: 'POST',

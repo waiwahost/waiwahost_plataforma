@@ -4,19 +4,15 @@ import { IHuespedTableData, IHuespedEditableFields, IHuespedDetailData } from '.
 // Obtener todos los huéspedes
 export const getHuespedesApi = async (id_empresa?: number): Promise<IHuespedTableData[]> => {
   try {
-    const url = id_empresa 
+    const url = id_empresa
       ? `/api/huespedes/getHuespedes?id_empresa=${id_empresa}`
-      : '/api/huespedes/getHuespedes';
-    
-    const response = await apiFetch(url, {
+      : '/api/huespedes';
+
+    const data = await apiFetch(url, {
       method: 'GET',
     });
 
-    if (response.isError) {
-      throw new Error(response.message || 'Error al obtener huéspedes');
-    }
-
-    return response.data;
+    return data as IHuespedTableData[];
   } catch (error) {
     console.error('Error en getHuespedesApi:', error);
     throw error;
@@ -26,7 +22,7 @@ export const getHuespedesApi = async (id_empresa?: number): Promise<IHuespedTabl
 // Crear nuevo huésped
 export const createHuespedApi = async (huespedData: any): Promise<IHuespedTableData> => {
   try {
-    const response = await apiFetch('/api/huespedes/createHuesped', {
+    const data = await apiFetch('/api/huespedes/createHuesped', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,11 +30,7 @@ export const createHuespedApi = async (huespedData: any): Promise<IHuespedTableD
       body: JSON.stringify(huespedData),
     });
 
-    if (response.isError) {
-      throw new Error(response.message || 'Error al crear huésped');
-    }
-
-    return response.data;
+    return data as IHuespedTableData;
   } catch (error) {
     console.error('Error en createHuespedApi:', error);
     throw error;
@@ -50,7 +42,7 @@ export const editHuespedApi = async (id: number, huespedData: any): Promise<IHue
   try {
     // Filtrar solo los campos editables
     const editableFields: IHuespedEditableFields = {};
-    
+
     if (huespedData.nombre !== undefined) editableFields.nombre = huespedData.nombre;
     if (huespedData.apellido !== undefined) editableFields.apellido = huespedData.apellido;
     if (huespedData.email !== undefined) editableFields.email = huespedData.email;
@@ -62,7 +54,7 @@ export const editHuespedApi = async (id: number, huespedData: any): Promise<IHue
 
     console.log('Sending editable fields:', editableFields);
 
-    const response = await apiFetch(`/api/huespedes/editHuesped?id=${id}`, {
+    const data = await apiFetch(`/api/huespedes/editHuesped/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -70,11 +62,7 @@ export const editHuespedApi = async (id: number, huespedData: any): Promise<IHue
       body: JSON.stringify(editableFields),
     });
 
-    if (response.isError) {
-      throw new Error(response.message || 'Error al actualizar huésped');
-    }
-
-    return response.data;
+    return data as IHuespedTableData;
   } catch (error) {
     console.error('Error en editHuespedApi:', error);
     throw error;
@@ -84,13 +72,9 @@ export const editHuespedApi = async (id: number, huespedData: any): Promise<IHue
 // Eliminar huésped
 export const deleteHuespedApi = async (id: number): Promise<void> => {
   try {
-    const response = await apiFetch(`/api/huespedes/deleteHuesped?id=${id}`, {
+    await apiFetch(`/api/huespedes/deleteHuesped?id=${id}`, {
       method: 'DELETE',
     });
-
-    if (response.isError) {
-      throw new Error(response.message || 'Error al eliminar huésped');
-    }
   } catch (error) {
     console.error('Error en deleteHuespedApi:', error);
     throw error;
@@ -100,15 +84,11 @@ export const deleteHuespedApi = async (id: number): Promise<void> => {
 // Obtener detalle de un huésped
 export const getHuespedDetalleApi = async (id: number): Promise<IHuespedDetailData> => {
   try {
-    const response = await apiFetch(`/api/huespedes/getHuespedDetalle?id=${id}`, {
+    const data = await apiFetch(`/api/huespedes/getHuespedDetalle?id=${id}`, {
       method: 'GET',
     });
 
-    if (response.isError) {
-      throw new Error(response.message || 'Error al obtener detalle del huésped');
-    }
-
-    return response.data;
+    return data as IHuespedDetailData;
   } catch (error) {
     console.error('Error en getHuespedDetalleApi:', error);
     throw error;

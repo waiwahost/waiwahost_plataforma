@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Construir URL del backend
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const backendUrl = process.env.API_URL || 'http://localhost:3001';
     let url = `${backendUrl}/huespedes`;
 
     // Si hay id_empresa, lo pasamos como query param (aunque el backend usa el token principalmente)

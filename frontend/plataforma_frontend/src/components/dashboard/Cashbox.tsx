@@ -8,32 +8,33 @@ import MovimientoDetailModal from './MovimientoDetailModal';
 import ConfirmModal from './ConfirmModal';
 import SuccessModal from './SuccessModal';
 import { IMovimiento, IResumenDiario } from '../../interfaces/Movimiento';
-import { 
-  getMovimientosByFecha, 
-  getResumenDiario, 
-  deleteMovimiento 
+import {
+  getMovimientosByFecha,
+  getResumenDiario,
+  deleteMovimiento
 } from '../../auth/movimientosApi';
 import { PLATAFORMAS_ORIGEN, PlataformaOrigen } from '../../constants/plataformas';
 
 const Cashbox: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const now = new Date();
+    return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+  });
   const [movimientos, setMovimientos] = useState<IMovimiento[]>([]);
   const [selectedPlataforma, setSelectedPlataforma] = useState<PlataformaOrigen | 'todas'>('todas');
   const [resumen, setResumen] = useState<IResumenDiario | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
+
   // Selected items
   const [selectedMovimiento, setSelectedMovimiento] = useState<IMovimiento | null>(null);
   const [movimientoToDelete, setMovimientoToDelete] = useState<IMovimiento | null>(null);
-  
+
   // Success message
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -46,7 +47,7 @@ const Cashbox: React.FC = () => {
     try {
       // Determinar si hay un filtro de plataforma aplicado
       const plataformaFiltro = selectedPlataforma !== 'todas' ? selectedPlataforma : undefined;
-      
+
       const [movimientosResponse, resumenResponse] = await Promise.all([
         getMovimientosByFecha(selectedDate, plataformaFiltro),
         getResumenDiario(selectedDate)
@@ -133,9 +134,9 @@ const Cashbox: React.FC = () => {
       </div>
 
       {/* Date Selector */}
-      <DateSelector 
-        selectedDate={selectedDate} 
-        onDateChange={handleDateChange} 
+      <DateSelector
+        selectedDate={selectedDate}
+        onDateChange={handleDateChange}
       />
 
       {/* Filtros */}
@@ -165,9 +166,9 @@ const Cashbox: React.FC = () => {
       </div>
 
       {/* Daily Summary */}
-      <DailySummary 
-        resumen={resumen} 
-        loading={loading} 
+      <DailySummary
+        resumen={resumen}
+        loading={loading}
       />
 
       {/* Movements Table */}

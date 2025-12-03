@@ -13,20 +13,26 @@ import { apiFetch } from './apiFetch';
 export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: string): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Obteniendo movimientos por fecha:', fecha, plataformaOrigen ? `con filtro de plataforma: ${plataformaOrigen}` : 'sin filtro de plataforma');
-    
-    // Construir URL con parámetro opcional de plataforma
+
+    // Construir URL con parámetros de consulta
     let url = `/api/movimientos/getMovimientosByFecha?fecha=${fecha}`;
     if (plataformaOrigen) {
       url += `&plataforma_origen=${plataformaOrigen}`;
     }
-    
-    const response: IMovimientoApiResponse = await apiFetch(url, {
+
+    const data = await apiFetch(url, {
       method: 'GET',
     });
 
-    console.log('✅ Movimientos por fecha obtenidos exitosamente:', Array.isArray(response.data) ? response.data.length : 1);
-    return response;
-    
+    console.log('✅ Movimientos por fecha obtenidos exitosamente:', Array.isArray(data) ? data.length : 1);
+    // apiFetch devuelve la data directamente, pero la interfaz espera { success, data }
+    // Ajustamos para devolver la estructura esperada por el frontend
+    return {
+      success: true,
+      data: data,
+      message: 'Movimientos obtenidos exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al obtener movimientos por fecha:', error);
     return {
@@ -44,17 +50,21 @@ export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: st
 export const getResumenDiario = async (fecha: string): Promise<{ success: boolean; data?: IResumenDiario; message: string; error?: string }> => {
   try {
     console.log('🔄 Obteniendo resumen diario:', fecha);
-    
-    const response: { success: boolean; data?: IResumenDiario; message: string; error?: string } = await apiFetch(
-      `/api/movimientos/getResumenDiario?fecha=${fecha}`, 
+
+    const data = await apiFetch(
+      `/api/movimientos/getResumenDiario?fecha=${fecha}`,
       {
         method: 'GET',
       }
     );
 
-    console.log('✅ Resumen diario obtenido exitosamente:', response.data);
-    return response;
-    
+    console.log('✅ Resumen diario obtenido exitosamente:', data);
+    return {
+      success: true,
+      data: data,
+      message: 'Resumen diario obtenido exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al obtener resumen diario:', error);
     return {
@@ -72,15 +82,19 @@ export const getResumenDiario = async (fecha: string): Promise<{ success: boolea
 export const createMovimiento = async (movimientoData: IMovimientoForm): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Creando movimiento:', movimientoData);
-    
-    const response: IMovimientoApiResponse = await apiFetch('/api/movimientos/createMovimiento', {
+
+    const data = await apiFetch('/api/movimientos/createMovimiento', {
       method: 'POST',
       body: JSON.stringify(movimientoData),
     });
 
-    console.log('✅ Movimiento creado exitosamente:', response.data);
-    return response;
-    
+    console.log('✅ Movimiento creado exitosamente:', data);
+    return {
+      success: true,
+      data: data,
+      message: 'Movimiento creado exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al crear movimiento:', error);
     return {
@@ -98,15 +112,19 @@ export const createMovimiento = async (movimientoData: IMovimientoForm): Promise
 export const updateMovimiento = async (id: string, movimientoData: Partial<IMovimientoForm>): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Actualizando movimiento:', { id, data: movimientoData });
-    
-    const response: IMovimientoApiResponse = await apiFetch(`/api/movimientos/updateMovimiento?id=${id}`, {
+
+    const data = await apiFetch(`/api/movimientos/updateMovimiento?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify(movimientoData),
     });
 
-    console.log('✅ Movimiento actualizado exitosamente:', response.data);
-    return response;
-    
+    console.log('✅ Movimiento actualizado exitosamente:', data);
+    return {
+      success: true,
+      data: data,
+      message: 'Movimiento actualizado exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al actualizar movimiento:', error);
     return {
@@ -124,14 +142,18 @@ export const updateMovimiento = async (id: string, movimientoData: Partial<IMovi
 export const deleteMovimiento = async (id: string): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Eliminando movimiento:', id);
-    
-    const response: IMovimientoApiResponse = await apiFetch(`/api/movimientos/deleteMovimiento?id=${id}`, {
+
+    const data = await apiFetch(`/api/movimientos/deleteMovimiento?id=${id}`, {
       method: 'DELETE',
     });
 
     console.log('✅ Movimiento eliminado exitosamente:', id);
-    return response;
-    
+    return {
+      success: true,
+      data: { id } as any,
+      message: 'Movimiento eliminado exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al eliminar movimiento:', error);
     return {
@@ -149,17 +171,21 @@ export const deleteMovimiento = async (id: string): Promise<IMovimientoApiRespon
 export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma: string): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Filtrando movimientos por plataforma:', { fecha, plataforma });
-    
-    const response: IMovimientoApiResponse = await apiFetch(
-      `/api/movimientos/filtrarPorPlataforma?fecha=${fecha}&plataforma=${plataforma}`, 
+
+    const data = await apiFetch(
+      `/api/movimientos/filtrarPorPlataforma?fecha=${fecha}&plataforma=${plataforma}`,
       {
         method: 'GET',
       }
     );
 
-    console.log('✅ Movimientos filtrados por plataforma exitosamente:', Array.isArray(response.data) ? response.data.length : 1);
-    return response;
-    
+    console.log('✅ Movimientos filtrados por plataforma exitosamente:', Array.isArray(data) ? data.length : 1);
+    return {
+      success: true,
+      data: data,
+      message: 'Movimientos filtrados exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al filtrar movimientos por plataforma:', error);
     return {
@@ -177,14 +203,18 @@ export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma:
 export const getMovimientoById = async (id: string): Promise<IMovimientoApiResponse> => {
   try {
     console.log('🔄 Obteniendo movimiento por ID:', id);
-    
-    const response: IMovimientoApiResponse = await apiFetch(`/api/movimientos/getMovimientoById?id=${id}`, {
+
+    const data = await apiFetch(`/api/movimientos/getMovimientoById?id=${id}`, {
       method: 'GET',
     });
 
-    console.log('✅ Movimiento por ID obtenido exitosamente:', response.data);
-    return response;
-    
+    console.log('✅ Movimiento por ID obtenido exitosamente:', data);
+    return {
+      success: true,
+      data: data,
+      message: 'Movimiento obtenido exitosamente'
+    };
+
   } catch (error) {
     console.error('❌ Error al obtener movimiento por ID:', error);
     return {
