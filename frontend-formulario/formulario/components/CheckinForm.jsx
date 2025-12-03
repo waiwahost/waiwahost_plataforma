@@ -69,7 +69,7 @@ const CheckinFormContent = () => {
     const fetchInmueblesList = async () => {
         try {
             setLoadingList(true);
-            const res = await fetch(`/apis/inmuebles/public-list`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles/public-list`);
             if (res.ok) {
                 const data = await res.json();
                 if (!data.isError) {
@@ -87,7 +87,7 @@ const CheckinFormContent = () => {
         if (!id) return;
         try {
             setLoadingInmueble(true);
-            const res = await fetch(`${process.env.API_URL || 'http://localhost:3003'}/inmuebles/public/${id}`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/inmuebles/public/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 if (!data.isError) {
@@ -106,7 +106,7 @@ const CheckinFormContent = () => {
         if (!id) return;
         try {
             setLoadingReserva(true);
-            const res = await fetch(`${process.env.API_URL || 'http://localhost:3003'}/reservas/public/${id}`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reservas/public/${id}`);
 
             if (res.ok) {
                 const data = await res.json();
@@ -267,7 +267,7 @@ const CheckinFormContent = () => {
         setSubmitError('');
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/reservas/public`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reservas/public`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
