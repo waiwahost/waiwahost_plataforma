@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Eye, Users, CreditCard } from 'lucide-react';
+import { Edit2, Trash2, Eye, Users, CreditCard, Share2 } from 'lucide-react';
 import { IReservaTableData } from '../../interfaces/Reserva';
 import PlataformaBadge from '../atoms/PlataformaBadge';
 import ScrollableTable from '../ui/ScrollableTable';
@@ -15,9 +15,9 @@ interface ReservasTableProps {
   canDelete?: boolean;
 }
 
-const ReservasTable: React.FC<ReservasTableProps> = ({ 
-  reservas, 
-  onEdit, 
+const ReservasTable: React.FC<ReservasTableProps> = ({
+  reservas,
+  onEdit,
   onDelete,
   onViewDetail,
   onViewHuespedes,
@@ -56,7 +56,7 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
 
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
-    
+
     switch (estado) {
       case 'pendiente':
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
@@ -74,12 +74,12 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
   };
 
   const calcularNoches = (fechaEntrada: string, fechaSalida: string) => {
-  const entrada = new Date(fechaEntrada);
-  const salida = new Date(fechaSalida);
-  if (isNaN(entrada.getTime()) || isNaN(salida.getTime())) return '-';
-  const diffTime = Math.abs(salida.getTime() - entrada.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
+    const entrada = new Date(fechaEntrada);
+    const salida = new Date(fechaSalida);
+    if (isNaN(entrada.getTime()) || isNaN(salida.getTime())) return '-';
+    const diffTime = Math.abs(salida.getTime() - entrada.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   return (
@@ -178,7 +178,7 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {reserva.total_reserva !== null && reserva.total_reserva !== undefined 
+                    {reserva.total_reserva !== null && reserva.total_reserva !== undefined
                       ? formatCurrency(reserva.total_reserva)
                       : <span className="text-gray-500">null</span>
                     }
@@ -186,23 +186,23 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {reserva.total_pagado !== null && reserva.total_pagado !== undefined 
+                    {reserva.total_pagado !== null && reserva.total_pagado !== undefined
                       ? formatCurrency(reserva.total_pagado)
                       : <span className="text-gray-500">null</span>
                     }
                   </div>
-                  {reserva.total_pagado !== null && reserva.total_pagado !== undefined && 
-                   reserva.total_reserva !== null && reserva.total_reserva !== undefined ? (
+                  {reserva.total_pagado !== null && reserva.total_pagado !== undefined &&
+                    reserva.total_reserva !== null && reserva.total_reserva !== undefined ? (
                     <div className="text-xs text-gray-500">
                       {getPaymentStatus(reserva.total_pagado, reserva.total_reserva)}
                     </div>
                   ) : null}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  {reserva.total_pendiente !== null && reserva.total_pendiente !== undefined && 
-                   reserva.total_reserva !== null && reserva.total_reserva !== undefined ? (
+                  {reserva.total_pendiente !== null && reserva.total_pendiente !== undefined &&
+                    reserva.total_reserva !== null && reserva.total_reserva !== undefined ? (
                     <div className={`text-sm font-medium ${getPendingAmountColor(
-                      reserva.total_pendiente, 
+                      reserva.total_pendiente,
                       reserva.total_reserva
                     )}`}>
                       {formatCurrency(reserva.total_pendiente)}
@@ -221,18 +221,18 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     {reserva.estado.replace('_', ' ')}
                   </span>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-1 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onViewDetail(reserva)}
-                      className="inline-flex items-center p-2 rounded-md text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
+                      className="inline-flex items-center p-1 rounded-md text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
                       title="Ver detalles de la reserva"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onViewPagos(reserva)}
-                      className="inline-flex items-center p-2 rounded-md text-tourism-teal hover:bg-tourism-teal/10 hover:text-tourism-teal transition-colors"
+                      className="inline-flex items-center p-1 rounded-md text-tourism-teal hover:bg-tourism-teal/10 hover:text-tourism-teal transition-colors"
                       title="Gestionar pagos"
                     >
                       <CreditCard className="h-4 w-4" />
@@ -240,11 +240,10 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     <button
                       onClick={() => onEdit(reserva)}
                       disabled={!canEdit}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canEdit
-                          ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
-                          : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`inline-flex items-center p-1 rounded-md transition-colors ${canEdit
+                        ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                        }`}
                       title={canEdit ? 'Editar reserva' : 'No tienes permisos para editar'}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -252,14 +251,26 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     <button
                       onClick={() => onDelete(reserva)}
                       disabled={!canDelete}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canDelete
-                          ? 'text-red-600 hover:bg-red-50 hover:text-red-800'
-                          : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`inline-flex items-center p-1 rounded-md transition-colors ${canDelete
+                        ? 'text-red-600 hover:bg-red-50 hover:text-red-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                        }`}
                       title={canDelete ? 'Eliminar reserva' : 'No tienes permisos para eliminar'}
                     >
                       <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const formUrl = process.env.NEXT_PUBLIC_FORM_URL || 'http://localhost:3000';
+                        const link = `${formUrl}?reserva=${reserva.id}`;
+                        navigator.clipboard.writeText(link);
+                        // Opcional: Mostrar toast o feedback visual
+                        alert(`Enlace copiado al portapapeles: ${link}`);
+                      }}
+                      className="inline-flex items-center p-1 rounded-md text-purple-600 hover:bg-purple-50 hover:text-purple-800 transition-colors"
+                      title="Compartir enlace formulario"
+                    >
+                      <Share2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

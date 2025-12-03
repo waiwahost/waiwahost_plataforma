@@ -1,9 +1,9 @@
 import React from 'react';
-import { Eye, Edit2, Trash2 } from 'lucide-react';
+import { Eye, Edit2, Trash2, Share2 } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { IInmueble } from '../../interfaces/Inmueble';
 
-export interface IDataInmuebleIn extends IInmueble {}
+export interface IDataInmuebleIn extends IInmueble { }
 
 interface InmueblesTableProps {
   inmuebles: IDataInmuebleIn[];
@@ -89,11 +89,10 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                     <button
                       onClick={() => onEdit(inmueble)}
                       disabled={!canEdit}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canEdit
-                          ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
-                          : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`inline-flex items-center p-2 rounded-md transition-colors ${canEdit
+                        ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                        }`}
                       title={canEdit ? 'Editar inmueble' : 'No tienes permisos para editar'}
                     >
                       <Edit2 className="h-4 w-4" />
@@ -101,14 +100,26 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                     <button
                       onClick={() => onDelete(inmueble)}
                       disabled={!canDelete}
-                      className={`inline-flex items-center p-2 rounded-md transition-colors ${
-                        canDelete
-                          ? 'text-red-600 hover:bg-red-50 hover:text-red-800'
-                          : 'text-gray-400 cursor-not-allowed'
-                      }`}
+                      className={`inline-flex items-center p-2 rounded-md transition-colors ${canDelete
+                        ? 'text-red-600 hover:bg-red-50 hover:text-red-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                        }`}
                       title={canDelete ? 'Eliminar inmueble' : 'No tienes permisos para eliminar'}
                     >
                       <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const formUrl = process.env.NEXT_PUBLIC_FORM_URL || 'http://localhost:3000';
+                        const link = `${formUrl}?inmueble=${inmueble.id_inmueble || inmueble.id}`;
+                        navigator.clipboard.writeText(link);
+                        // Opcional: Mostrar toast o feedback visual
+                        alert(`Enlace copiado al portapapeles: ${link}`);
+                      }}
+                      className="inline-flex items-center p-2 rounded-md text-purple-600 hover:bg-purple-50 hover:text-purple-800 transition-colors"
+                      title="Compartir enlace formulario"
+                    >
+                      <Share2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>
