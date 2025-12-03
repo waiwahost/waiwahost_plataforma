@@ -69,7 +69,7 @@ const CheckinFormContent = () => {
     const fetchInmueblesList = async () => {
         try {
             setLoadingList(true);
-            const res = await fetch(`${process.env.API_URL}/inmuebles/public-list`);
+            const res = await fetch(`/apis/inmuebles/public-list`);
             if (res.ok) {
                 const data = await res.json();
                 if (!data.isError) {
