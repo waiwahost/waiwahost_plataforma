@@ -8,7 +8,7 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                'tourism-teal': '#26A69A',
+                'tourism-teal': '#2d7d7d',
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],

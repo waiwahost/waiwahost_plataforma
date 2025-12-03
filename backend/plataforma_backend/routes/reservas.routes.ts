@@ -1,13 +1,13 @@
 
 import { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { reservasController } from '../controllers/reservas.controller';
-import { createReservaPublicController } from '../controllers/reservaPublic.controller';
+import { createReservaPublicController, getReservaPublicController } from '../controllers/reservaPublic.controller';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { getReservasSchema, createReservaSchema, editReservaSchema } from '../schemas/reserva.schema';
 
 export async function reservasRoutes(server: FastifyInstance, opts: FastifyPluginOptions) {
   // GET /reservas - Obtener lista de reservas
-  server.get('/', { 
+  server.get('/', {
     preHandler: [authMiddleware],
     schema: getReservasSchema
   }, reservasController.getReservas);
@@ -20,6 +20,9 @@ export async function reservasRoutes(server: FastifyInstance, opts: FastifyPlugi
 
   // POST /reservas/public - Crear reserva desde formulario externo (sin autenticación)
   server.post('/public', {}, createReservaPublicController);
+
+  // GET /reservas/public/:id - Obtener reserva pública por ID
+  server.get('/public/:id', {}, getReservaPublicController);
 
   // PUT /reservas/:id - Editar reserva
   server.put('/:id', {

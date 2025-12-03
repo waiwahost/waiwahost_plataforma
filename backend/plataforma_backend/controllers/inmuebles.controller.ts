@@ -351,4 +351,42 @@ export const inmueblesController = {
       );
     }
   },
+  /**
+   * Obtiene una lista pública de todos los inmuebles activos (id y nombre)
+   * GET /inmuebles/public/list
+   */
+  getInmueblePublicList: async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const repository = new InmueblesRepository();
+      const { data, error } = await repository.getAllInmuebles();
+
+      if (error) {
+        return reply.status(500).send(
+          errorResponse({
+            message: 'Error al obtener la lista de inmuebles',
+            code: 500,
+            error
+          })
+        );
+      }
+
+      // Mapear para devolver solo datos necesarios para el selector público
+      const publicList = data?.map((inmueble: any) => ({
+        id_inmueble: inmueble.id_inmueble,
+        nombre: inmueble.nombre,
+        direccion: inmueble.direccion
+      })) || [];
+
+      return reply.send(successResponse(publicList));
+
+    } catch (err) {
+      return reply.status(500).send(
+        errorResponse({
+          message: 'Error interno del servidor',
+          code: 500,
+          error: err
+        })
+      );
+    }
+  },
 };

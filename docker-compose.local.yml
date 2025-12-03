@@ -45,6 +45,7 @@ services:
       INTERNAL_API_URL: http://backend:3001
       NEXT_PUBLIC_API_URL: http://localhost/api
       API_URL: http://backend:3001
+      NEXT_PUBLIC_FORM_URL: http://formulario:3002
     networks:
       - waiwa-net-local
 
@@ -56,6 +57,7 @@ services:
       - "3002:3002"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      API_URL: http://backend:3001
     networks:
       - waiwa-net-local
 

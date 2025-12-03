@@ -4,6 +4,8 @@ import { movimientosController } from '../controllers/movimientos.controller';
 import { authMiddleware } from '../middlewares/authMiddleware';
 
 export async function inmueblesRoutes(server: FastifyInstance, opts: FastifyPluginOptions) {
+  console.log('Loading Inmuebles Routes...'); // DEBUG LOG
+
   // GET /inmuebles/public/:id - Obtener información pública de un inmueble
   server.get('/public/:id', {}, inmueblesController.getInmueblePublic);
 
@@ -24,4 +26,7 @@ export async function inmueblesRoutes(server: FastifyInstance, opts: FastifyPlug
 
   // Mantener compatibilidad con el endpoint anterior
   server.get('/', { preHandler: [authMiddleware] }, inmueblesController.list);
+
+  // GET /inmuebles/public-list - Obtener lista de inmuebles públicos
+  server.get('/public-list', {}, inmueblesController.getInmueblePublicList);
 }
