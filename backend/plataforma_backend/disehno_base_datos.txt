@@ -239,7 +239,7 @@ ALTER TABLE inmuebles add column cocina BOOLEAN;
 
 
 ALTER TABLE reservas ADD COLUMN codigo_reserva VARCHAR(20);
-ALTER TABLE reservas ADD COLUMN precio_total NUMERIC(10,2);
+ALTER TABLE reservas ADD COLUMN precio_total NUMERIC(10,2) DEFAULT 0;
 ALTER TABLE reservas ADD COLUMN observaciones TEXT;
 ALTER TABLE reservas ADD COLUMN numero_huespedes INTEGER;
 

@@ -1,12 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { createReservaPublicService } from '../services/reservas/createReservaPublicService';
+import { createOrUpdateReservaPublicService } from '../services/reservas/createOrUpdateReservaPublicService';
 import { GetReservaPublicService } from '../services/reservas/getReservaPublicService';
 import { errorResponse, successResponse } from '../libs/responseHelper';
 
 export const createReservaPublicController = async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const reservaData = request.body;
-    const result = await createReservaPublicService(reservaData);
+    const result = await createOrUpdateReservaPublicService(reservaData);
     return reply.code(201).send({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error desconocido';
