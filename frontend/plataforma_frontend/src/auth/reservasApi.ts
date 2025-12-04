@@ -114,7 +114,7 @@ export const editReservaApi = async (reservaData: IReservaForm & { id: number; c
   try {
     console.log('🔄 Llamando API editReserva para ID:', reservaData.id);
 
-    const data = await apiFetch(`/api/reservas/editReserva/${reservaData.id}`, {
+    const data = await apiFetch(`/api/reservas/editReserva`, {
       method: 'PUT',
       body: JSON.stringify(reservaData),
     });
