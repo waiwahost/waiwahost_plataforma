@@ -3,6 +3,7 @@ import { Edit2, Trash2, Eye, Users, CreditCard, Share2 } from 'lucide-react';
 import { IReservaTableData } from '../../interfaces/Reserva';
 import PlataformaBadge from '../atoms/PlataformaBadge';
 import ScrollableTable from '../ui/ScrollableTable';
+import { copyToClipboard } from '../../lib/utils';
 
 interface ReservasTableProps {
   reservas: IReservaTableData[];
@@ -260,12 +261,16 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        const formUrl = process.env.NEXT_PUBLIC_FORM_URL || 'http://localhost:3000';
-                        const link = `${formUrl}?reserva=${reserva.id}`;
-                        navigator.clipboard.writeText(link);
-                        // Opcional: Mostrar toast o feedback visual
-                        alert(`Enlace copiado al portapapeles: ${link}`);
+                      onClick={async () => {
+                        const baseUrl = process.env.NEXT_PUBLIC_FORM_URL || window.location.origin.replace('3001', '3000'); // Fallback inteligente
+                        const link = `${baseUrl}/checkin?reserva=${reserva.id}`;
+
+                        const success = await copyToClipboard(link);
+                        if (success) {
+                          alert(`Enlace copiado al portapapeles: ${link}`);
+                        } else {
+                          alert(`No se pudo copiar el enlace automáticamente. Por favor copia manualmente: ${link}`);
+                        }
                       }}
                       className="inline-flex items-center p-1 rounded-md text-purple-600 hover:bg-purple-50 hover:text-purple-800 transition-colors"
                       title="Compartir enlace formulario"
