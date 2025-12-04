@@ -121,6 +121,7 @@ const CheckinFormContent = () => {
                     setFormData(prev => ({
                         ...prev,
                         id_inmueble: reserva.id_inmueble,
+                        id_reserva: reserva.id, // Asegurar que se envía el ID para actualizar
                         fecha_inicio: reserva.fecha_inicio.split('T')[0],
                         fecha_fin: reserva.fecha_fin.split('T')[0],
                         numero_huespedes: reserva.numero_huespedes,
