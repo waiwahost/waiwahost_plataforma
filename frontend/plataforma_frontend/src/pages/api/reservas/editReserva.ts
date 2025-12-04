@@ -56,7 +56,7 @@ const getInmuebleNombre = (id_inmueble: number): string => {
     { id: 3, nombre: 'Loft Zona Rosa' },
     { id: 4, nombre: 'Estudio Chapinero' },
   ];
-  
+
   const inmueble = inmuebles.find(i => i.id === id_inmueble);
   return inmueble?.nombre || 'Inmueble no encontrado';
 };
@@ -138,8 +138,8 @@ const validateReservaData = (data: any): { isValid: boolean; errors: string[] } 
     errors.push('El número de huéspedes no coincide con la cantidad de huéspedes proporcionados');
   }
 
-  if (!data.precio_total || typeof data.precio_total !== 'number' || data.precio_total <= 0) {
-    errors.push('El precio total es requerido y debe ser mayor a 0');
+  if (data.precio_total === undefined || typeof data.precio_total !== 'number' || data.precio_total < 0) {
+    errors.push('El precio total es requerido y debe ser mayor o igual a 0');
   }
 
   if (!data.estado || !['pendiente', 'confirmada', 'en_proceso', 'completada', 'cancelada'].includes(data.estado)) {
@@ -185,9 +185,9 @@ const mapReservaFromAPI = (reservaAPI: ExternalEditReservaResponse): IReservaTab
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido' 
+      message: 'Método no permitido'
     });
   }
 
@@ -217,7 +217,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
+
     try {
       const response = await fetch(`${apiUrl}/reservas/${externalBody.id}`, {
         method: 'PUT',
@@ -237,7 +237,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updatedReserva = mapReservaFromAPI(apiResponse.data);
 
       console.log('✏️ Reserva actualizada exitosamente:', updatedReserva.codigo_reserva);
-      
+
       res.status(200).json({
         success: true,
         data: updatedReserva,
@@ -250,7 +250,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error in editReserva API:', error);
-    
+
     res.status(500).json({
       success: false,
       data: null,

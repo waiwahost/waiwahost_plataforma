@@ -2,7 +2,7 @@ import dbClient from '../libs/db';
 import { GetReservasQuery, Reserva } from '../interfaces/reserva.interface';
 
 export class ReservasRepository {
-  
+
   /**
    * Obtiene las reservas con filtros opcionales
    */
@@ -30,7 +30,7 @@ export class ReservasRepository {
         INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
         WHERE 1=1
       `;
-      
+
       const params: any[] = [];
       let paramIndex = 1;
 
@@ -92,7 +92,7 @@ export class ReservasRepository {
         WHERE hr.id_reserva = $1
         ORDER BY hr.es_principal DESC
       `;
-      
+
       const result = await dbClient.query(query, [idReserva]);
       return result.rows;
     } catch (error) {
@@ -127,7 +127,7 @@ export class ReservasRepository {
         WHERE hr.id_reserva IN (${placeholders})
         ORDER BY hr.id_reserva, hr.es_principal DESC
       `;
-      
+
       const result = await dbClient.query(query, reservaIds);
       return result.rows;
     } catch (error) {
@@ -147,11 +147,11 @@ export class ReservasRepository {
         FROM reservas 
         WHERE EXTRACT(YEAR FROM created_at) = $1
       `;
-      
+
       const result = await dbClient.query(query, [year]);
       const total = parseInt(result.rows[0].total) + 1;
       const paddedNumber = total.toString().padStart(3, '0');
-      
+
       return `RSV-${year}-${paddedNumber}`;
     } catch (error) {
       console.error('Error al generar código de reserva:', error);
@@ -194,7 +194,7 @@ export class ReservasRepository {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id_reserva as id, created_at
       `;
-      
+
       const values = [
         reservaData.id_inmueble,
         reservaData.fecha_inicio,
@@ -209,7 +209,7 @@ export class ReservasRepository {
         reservaData.numero_huespedes,
         reservaData.plataforma_origen
       ];
-      
+
       const result = await dbClient.query(query, values);
       return result.rows[0];
     } catch (error) {
@@ -238,7 +238,7 @@ export class ReservasRepository {
         WHERE documento_numero = $1 OR documento_identidad = $1
         LIMIT 1
       `;
-      
+
       const result = await dbClient.query(query, [documentoNumero]);
       return result.rows[0] || null;
     } catch (error) {
@@ -255,7 +255,7 @@ export class ReservasRepository {
       if (documentos.length === 0) return [];
 
       const placeholders = documentos.map((_, index) => `$${index + 1}`).join(',');
-      
+
       const query = `
         SELECT 
           id_huesped as id,
@@ -272,7 +272,7 @@ export class ReservasRepository {
         WHERE documento_numero IN (${placeholders}) 
            OR documento_identidad IN (${placeholders})
       `;
-      
+
       const result = await dbClient.query(query, documentos);
       return result.rows;
     } catch (error) {
@@ -308,7 +308,7 @@ export class ReservasRepository {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id_huesped as id
       `;
-      
+
       const values = [
         huespedData.nombre,
         huespedData.apellido,
@@ -320,7 +320,7 @@ export class ReservasRepository {
         huespedData.fecha_nacimiento,
         huespedData.documento_numero // Duplicar en documento_identidad para compatibilidad
       ];
-      
+
       const result = await dbClient.query(query, values);
       return result.rows[0];
     } catch (error) {
@@ -340,7 +340,7 @@ export class ReservasRepository {
     try {
       if (relaciones.length === 0) return;
 
-      const values = relaciones.map((rel, index) => 
+      const values = relaciones.map((rel, index) =>
         `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
       ).join(', ');
 
@@ -371,7 +371,7 @@ export class ReservasRepository {
         INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal)
         VALUES ($1, $2, $3)
       `;
-      
+
       await dbClient.query(query, [idReserva, idHuesped, esPrincipal]);
     } catch (error) {
       console.error('Error al relacionar huésped con reserva:', error);
@@ -406,7 +406,7 @@ export class ReservasRepository {
         INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
         WHERE r.id_reserva = $1
       `;
-      
+
       const result = await dbClient.query(query, [idReserva]);
       return result.rows[0] || null;
     } catch (error) {
@@ -428,6 +428,9 @@ export class ReservasRepository {
       fecha_fin: 'fecha_fin',
       numero_huespedes: 'numero_huespedes',
       precio_total: 'precio_total',
+      total_reserva: 'total_reserva',
+      total_pagado: 'total_pagado',
+      total_pendiente: 'total_pendiente',
       estado: 'estado',
       observaciones: 'observaciones',
       plataforma_origen: 'plataforma_origen',
