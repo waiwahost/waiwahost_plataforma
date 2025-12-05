@@ -4,6 +4,7 @@ import { IInmuebleForm } from '../../interfaces/Inmueble';
 import { useAuth } from '../../auth/AuthContext';
 import { getPropietariosApi } from '../../auth/propietariosApi';
 import { IPropietarioTableData } from '../../interfaces/Propietario';
+import { getEmpresasApi } from '../../auth/getEmpresasApi';
 
 interface CreateInmuebleModalProps {
   open: boolean;
@@ -23,6 +24,8 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const { user } = useAuth();
   const [propietarios, setPropietarios] = useState<IPropietarioTableData[]>([]);
   const [loadingPropietarios, setLoadingPropietarios] = useState(false);
+  const [empresas, setEmpresas] = useState<{ id_empresa: number; nombre: string }[]>([]);
+  const [loadingEmpresas, setLoadingEmpresas] = useState(false);
 
   const {
     register,
@@ -61,10 +64,42 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       }
     };
 
+    const fetchEmpresas = async () => {
+      try {
+        setLoadingEmpresas(true);
+        const response = await getEmpresasApi();
+        if (response.success) {
+          setEmpresas(response.data);
+          // Si solo hay una empresa, seleccionarla automáticamente
+          if (response.data.length === 1) {
+            // Usamos setValue de react-hook-form si estuviéramos fuera del reset, 
+            // pero como esto corre al inicio, el reset inicial o el useEffect de abajo lo manejará.
+            // Sin embargo, para asegurar que se seleccione visualmente si ya se renderizó:
+            // setValue('id_empresa', response.data[0].id_empresa.toString());
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching empresas:', error);
+      } finally {
+        setLoadingEmpresas(false);
+      }
+    };
+
     if (open) {
       fetchPropietarios();
+      fetchEmpresas();
     }
   }, [open]);
+
+  // Efecto para pre-seleccionar empresa si solo hay una
+  useEffect(() => {
+    if (empresas.length === 1) {
+      reset(currentValues => ({
+        ...currentValues,
+        id_empresa: empresas[0].id_empresa.toString()
+      }));
+    }
+  }, [empresas, reset]);
 
   useEffect(() => {
     if (open && initialData) {
@@ -347,20 +382,25 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  ID Empresa *
-                  {isEdit && <span className="text-xs text-gray-500 ml-1">(No editable)</span>}
+                  Empresa *
+                  {(isEdit || empresas.length === 1) && <span className="text-xs text-gray-500 ml-1">(No editable)</span>}
                 </label>
-                <input
-                  type="number"
+                <select
                   {...register('id_empresa', {
-                    required: 'El ID de la empresa es requerido',
-                    min: { value: 1, message: 'Debe ser mayor a 0' }
+                    required: 'La empresa es requerida',
                   })}
-                  disabled={isEdit}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                  disabled={isEdit || loadingEmpresas || empresas.length === 1}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingEmpresas || empresas.length === 1) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
                     }`}
-                  placeholder="1"
-                />
+                >
+                  <option value="">Seleccione una empresa</option>
+                  {empresas.map((emp) => (
+                    <option key={emp.id_empresa} value={emp.id_empresa}>
+                      {emp.nombre}
+                    </option>
+                  ))}
+                </select>
+                {loadingEmpresas && <p className="text-xs text-gray-500 mt-1">Cargando empresas...</p>}
                 {errors.id_empresa && (
                   <p className="text-red-500 text-xs mt-1">{errors.id_empresa.message}</p>
                 )}
