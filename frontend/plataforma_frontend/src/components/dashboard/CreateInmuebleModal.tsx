@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { IInmuebleForm } from '../../interfaces/Inmueble';
 import { useAuth } from '../../auth/AuthContext';
+import { getPropietariosApi } from '../../auth/propietariosApi';
+import { IPropietarioTableData } from '../../interfaces/Propietario';
 
 interface CreateInmuebleModalProps {
   open: boolean;
@@ -20,6 +21,9 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   isEdit = false
 }) => {
   const { user } = useAuth();
+  const [propietarios, setPropietarios] = useState<IPropietarioTableData[]>([]);
+  const [loadingPropietarios, setLoadingPropietarios] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -43,6 +47,24 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       id_empresa: '1'
     }
   });
+
+  useEffect(() => {
+    const fetchPropietarios = async () => {
+      try {
+        setLoadingPropietarios(true);
+        const data = await getPropietariosApi();
+        setPropietarios(data);
+      } catch (error) {
+        console.error('Error fetching propietarios:', error);
+      } finally {
+        setLoadingPropietarios(false);
+      }
+    };
+
+    if (open) {
+      fetchPropietarios();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open && initialData) {
@@ -125,9 +147,8 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   type="text"
                   {...register('id_producto_sigo', { required: 'El ID del producto Sigo es requerido' })}
                   disabled={isEdit}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
-                    isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
-                  }`}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                    }`}
                   placeholder="Ej: SIGO123"
                 />
                 {errors.id_producto_sigo && (
@@ -208,7 +229,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('capacidad_maxima', { 
+                  {...register('capacidad_maxima', {
                     required: 'La capacidad máxima es requerida',
                     min: { value: 1, message: 'Debe ser mayor a 0' }
                   })}
@@ -226,7 +247,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('habitaciones', { 
+                  {...register('habitaciones', {
                     required: 'Las habitaciones son requeridas',
                     min: { value: 0, message: 'Debe ser mayor o igual a 0' }
                   })}
@@ -244,7 +265,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('banos', { 
+                  {...register('banos', {
                     required: 'Los baños son requeridos',
                     min: { value: 1, message: 'Debe tener al menos 1 baño' }
                   })}
@@ -266,7 +287,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 <input
                   type="number"
                   step="0.01"
-                  {...register('comision', { 
+                  {...register('comision', {
                     required: 'La comisión es requerida',
                     min: { value: 0, message: 'Debe ser mayor o igual a 0' }
                   })}
@@ -284,7 +305,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('precio_limpieza', { 
+                  {...register('precio_limpieza', {
                     min: { value: 0, message: 'Debe ser mayor o igual a 0' }
                   })}
                   className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -300,21 +321,25 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  ID Propietario *
+                  Propietario *
                   {isEdit && <span className="text-xs text-gray-500 ml-1">(No editable)</span>}
                 </label>
-                <input
-                  type="number"
-                  {...register('id_propietario', { 
-                    required: 'El ID del propietario es requerido',
-                    min: { value: 1, message: 'Debe ser mayor a 0' }
+                <select
+                  {...register('id_propietario', {
+                    required: 'El propietario es requerido',
                   })}
-                  disabled={isEdit}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
-                    isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
-                  }`}
-                  placeholder="1"
-                />
+                  disabled={isEdit || loadingPropietarios}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingPropietarios) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                    }`}
+                >
+                  <option value="">Seleccione un propietario</option>
+                  {propietarios.map((prop) => (
+                    <option key={prop.id} value={prop.id}>
+                      {prop.nombre} {prop.apellido}
+                    </option>
+                  ))}
+                </select>
+                {loadingPropietarios && <p className="text-xs text-gray-500 mt-1">Cargando propietarios...</p>}
                 {errors.id_propietario && (
                   <p className="text-red-500 text-xs mt-1">{errors.id_propietario.message}</p>
                 )}
@@ -327,14 +352,13 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  {...register('id_empresa', { 
+                  {...register('id_empresa', {
                     required: 'El ID de la empresa es requerido',
                     min: { value: 1, message: 'Debe ser mayor a 0' }
                   })}
                   disabled={isEdit}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
-                    isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
-                  }`}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${isEdit ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                    }`}
                   placeholder="1"
                 />
                 {errors.id_empresa && (

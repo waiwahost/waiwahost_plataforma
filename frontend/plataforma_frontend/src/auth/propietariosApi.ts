@@ -2,11 +2,9 @@ import { apiFetch } from './apiFetch';
 import { IPropietarioTableData, IPropietarioEditableFields } from '../interfaces/Propietario';
 
 // Obtener todos los propietarios
-export const getPropietariosApi = async (id_empresa?: number): Promise<IPropietarioTableData[]> => {
+export const getPropietariosApi = async (): Promise<IPropietarioTableData[]> => {
   try {
-    const url = id_empresa
-      ? `/api/propietarios/getPropietarios?id_empresa=${id_empresa}`
-      : '/api/propietarios/getPropietarios';
+    const url = '/api/propietarios/getPropietarios';
 
     const data = await apiFetch(url, {
       method: 'GET',
