@@ -681,3 +681,6 @@ COMMENT ON COLUMN pagos.fecha_reporte IS 'Fecha de reporte del pago, distinta a 
 -- Crear índices para fecha_reporte
 CREATE INDEX IF NOT EXISTS idx_movimientos_fecha_reporte ON movimientos(fecha_reporte);
 CREATE INDEX IF NOT EXISTS idx_pagos_fecha_reporte ON pagos(fecha_reporte);
+
+
+ALTER TABLE inmuebles ALTER COLUMN comision TYPE DECIMAL(10,2) USING NULLIF(comision, '')::numeric;
