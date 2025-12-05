@@ -131,7 +131,10 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
         ...data,
         comision: typeof data.comision === 'string'
           ? parseFloat((data.comision as string).replace(',', '.'))
-          : data.comision
+          : data.comision,
+        precio_limpieza: typeof data.precio_limpieza === 'string'
+          ? (data.precio_limpieza === '' ? 0 : parseInt(data.precio_limpieza as string, 10))
+          : data.precio_limpieza
       };
       await onCreate(formattedData);
       if (!isEdit) {
@@ -355,10 +358,20 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   Precio Limpieza
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   {...register('precio_limpieza', {
-                    min: { value: 0, message: 'Debe ser mayor o igual a 0' }
+                    validate: (value) => {
+                      if (value && !/^[0-9]*$/.test(value.toString())) {
+                        return 'Solo se permiten números enteros';
+                      }
+                      return true;
+                    }
                   })}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   placeholder="50000"
                 />
