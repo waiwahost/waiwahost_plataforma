@@ -2,11 +2,11 @@ export interface Huesped {
   id: number;
   nombre: string;
   apellido: string;
-  email: string;
-  telefono: string;
-  documento_tipo: string;
-  documento_numero: string;
-  fecha_nacimiento: string;
+  email?: string;
+  telefono?: string;
+  documento_tipo?: string;
+  documento_numero?: string;
+  fecha_nacimiento?: string;
   es_principal: boolean;
   id_reserva: number;
 }
@@ -14,8 +14,8 @@ export interface Huesped {
 export interface HuespedPrincipal {
   nombre: string;
   apellido: string;
-  email: string;
-  telefono: string;
+  email?: string;
+  telefono?: string;
 }
 
 export interface Reserva {
@@ -55,13 +55,14 @@ export interface GetReservasQuery {
 }
 
 export interface CreateHuespedData {
+  id?: number;
   nombre: string;
   apellido: string;
-  email: string;
-  telefono: string;
-  documento_tipo: string;
-  documento_numero: string;
-  fecha_nacimiento: string;
+  email?: string;
+  telefono?: string;
+  documento_tipo?: string;
+  documento_numero?: string;
+  fecha_nacimiento?: string;
   es_principal: boolean;
 }
 

@@ -12,10 +12,10 @@ import MonthSelector from './MonthSelector';
 import { useAuth } from '../../auth/AuthContext';
 import { IReservaForm, IReservaTableData, IHuesped } from '../../interfaces/Reserva';
 import { IPago } from '../../interfaces/Pago';
-import { 
-  createReservaApi, 
-  editReservaApi, 
-  deleteReservaApi 
+import {
+  createReservaApi,
+  editReservaApi,
+  deleteReservaApi
 } from '../../auth/reservasApi';
 import { useReservasConTotales } from '../../hooks/useReservasConTotales';
 
@@ -47,7 +47,7 @@ const Bookings: React.FC = () => {
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
-  
+
   const { user } = useAuth();
   const canCreate = user?.permisos?.includes('crear_reservas') || true; // TEMPORAL: siempre true para debugging
   const canEdit = user?.permisos?.includes('editar_reservas') || true; // TEMPORAL: siempre true para debugging
@@ -95,7 +95,8 @@ const Bookings: React.FC = () => {
     if (!reservaToEdit) return;
 
     // Helper para formatear fechas a YYYY-MM-DD
-    const toDateApi = (date: string) => {
+    // Helper para formatear fechas a YYYY-MM-DD
+    const toDateApi = (date?: string) => {
       if (!date) return '';
       // Si ya está en formato YYYY-MM-DD, devolver igual
       if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
@@ -105,6 +106,7 @@ const Bookings: React.FC = () => {
     // Preparar huéspedes con fecha_nacimiento en formato correcto
     const huespedes = reservaData.huespedes.map(h => ({
       ...h,
+      id: h.id, // Asegurar que el ID se envíe
       fecha_nacimiento: toDateApi(h.fecha_nacimiento)
     }));
 
@@ -143,7 +145,7 @@ const Bookings: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!reservaToDelete) return;
     setConfirmDeleteOpen(false);
-    
+
     try {
       await deleteReservaApi(reservaToDelete.id);
       eliminarReservaDeLista(reservaToDelete.id);
@@ -154,7 +156,7 @@ const Bookings: React.FC = () => {
       setSuccessMsg('Error eliminando reserva');
       setSuccessOpen(true);
     }
-    
+
     setReservaToDelete(null);
   };
 
@@ -192,7 +194,7 @@ const Bookings: React.FC = () => {
       ) : error ? (
         <div className="text-red-500 text-center py-8">
           {error}
-          <button 
+          <button
             onClick={refrescarReservas}
             className="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
@@ -200,9 +202,9 @@ const Bookings: React.FC = () => {
           </button>
         </div>
       ) : (
-        <ReservasTable 
-          reservas={filteredReservas} 
-          onEdit={handleEdit} 
+        <ReservasTable
+          reservas={filteredReservas}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onViewDetail={handleViewDetail}
           onViewHuespedes={handleViewHuespedes}
@@ -211,19 +213,19 @@ const Bookings: React.FC = () => {
           canDelete={canDelete}
         />
       )}
-      
-      <CreateReservaModal 
-        open={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onCreate={handleCreate} 
+
+      <CreateReservaModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreate={handleCreate}
       />
-      
-      <CreateReservaModal 
-        open={editModalOpen} 
+
+      <CreateReservaModal
+        open={editModalOpen}
         onClose={() => {
           setEditModalOpen(false);
           setReservaToEdit(null);
-        }} 
+        }}
         onCreate={handleEditSubmit}
         initialData={reservaToEdit ? {
           id_inmueble: reservaToEdit.id_inmueble,
@@ -231,6 +233,7 @@ const Bookings: React.FC = () => {
           fecha_fin: reservaToEdit.fecha_fin,
           numero_huespedes: reservaToEdit.numero_huespedes,
           huespedes: reservaToEdit.huespedes.map(huesped => ({
+            id: huesped.id, // IMPORTANTE: Pasar el ID para edición
             nombre: huesped.nombre,
             apellido: huesped.apellido,
             email: huesped.email,
@@ -291,7 +294,7 @@ const Bookings: React.FC = () => {
           }
         }}
       />
-      
+
       <ConfirmModal
         open={confirmDeleteOpen}
         message={`¿Estás seguro de que deseas eliminar la reserva "${reservaToDelete?.codigo_reserva || ''}"?`}
@@ -301,11 +304,11 @@ const Bookings: React.FC = () => {
           setReservaToDelete(null);
         }}
       />
-      
-      <SuccessModal 
-        open={successOpen} 
-        message={successMsg} 
-        onClose={() => setSuccessOpen(false)} 
+
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
       />
     </div>
   );
