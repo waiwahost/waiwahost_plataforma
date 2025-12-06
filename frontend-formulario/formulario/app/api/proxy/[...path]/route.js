@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-    const path = params.path.join('/');
+    const { path: pathArray } = await params;
+    const path = pathArray?.join('/') || '';
     const query = request.nextUrl.search;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
 
@@ -25,7 +26,8 @@ export async function GET(request, { params }) {
 }
 
 export async function POST(request, { params }) {
-    const path = params.path.join('/');
+    const { path: pathArray } = await params;
+    const path = pathArray?.join('/') || '';
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
 
     console.log('Proxy request to:', apiUrl);
