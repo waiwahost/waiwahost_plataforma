@@ -4,11 +4,11 @@ export interface IHuesped {
   id: number;
   nombre: string;
   apellido: string;
-  email: string;
-  telefono: string;
-  documento_tipo: 'cedula' | 'pasaporte' | 'tarjeta_identidad';
-  documento_numero: string;
-  fecha_nacimiento: string;
+  email?: string;
+  telefono?: string;
+  documento_tipo?: 'cedula' | 'pasaporte' | 'tarjeta_identidad';
+  documento_numero?: string;
+  fecha_nacimiento?: string;
   es_principal: boolean;
   id_reserva: number;
 }
@@ -21,8 +21,8 @@ export interface IReserva {
   huesped_principal: {
     nombre: string;
     apellido: string;
-    email: string;
-    telefono: string;
+    email?: string;
+    telefono?: string;
   };
   fecha_inicio: string;
   fecha_fin: string;
@@ -40,13 +40,14 @@ export interface IReserva {
 }
 
 export interface IHuespedForm {
+  id?: number;
   nombre: string;
   apellido: string;
-  email: string;
-  telefono: string;
-  documento_tipo: 'cedula' | 'pasaporte' | 'tarjeta_identidad';
-  documento_numero: string;
-  fecha_nacimiento: string;
+  email?: string;
+  telefono?: string;
+  documento_tipo?: 'cedula' | 'pasaporte' | 'tarjeta_identidad';
+  documento_numero?: string;
+  fecha_nacimiento?: string;
   es_principal: boolean;
 }
 

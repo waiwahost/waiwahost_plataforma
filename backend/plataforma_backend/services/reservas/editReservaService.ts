@@ -39,7 +39,13 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
   if (!updated) {
     throw new Error('No se pudo actualizar la reserva.');
   }
-  // TODO: Si se envían huéspedes, actualizar la relación huespedes-reserva
-  // (No implementado aquí, requiere lógica adicional)
+
+  // Si se envían huéspedes, actualizar sus datos
+  if (data.huespedes && data.huespedes.length > 0) {
+    const { HuespedesService } = await import('./huespedesService');
+    const huespedesService = new HuespedesService();
+    await huespedesService.updateHuespedesForReserva(id, data.huespedes);
+  }
+
   return updated;
 }

@@ -57,45 +57,30 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
         resultReserva = await repository.createReserva(createPayload);
     }
 
-    // Procesar Huéspedes
-    if (resultReserva && resultReserva.id && Array.isArray(data.huespedes) && data.huespedes.length > 0) {
-        const idReserva = resultReserva.id;
+    // Procesar Huéspedes usando el HuespedesService para consistencia
+    const reservaId = resultReserva?.id || resultReserva?.id_reserva;
+    console.log(`[PublicService] ResultReserva raw ID check: id=${resultReserva?.id}, id_reserva=${resultReserva?.id_reserva}, resolved=${reservaId}`);
 
-        for (const huespedData of data.huespedes) {
-            // Validar datos mínimos del huésped
-            if (!huespedData.documento_numero || !huespedData.nombre) continue;
+    if (reservaId && Array.isArray(data.huespedes) && data.huespedes.length > 0) {
+        console.log(`[PublicService] Processing ${data.huespedes.length} guests for reservation ${reservaId}`);
+        const { HuespedesService } = await import('./huespedesService');
+        const huespedesService = new HuespedesService();
 
-            let idHuesped;
+        // Mapear y limpiar los datos
+        const huespedesSanitized = data.huespedes.map((h: any) => ({
+            ...h,
+            nombre: h.nombre ? String(h.nombre).trim() : undefined,
+            apellido: h.apellido ? String(h.apellido).trim() : undefined,
+            email: h.email ? String(h.email).trim() : undefined,
+            telefono: h.telefono ? String(h.telefono).trim() : undefined,
+            documento_numero: h.documento_numero ? String(h.documento_numero).trim() : undefined,
+            documento_tipo: h.documento_tipo ? String(h.documento_tipo).trim() : undefined,
+            fecha_nacimiento: h.fecha_nacimiento ? String(h.fecha_nacimiento).trim() : undefined,
+        }));
 
-            // 1. Buscar si el huésped ya existe
-            const existingHuesped = await repository.findHuespedByDocumento(huespedData.documento_numero);
-
-            if (existingHuesped) {
-                idHuesped = existingHuesped.id;
-                // Opcional: Podríamos actualizar datos del huésped aquí si fuera necesario
-            } else {
-                // 2. Crear nuevo huésped
-                const newHuesped = await repository.createHuespedCompleto({
-                    nombre: huespedData.nombre,
-                    apellido: huespedData.apellido || '',
-                    email: huespedData.email || '',
-                    telefono: huespedData.telefono || '',
-                    documento_tipo: huespedData.documento_tipo || 'cedula',
-                    documento_numero: huespedData.documento_numero,
-                    fecha_nacimiento: huespedData.fecha_nacimiento || null
-                });
-                idHuesped = newHuesped.id;
-            }
-
-            // 3. Vincular huésped a la reserva
-            // Verificamos si ya existe la relación para no duplicar (aunque la PK compuesta lo evitaría, mejor prevenir errores)
-            try {
-                await repository.linkHuespedToReserva(idReserva, idHuesped, !!huespedData.es_principal);
-            } catch (error) {
-                // Si falla por duplicado (PK violation), lo ignoramos silenciosamente
-                console.warn(`Relación huesped-reserva ya existe o falló: ${error}`);
-            }
-        }
+        await huespedesService.updateHuespedesForReserva(reservaId, huespedesSanitized);
+    } else {
+        console.warn(`[PublicService] Skipping guest processing. HasID=${!!reservaId}, HasGuests=${Array.isArray(data.huespedes)}`);
     }
 
     return resultReserva;

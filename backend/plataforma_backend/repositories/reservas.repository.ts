@@ -287,11 +287,11 @@ export class ReservasRepository {
   async createHuespedCompleto(huespedData: {
     nombre: string;
     apellido: string;
-    email: string;
-    telefono: string;
-    documento_tipo: string;
-    documento_numero: string;
-    fecha_nacimiento: string;
+    email?: string | null;
+    telefono?: string | null;
+    documento_tipo?: string | null;
+    documento_numero?: string | null;
+    fecha_nacimiento?: string | null;
   }) {
     try {
       const query = `
@@ -312,19 +312,65 @@ export class ReservasRepository {
       const values = [
         huespedData.nombre,
         huespedData.apellido,
-        huespedData.email,
-        huespedData.email, // Duplicar en correo para compatibilidad
-        huespedData.telefono,
-        huespedData.documento_tipo,
-        huespedData.documento_numero,
-        huespedData.fecha_nacimiento,
-        huespedData.documento_numero // Duplicar en documento_identidad para compatibilidad
+        huespedData.email || null,
+        huespedData.email || null, // Duplicar en correo
+        huespedData.telefono || null,
+        huespedData.documento_tipo || null,
+        huespedData.documento_numero || null,
+        huespedData.fecha_nacimiento || null,
+        huespedData.documento_numero || null // Duplicar en documento_identidad
       ];
 
       const result = await dbClient.query(query, values);
       return result.rows[0];
     } catch (error) {
       console.error('Error al crear huésped completo:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza un huésped existente
+   */
+  async updateHuesped(id: number, huespedData: {
+    nombre?: string;
+    apellido?: string;
+    email?: string | null;
+    telefono?: string | null;
+    documento_tipo?: string | null;
+    documento_numero?: string | null;
+    fecha_nacimiento?: string | null;
+  }) {
+    try {
+      if (!id) return null;
+
+      const setClauses: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (huespedData.nombre !== undefined) { setClauses.push(`nombre = $${idx++}`); values.push(huespedData.nombre); }
+      if (huespedData.apellido !== undefined) { setClauses.push(`apellido = $${idx++}`); values.push(huespedData.apellido); }
+      if (huespedData.email !== undefined) {
+        setClauses.push(`email = $${idx++}`); values.push(huespedData.email);
+        setClauses.push(`correo = $${idx - 1}`); // Update legacy column too
+      }
+      if (huespedData.telefono !== undefined) { setClauses.push(`telefono = $${idx++}`); values.push(huespedData.telefono); }
+      if (huespedData.documento_tipo !== undefined) { setClauses.push(`documento_tipo = $${idx++}`); values.push(huespedData.documento_tipo); }
+      if (huespedData.documento_numero !== undefined) {
+        setClauses.push(`documento_numero = $${idx++}`); values.push(huespedData.documento_numero);
+        setClauses.push(`documento_identidad = $${idx - 1}`); // Update legacy column too
+      }
+      if (huespedData.fecha_nacimiento !== undefined) { setClauses.push(`fecha_nacimiento = $${idx++}`); values.push(huespedData.fecha_nacimiento); }
+
+      if (setClauses.length === 0) return null;
+
+      values.push(id);
+      const query = `UPDATE huespedes SET ${setClauses.join(', ')} WHERE id_huesped = $${idx} RETURNING *`;
+
+      const result = await dbClient.query(query, values);
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('Error al actualizar huésped:', error);
       throw error;
     }
   }

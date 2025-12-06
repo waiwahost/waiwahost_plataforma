@@ -13,11 +13,11 @@ export class HuespedesService {
    */
   private validateHuespedPrincipal(huespedes: CreateHuespedData[]): void {
     const principales = huespedes.filter(h => h.es_principal);
-    
+
     if (principales.length === 0) {
       throw new Error('Debe especificar al menos un huésped principal');
     }
-    
+
     if (principales.length > 1) {
       throw new Error('Solo puede haber un huésped principal por reserva');
     }
@@ -29,7 +29,7 @@ export class HuespedesService {
   private validateDocumentosDuplicados(huespedes: CreateHuespedData[]): void {
     const documentos = huespedes.map(h => h.documento_numero);
     const documentosUnicos = new Set(documentos);
-    
+
     if (documentos.length !== documentosUnicos.size) {
       throw new Error('No pueden existir huéspedes con el mismo número de documento en una reserva');
     }
@@ -51,11 +51,11 @@ export class HuespedesService {
     const fechaNacimiento = new Date(fecha);
     const hoy = new Date();
     const edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-    
+
     if (isNaN(fechaNacimiento.getTime())) {
       throw new Error('Formato de fecha de nacimiento inválido');
     }
-    
+
     if (edad < 0 || edad > 120) {
       throw new Error('La fecha de nacimiento no es válida');
     }
@@ -67,13 +67,17 @@ export class HuespedesService {
   private validateHuespedes(numeroHuespedes: number, huespedes: CreateHuespedData[]): void {
     // Validaciones básicas
     this.validateNumeroHuespedes(numeroHuespedes, huespedes);
-    this.validateHuespedPrincipal(huespedes);
-    this.validateDocumentosDuplicados(huespedes);
+    //this.validateHuespedPrincipal(huespedes);
+    //this.validateDocumentosDuplicados(huespedes);
+    // Ya no validamos estricto documento duplicado si no hay documento
+    // this.validateDocumentosDuplicados(huespedes); 
 
-    // Validaciones individuales
+    // Validaciones individuales limitadas
     huespedes.forEach((huesped, index) => {
       try {
-        this.validateFechaNacimiento(huesped.fecha_nacimiento);
+        if (huesped.fecha_nacimiento) {
+          this.validateFechaNacimiento(huesped.fecha_nacimiento);
+        }
       } catch (error) {
         throw new Error(`Error en huésped ${index + 1}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       }
@@ -92,11 +96,17 @@ export class HuespedesService {
       // 1. Validar datos de entrada
       this.validateHuespedes(numeroHuespedes, huespedesData);
 
-      // 2. Obtener documentos para buscar existentes
-      const documentos = huespedesData.map(h => h.documento_numero);
+      // 2. Obtener documentos para buscar existentes (solo si tienen documento)
+      const documentos = huespedesData
+        .map(h => h.documento_numero)
+        .filter((d): d is string => d !== undefined && d !== null && d !== '');
 
       // 3. Buscar huéspedes existentes por documento
-      const huespedesExistentes = await this.reservasRepository.findHuespedesByDocumentos(documentos);
+      let huespedesExistentes: any[] = [];
+      if (documentos.length > 0) {
+        huespedesExistentes = await this.reservasRepository.findHuespedesByDocumentos(documentos);
+      }
+
       const documentosExistentes = new Set(
         huespedesExistentes.flatMap(h => [h.documento_numero, h.documento_identidad].filter(Boolean))
       );
@@ -109,10 +119,15 @@ export class HuespedesService {
       }> = [];
 
       for (const huespedData of huespedesData) {
-        const existeHuesped = huespedesExistentes.find(
-          h => h.documento_numero === huespedData.documento_numero || 
-               h.documento_identidad === huespedData.documento_numero
-        );
+        let existeHuesped = null;
+
+        // Solo buscar si tiene documento
+        if (huespedData.documento_numero) {
+          existeHuesped = huespedesExistentes.find(
+            h => h.documento_numero === huespedData.documento_numero ||
+              h.documento_identidad === huespedData.documento_numero
+          );
+        }
 
         if (existeHuesped) {
           // Huésped ya existe, usar ID existente
@@ -123,14 +138,15 @@ export class HuespedesService {
           });
         } else {
           // Crear nuevo huésped
+          // Asegurar que pasamos undefined o null para campos opcionales vacíos
           const nuevoHuesped = await this.reservasRepository.createHuespedCompleto({
             nombre: huespedData.nombre,
             apellido: huespedData.apellido,
-            email: huespedData.email,
-            telefono: huespedData.telefono,
-            documento_tipo: huespedData.documento_tipo,
-            documento_numero: huespedData.documento_numero,
-            fecha_nacimiento: huespedData.fecha_nacimiento
+            email: huespedData.email || null,
+            telefono: huespedData.telefono || null,
+            documento_tipo: huespedData.documento_tipo || null,
+            documento_numero: huespedData.documento_numero || null,
+            fecha_nacimiento: huespedData.fecha_nacimiento || null
           });
 
           resultados.push({
@@ -144,6 +160,64 @@ export class HuespedesService {
       return resultados;
     } catch (error) {
       console.error('Error en HuespedesService.processHuespedes:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza los huéspedes de una reserva (actualiza existentes o crea nuevos)
+   * Lógica Pivot: Se usa documento_numero como llave de búsqueda.
+   */
+  async updateHuespedesForReserva(idReserva: number, huespedesData: CreateHuespedData[]): Promise<void> {
+    try {
+      for (const huespedData of huespedesData) {
+        let existingId: number | null = null;
+
+        // 1. Intentar buscar por documento (si existe)
+        // 1. Intentar buscar por documento (si existe)
+        if (huespedData.documento_numero) {
+          const docNum = String(huespedData.documento_numero).trim();
+          if (docNum) {
+            const found = await this.reservasRepository.findHuespedesByDocumentos([docNum]);
+            if (found && found.length > 0) {
+              const match = found.find(h =>
+                (h.documento_numero && String(h.documento_numero).trim() === docNum) ||
+                (h.documento_identidad && String(h.documento_identidad).trim() === docNum)
+              );
+              if (match) existingId = match.id;
+            }
+          }
+        }
+
+        // 2. Fallback a ID si se envía (por compatibilidad o si no tiene documento - edge case)
+        if (!existingId && huespedData.id) {
+          existingId = huespedData.id;
+        }
+
+        if (existingId) {
+          // Actualizar existente
+          await this.reservasRepository.updateHuesped(existingId, {
+            nombre: huespedData.nombre,
+            apellido: huespedData.apellido,
+            email: huespedData.email || null,
+            telefono: huespedData.telefono || null,
+            documento_tipo: huespedData.documento_tipo || null,
+            documento_numero: huespedData.documento_numero || null, // Aunque no debería cambiar, se incluye
+            fecha_nacimiento: huespedData.fecha_nacimiento || null
+          });
+        } else {
+          // Crear nuevo y linkear
+          const [nuevoHuesped] = await this.processHuespedes(1, [huespedData]);
+
+          await this.reservasRepository.linkHuespedToReserva(
+            idReserva,
+            nuevoHuesped.id,
+            nuevoHuesped.esPrincipal
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error en HuespedesService.updateHuespedesForReserva:', error);
       throw error;
     }
   }

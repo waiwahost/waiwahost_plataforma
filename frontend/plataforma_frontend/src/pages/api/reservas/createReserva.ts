@@ -67,21 +67,21 @@ const validateReservaData = (data: any): { isValid: boolean; errors: string[] } 
 
     // Validar cada huésped
     data.huespedes.forEach((huesped: any, index: number) => {
-      if (!huesped.nombre || typeof huesped.nombre !== 'string' || huesped.nombre.trim().length < 2) {
-        errors.push(`El nombre del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
-      }
+      //if (!huesped.nombre || typeof huesped.nombre !== 'string' || huesped.nombre.trim().length < 2) {
+      //  errors.push(`El nombre del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
+      //}
 
-      if (!huesped.apellido || typeof huesped.apellido !== 'string' || huesped.apellido.trim().length < 2) {
-        errors.push(`El apellido del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
-      }
+      //if (!huesped.apellido || typeof huesped.apellido !== 'string' || huesped.apellido.trim().length < 2) {
+      //  errors.push(`El apellido del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
+      //}
 
-      if (!huesped.email || typeof huesped.email !== 'string' || !/\S+@\S+\.\S+/.test(huesped.email)) {
-        errors.push(`El email del huésped ${index + 1} es requerido y debe ser válido`);
-      }
+      //if (!huesped.email || typeof huesped.email !== 'string' || !/\S+@\S+\.\S+/.test(huesped.email)) {
+      //  errors.push(`El email del huésped ${index + 1} es requerido y debe ser válido`);
+      //}
 
-      if (!huesped.telefono || typeof huesped.telefono !== 'string' || huesped.telefono.trim().length < 10) {
-        errors.push(`El teléfono del huésped ${index + 1} es requerido y debe tener al menos 10 caracteres`);
-      }
+      //if (!huesped.telefono || typeof huesped.telefono !== 'string' || huesped.telefono.trim().length < 10) {
+      //  errors.push(`El teléfono del huésped ${index + 1} es requerido y debe tener al menos 10 caracteres`);
+      //}
 
       if (!huesped.documento_numero || typeof huesped.documento_numero !== 'string' || huesped.documento_numero.trim().length < 5) {
         errors.push(`El documento del huésped ${index + 1} es requerido y debe tener al menos 5 caracteres`);
@@ -91,9 +91,9 @@ const validateReservaData = (data: any): { isValid: boolean; errors: string[] } 
         errors.push(`El tipo de documento del huésped ${index + 1} es requerido y debe ser válido`);
       }
 
-      if (!huesped.fecha_nacimiento || typeof huesped.fecha_nacimiento !== 'string') {
-        errors.push(`La fecha de nacimiento del huésped ${index + 1} es requerida`);
-      }
+      //if (!huesped.fecha_nacimiento || typeof huesped.fecha_nacimiento !== 'string') {
+      //  errors.push(`La fecha de nacimiento del huésped ${index + 1} es requerida`);
+      //}
     });
   }
 
@@ -169,9 +169,9 @@ const mapReservaFromAPI = (reservaAPI: ExternalCreateReservaResponse): IReservaT
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido' 
+      message: 'Método no permitido'
     });
   }
 
@@ -241,9 +241,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Mapear los datos al formato esperado por el frontend
     const nuevaReserva = mapReservaFromAPI(externalData.data);
-    
+
     console.log(' Reserva creada exitosamente:', nuevaReserva.codigo_reserva);
-    
+
     res.status(201).json({
       success: true,
       data: nuevaReserva,
@@ -252,7 +252,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error(' Error en createReserva API:', error);
-    
+
     res.status(500).json({
       success: false,
       data: null,

@@ -55,12 +55,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
   // Helper para verificar si un huésped tiene todos los datos completos
   const isGuestComplete = (huesped: IHuespedForm): boolean => {
     return Boolean(
-      huesped.nombre.trim() &&
-      huesped.apellido.trim() &&
-      huesped.email.trim() &&
-      huesped.telefono.trim() &&
-      huesped.documento_numero.trim() &&
-      huesped.fecha_nacimiento
+      huesped.documento_numero?.trim()
     );
   };
 
@@ -97,7 +92,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
 
       if (initialData) {
         // Helper para transformar fecha ISO a YYYY-MM-DD
-        const toDateInput = (iso: string) => {
+        const toDateInput = (iso?: string) => {
           if (!iso) return '';
           const d = new Date(iso);
           // Ajuste de zona horaria para evitar desfase
@@ -113,6 +108,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
           fecha_fin: toDateInput(initialData.fecha_fin),
           huespedes: initialData.huespedes.map(h => ({
             ...h,
+            id: h.id, // Asegurar que el ID se conserve para la edición
             fecha_nacimiento: toDateInput(h.fecha_nacimiento)
           }))
         });
@@ -159,39 +155,18 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
       newErrors.huespedes = 'Debe haber al menos un huésped';
     } else {
       // Validar que cada huésped tenga los datos completos
+      // Validar que cada huésped tenga el número de documento
       for (let i = 0; i < formData.huespedes.length; i++) {
         const huesped = formData.huespedes[i];
 
-        if (!huesped.nombre.trim()) {
-          newErrors.huespedes = `El nombre del huésped ${i + 1} es requerido`;
+        if (!huesped.documento_numero || !huesped.documento_numero.trim()) {
+          newErrors.huespedes = `El número de documento del huésped ${i + 1} es requerido`;
           break;
         }
 
-        if (!huesped.apellido.trim()) {
-          newErrors.huespedes = `El apellido del huésped ${i + 1} es requerido`;
-          break;
-        }
-
-        if (!huesped.email.trim()) {
-          newErrors.huespedes = `El email del huésped ${i + 1} es requerido`;
-          break;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(huesped.email)) {
+        // Validaciones opcionales solo si se ingresan datos
+        if (huesped.email && huesped.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(huesped.email)) {
           newErrors.huespedes = `El email del huésped ${i + 1} no es válido`;
-          break;
-        }
-
-        if (!huesped.telefono.trim()) {
-          newErrors.huespedes = `El teléfono del huésped ${i + 1} es requerido`;
-          break;
-        }
-
-        if (!huesped.documento_numero.trim()) {
-          newErrors.huespedes = `El documento del huésped ${i + 1} es requerido`;
-          break;
-        }
-
-        if (!huesped.fecha_nacimiento) {
-          newErrors.huespedes = `La fecha de nacimiento del huésped ${i + 1} es requerida`;
           break;
         }
       }
@@ -460,7 +435,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Nombre *
+                              Nombre
                             </label>
                             <input
                               type="text"
@@ -473,7 +448,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Apellido *
+                              Apellido
                             </label>
                             <input
                               type="text"
@@ -486,7 +461,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Email *
+                              Email
                             </label>
                             <input
                               type="email"
@@ -499,7 +474,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Teléfono *
+                              Teléfono
                             </label>
                             <input
                               type="tel"
@@ -512,7 +487,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Tipo de Documento *
+                              Tipo de Documento
                             </label>
                             <select
                               value={huesped.documento_tipo}
@@ -533,14 +508,16 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="text"
                               value={huesped.documento_numero}
                               onChange={(e) => handleHuespedChange(index, 'documento_numero', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                              disabled={isEdit && !!huesped.documento_numero} // Deshabilitar en edición si ya tiene valor
+                              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                                }`}
                               placeholder="Número de documento"
                             />
                           </div>
 
                           <div className="col-span-2">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Fecha de Nacimiento *
+                              Fecha de Nacimiento
                             </label>
                             <input
                               type="date"

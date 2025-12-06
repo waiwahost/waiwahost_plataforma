@@ -91,42 +91,14 @@ export const createReservaSchema: FastifySchema = {
       fecha_inicio: { type: 'string', format: 'date' },
       fecha_fin: { type: 'string', format: 'date' },
       numero_huespedes: { type: 'number', minimum: 1 },
-      huespedes: {
-        type: 'array',
-        minItems: 1,
-        items: {
-          type: 'object',
-          required: [
-            'nombre',
-            'apellido', 
-            'email',
-            'telefono',
-            'documento_tipo',
-            'documento_numero',
-            'fecha_nacimiento',
-            'es_principal'
-          ],
-          properties: {
-            nombre: { type: 'string', minLength: 1 },
-            apellido: { type: 'string', minLength: 1 },
-            email: { type: 'string', format: 'email' },
-            telefono: { type: 'string', minLength: 1 },
-            documento_tipo: { type: 'string', minLength: 1 },
-            documento_numero: { type: 'string', minLength: 1 },
-            fecha_nacimiento: { type: 'string', format: 'date' },
-            es_principal: { type: 'boolean' }
-          }
-        }
-      },
-      precio_total: { type: 'number', minimum: 0 },
       total_reserva: { type: 'number', minimum: 0 },
       total_pagado: { type: 'number', minimum: 0 },
       estado: { type: 'string', enum: ['pendiente', 'confirmada', 'cancelada', 'finalizada'] },
       observaciones: { type: 'string' },
       id_empresa: { type: 'number' },
-      plataforma_origen: { 
-        type: 'string', 
-        enum: ['airbnb', 'booking', 'pagina_web', 'directa'] 
+      plataforma_origen: {
+        type: 'string',
+        enum: ['airbnb', 'booking', 'pagina_web', 'directa']
       }
     }
   },
@@ -160,13 +132,13 @@ export const createReservaSchema: FastifySchema = {
                 type: 'object',
                 properties: {
                   id: { type: 'number' },
-                  nombre: { type: 'string' },
-                  apellido: { type: 'string' },
-                  email: { type: 'string' },
-                  telefono: { type: 'string' },
-                  documento_tipo: { type: 'string' },
-                  documento_numero: { type: 'string' },
-                  fecha_nacimiento: { type: 'string' },
+                  nombre: { type: ['string', 'null'] },
+                  apellido: { type: ['string', 'null'] },
+                  email: { type: ['string', 'null'] },
+                  telefono: { type: ['string', 'null'] },
+                  documento_tipo: { type: ['string', 'null'] },
+                  documento_numero: { type: 'string', minLength: 1 },
+                  fecha_nacimiento: { type: ['string', 'null'] },
                   es_principal: { type: 'boolean' },
                   id_reserva: { type: 'number' }
                 }
@@ -203,23 +175,18 @@ export const editReservaSchema: FastifySchema = {
         items: {
           type: 'object',
           required: [
-            'nombre',
-            'apellido',
-            'email',
-            'telefono',
-            'documento_tipo',
             'documento_numero',
-            'fecha_nacimiento',
             'es_principal'
           ],
           properties: {
-            nombre: { type: 'string', minLength: 1 },
-            apellido: { type: 'string', minLength: 1 },
-            email: { type: 'string', format: 'email' },
-            telefono: { type: 'string', minLength: 1 },
-            documento_tipo: { type: 'string', minLength: 1 },
+            id: { type: 'number' },
+            nombre: { type: ['string', 'null'] },
+            apellido: { type: ['string', 'null'] },
+            email: { type: ['string', 'null'] },
+            telefono: { type: ['string', 'null'] },
+            documento_tipo: { type: ['string', 'null'] },
             documento_numero: { type: 'string', minLength: 1 },
-            fecha_nacimiento: { type: 'string', format: 'date' },
+            fecha_nacimiento: { type: ['string', 'null'] },
             es_principal: { type: 'boolean' }
           }
         }
@@ -230,9 +197,9 @@ export const editReservaSchema: FastifySchema = {
       estado: { type: 'string', enum: ['pendiente', 'confirmada', 'cancelada', 'finalizada'] },
       observaciones: { type: 'string' },
       id_empresa: { type: 'number' },
-      plataforma_origen: { 
-        type: 'string', 
-        enum: ['airbnb', 'booking', 'pagina_web', 'directa'] 
+      plataforma_origen: {
+        type: 'string',
+        enum: ['airbnb', 'booking', 'pagina_web', 'directa']
       }
     },
     additionalProperties: false
