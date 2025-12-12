@@ -95,7 +95,7 @@ export const getInmueblesPropietarioApi = async (propietarioId: number) => {
 // Obtener detalle de un inmueble
 export const getInmuebleDetalleApi = async (inmuebleId: string) => {
   try {
-    const data = await apiFetch(`/api/inmuebles/getInmuebleDetalle?id=${inmuebleId}`, {
+    const data = await apiFetch(`/api/inmuebles/getInmuebles?id=${inmuebleId}`, {
       method: 'GET',
     });
 

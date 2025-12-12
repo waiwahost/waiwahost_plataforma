@@ -30,7 +30,9 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const {
     register,
     handleSubmit,
+
     reset,
+    watch,
     formState: { errors, isSubmitting }
   } = useForm<IInmuebleForm>({
     defaultValues: initialData || {
@@ -90,6 +92,8 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       fetchEmpresas();
     }
   }, [open]);
+
+
 
   // Efecto para pre-seleccionar empresa si solo hay una
   useEffect(() => {
@@ -388,22 +392,39 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   Propietario *
                   {isEdit && <span className="text-xs text-gray-500 ml-1">(No editable)</span>}
                 </label>
-                <select
-                  {...register('id_propietario', {
-                    required: 'El propietario es requerido',
-                  })}
-                  disabled={isEdit || loadingPropietarios}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingPropietarios) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
-                    }`}
-                >
-                  <option value="">Seleccione un propietario</option>
-                  {propietarios.map((prop) => (
-                    <option key={prop.id} value={prop.id}>
-                      {prop.nombre} {prop.apellido}
-                    </option>
-                  ))}
-                </select>
-                {loadingPropietarios && <p className="text-xs text-gray-500 mt-1">Cargando propietarios...</p>}
+                {isEdit ? (
+                  <input
+                    type="text"
+                    disabled
+
+                    value={(() => {
+                      const currentId = watch('id_propietario');
+                      const selectedProp = propietarios.find(p => p.id.toString() == currentId?.toString());
+                      if (selectedProp) return `${selectedProp.nombre} ${selectedProp.apellido}`;
+                      return (initialData as any)?.propietario_nombre || 'Desconocido';
+                    })()}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75"
+                  />
+                ) : (
+                  <>
+                    <select
+                      {...register('id_propietario', {
+                        required: 'El propietario es requerido',
+                      })}
+                      disabled={isEdit || loadingPropietarios}
+                      className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingPropietarios) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                        }`}
+                    >
+                      <option value="">Seleccione un propietario</option>
+                      {propietarios.map((prop) => (
+                        <option key={prop.id} value={prop.id}>
+                          {prop.nombre} {prop.apellido}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingPropietarios && <p className="text-xs text-gray-500 mt-1">Cargando propietarios...</p>}
+                  </>
+                )}
                 {errors.id_propietario && (
                   <p className="text-red-500 text-xs mt-1">{errors.id_propietario.message}</p>
                 )}
@@ -414,22 +435,38 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   Empresa *
                   {(isEdit || empresas.length === 1) && <span className="text-xs text-gray-500 ml-1">(No editable)</span>}
                 </label>
-                <select
-                  {...register('id_empresa', {
-                    required: 'La empresa es requerida',
-                  })}
-                  disabled={isEdit || loadingEmpresas || empresas.length === 1}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingEmpresas || empresas.length === 1) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
-                    }`}
-                >
-                  <option value="">Seleccione una empresa</option>
-                  {empresas.map((emp) => (
-                    <option key={emp.id_empresa} value={emp.id_empresa}>
-                      {emp.nombre}
-                    </option>
-                  ))}
-                </select>
-                {loadingEmpresas && <p className="text-xs text-gray-500 mt-1">Cargando empresas...</p>}
+                {isEdit ? (
+                  <input
+                    type="text"
+                    disabled
+                    value={(() => {
+                      const currentId = watch('id_empresa');
+                      const selectedEmp = empresas.find(e => e.id_empresa.toString() == currentId?.toString());
+                      if (selectedEmp) return selectedEmp.nombre;
+                      return (initialData as any)?.empresa_nombre || 'Desconocido';
+                    })()}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75"
+                  />
+                ) : (
+                  <>
+                    <select
+                      {...register('id_empresa', {
+                        required: 'La empresa es requerida',
+                      })}
+                      disabled={isEdit || loadingEmpresas || empresas.length === 1}
+                      className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${(isEdit || loadingEmpresas || empresas.length === 1) ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75' : ''
+                        }`}
+                    >
+                      <option value="">Seleccione una empresa</option>
+                      {empresas.map((emp) => (
+                        <option key={emp.id_empresa} value={emp.id_empresa}>
+                          {emp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {loadingEmpresas && <p className="text-xs text-gray-500 mt-1">Cargando empresas...</p>}
+                  </>
+                )}
                 {errors.id_empresa && (
                   <p className="text-red-500 text-xs mt-1">{errors.id_empresa.message}</p>
                 )}
