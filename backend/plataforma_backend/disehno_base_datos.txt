@@ -684,3 +684,15 @@ CREATE INDEX IF NOT EXISTS idx_pagos_fecha_reporte ON pagos(fecha_reporte);
 
 
 ALTER TABLE inmuebles ALTER COLUMN comision TYPE DECIMAL(10,2) USING NULLIF(comision, '')::numeric;
+
+
+
+INSERT INTO roles_permissions (id_rol, id_permission)
+SELECT 2, id_permission FROM permissions
+WHERE key IN (
+    'ver_dashboard',
+    'ver_inmuebles', 'crear_inmueble', 'editar_inmueble', 'eliminar_inmueble',
+    'ver_reservas', 'crear_reserva', 'editar_reserva', 'eliminar_reserva',
+    'ver_reportes', 'ver_caja', 'ver_propietarios', 'ver_ingresos', 'ver_egresos',
+    'ver_disponibilidad', 'ver_huespedes', 'ver_usuarios', 'crear_usuario', 'crear_usuarios' 
+);
