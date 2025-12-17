@@ -3,6 +3,7 @@ export interface Inmueble {
   nombre: string;
   descripcion?: string;
   direccion: string;
+  ciudad?: string;
   capacidad: number;
   id_propietario: number;
   id_empresa?: number | null;
@@ -29,6 +30,7 @@ export interface CreateInmuebleData {
   nombre: string;
   descripcion?: string;
   direccion: string;
+  ciudad?: string;
   capacidad: number;
   id_propietario: number;
   id_empresa?: number;
@@ -47,9 +49,10 @@ export interface EditInmuebleData {
   nombre?: string;
   descripcion?: string;
   direccion?: string;
+  ciudad?: string;
   capacidad?: number;
-  id_propietario?: number;
-  id_empresa?: number;
+  //id_propietario?: number;
+  //id_empresa?: number;
   estado?: 'activo' | 'inactivo';
   edificio?: string;
   apartamento?: string;

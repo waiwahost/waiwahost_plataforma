@@ -4,14 +4,14 @@ import { EditInmuebleData } from '../../interfaces/inmueble.interface';
 const inmueblesRepository = new InmueblesRepository();
 
 export async function editInmuebleService(
-  userId: number, 
+  userId: number,
   inmuebleId: number,
   inmuebleData: EditInmuebleData
 ) {
   try {
     // Verificar que el inmueble existe
     const { exists: inmuebleExists, error: inmuebleExistsError } = await inmueblesRepository.inmuebleExists(inmuebleId);
-    
+
     if (inmuebleExistsError) {
       console.error('Error al verificar inmueble:', inmuebleExistsError);
       return {
@@ -36,39 +36,39 @@ export async function editInmuebleService(
     }
 
     // Si se está cambiando el propietario, verificar que existe
-    if (inmuebleData.id_propietario) {
-      const { exists: propietarioExists, error: propietarioError } = await inmueblesRepository.propietarioExists(inmuebleData.id_propietario);
-      
-      if (propietarioError) {
-        console.error('Error al verificar propietario:', propietarioError);
-        return {
-          data: null,
-          error: {
-            message: 'Error al verificar propietario',
-            status: 500,
-            details: propietarioError
-          }
-        };
-      }
+    //if (inmuebleData.id_propietario) {
+    //  const { exists: propietarioExists, error: propietarioError } = await inmueblesRepository.propietarioExists(inmuebleData.id_propietario);
 
-      if (!propietarioExists) {
-        return {
-          data: null,
-          error: {
-            message: 'El propietario especificado no existe',
-            status: 400,
-            details: 'PROPIETARIO_NOT_FOUND'
-          }
-        };
-      }
-    }
+    //  if (propietarioError) {
+    //    console.error('Error al verificar propietario:', propietarioError);
+    //    return {
+    //      data: null,
+    //      error: {
+    //        message: 'Error al verificar propietario',
+    //        status: 500,
+    //        details: propietarioError
+    //      }
+    //    };
+    //  }
+
+    //  if (!propietarioExists) {
+    //    return {
+    //      data: null,
+    //      error: {
+    //        message: 'El propietario especificado no existe',
+    //        status: 400,
+    //        details: 'PROPIETARIO_NOT_FOUND'
+    //      }
+    //    };
+    //  }
+    //}
 
     // Actualizar el inmueble
     const { data: inmueble, error } = await inmueblesRepository.updateInmueble(inmuebleId, inmuebleData);
-    
+
     if (error) {
       console.error('Error al actualizar inmueble:', error);
-      
+
       // Manejar errores específicos de base de datos
       if (error.code === '23503') { // Foreign key violation
         return {
@@ -103,12 +103,12 @@ export async function editInmuebleService(
     }
 
     console.log('Inmueble actualizado exitosamente:', inmueble.id_inmueble);
-    
+
     return {
       data: inmueble,
       error: null
     };
-    
+
   } catch (err) {
     console.error('Error inesperado en editInmuebleService:', err);
     return {

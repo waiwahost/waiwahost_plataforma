@@ -46,21 +46,21 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
    */
   const loadMovimientos = async () => {
     if (!inmueble) return;
-    
+
     try {
       setLoadingMovimientos(true);
       setErrorMovimientos(null);
-      
+
       const fechaFormatted = formatDateForApi(selectedDate);
       const { ingresos, egresos, movimientos: movimientosData } = await getMovimientosInmuebleApi(
-        inmueble.id.toString(), 
+        inmueble.id.toString(),
         fechaFormatted
       );
-      
+
       setMovimientos(movimientosData);
       setTotalIngresos(ingresos);
       setTotalEgresos(egresos);
-      
+
     } catch (error) {
       console.error('Error cargando movimientos:', error);
       setErrorMovimientos('Error al cargar los movimientos del inmueble');
@@ -82,7 +82,7 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
   const formatMovimientoValue = (monto: number, tipo: 'ingreso' | 'egreso') => {
     const colorClass = tipo === 'ingreso' ? 'text-green-600' : 'text-red-600';
     const prefix = tipo === 'ingreso' ? '+' : '-';
-    
+
     return (
       <span className={`font-semibold ${colorClass}`}>
         {prefix}{formatPrice(monto)}
@@ -105,7 +105,7 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
 
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-    
+
     switch (estado) {
       case 'disponible':
         return `${baseClasses} bg-green-100 text-green-800`;
@@ -162,13 +162,18 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                 </span>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center text-gray-600">
                 <MapPin className="h-4 w-4 mr-1" />
                 <span className="text-sm">{inmueble.direccion}</span>
               </div>
-              
+
+              <div className="flex items-center text-gray-600 mt-1">
+                <MapPin className="h-4 w-4 mr-1 opacity-0" />
+                <span className="text-sm">{inmueble.ciudad || 'Sin ciudad'}</span>
+              </div>
+
               <div className="grid grid-cols-2 gap-4 mt-3">
                 <div className="text-sm">
                   <span className="text-gray-600">ID Inmueble:</span>
@@ -341,11 +346,10 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600">Balance</p>
-                    <p className={`text-xl font-bold ${
-                      calcularBalance(totalIngresos, totalEgresos) >= 0 
-                        ? 'text-green-600' 
+                    <p className={`text-xl font-bold ${calcularBalance(totalIngresos, totalEgresos) >= 0
+                        ? 'text-green-600'
                         : 'text-red-600'
-                    }`}>
+                      }`}>
                       {formatPrice(calcularBalance(totalIngresos, totalEgresos))}
                     </p>
                   </div>
@@ -391,11 +395,10 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                     <div key={movimiento.id} className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            movimiento.tipo === 'ingreso' 
-                              ? 'bg-green-100' 
+                          <div className={`p-2 rounded-lg ${movimiento.tipo === 'ingreso'
+                              ? 'bg-green-100'
                               : 'bg-red-100'
-                          }`}>
+                            }`}>
                             {movimiento.tipo === 'ingreso' ? (
                               <TrendingUp className="h-4 w-4 text-green-600" />
                             ) : (
@@ -425,7 +428,7 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                             {movimiento.descripcion}
                           </p>
                         )}
-                        
+
                         <div className="flex gap-4 text-xs text-gray-500">
                           {movimiento.codigo_reserva && (
                             <span>Reserva: {movimiento.codigo_reserva}</span>

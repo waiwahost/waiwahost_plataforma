@@ -7,6 +7,7 @@ interface ExternalInmuebleResponse {
   nombre: string | null;
   descripcion: string | null;
   direccion: string | null;
+  ciudad: string | null;
   capacidad: number | null;
   id_propietario: number | null;
   id_empresa: number | null;
@@ -38,6 +39,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_inmueble: (inmuebleAPI.id_inmueble ?? 0).toString(),
     nombre: inmuebleAPI.nombre || 'Sin nombre',
     direccion: inmuebleAPI.direccion || 'Sin dirección',
+    ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio || 'Sin edificio',
     apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
     comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
@@ -63,7 +65,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
 // Función auxiliar para mapear tipo de inmueble basado en el nombre
 const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studio' | 'penthouse' | 'oficina' | 'local' => {
   if (!nombre) return 'apartamento'; // Por defecto si es null
-  
+
   const nombreLower = nombre.toLowerCase();
   if (nombreLower.includes('apartamento')) return 'apartamento';
   if (nombreLower.includes('casa')) return 'casa';
@@ -77,7 +79,7 @@ const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studi
 // Función auxiliar para mapear estado del inmueble
 const mapEstadoInmueble = (estado: string | null): 'disponible' | 'ocupado' | 'mantenimiento' | 'inactivo' => {
   if (!estado) return 'disponible'; // Por defecto si es null
-  
+
   const estadoLower = estado.toLowerCase();
   if (estadoLower === 'activo') return 'disponible';
   if (estadoLower === 'ocupado') return 'ocupado';
@@ -102,9 +104,9 @@ const generateMockArea = (habitaciones: number | null): number => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido' 
+      message: 'Método no permitido'
     });
   }
 
@@ -120,10 +122,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
+
     console.log('🚀 Calling external API for inmueble detail:', `${apiUrl}/inmuebles/getInmuebles?id=${id}`);
     console.log('🔑 Using token:', token ? 'Token present' : 'No token');
-    
+
     // Realizar la llamada a la API externa
     const response = await fetch(`${apiUrl}/inmuebles/getInmuebles?id=${id}`, {
       method: 'GET',
@@ -175,7 +177,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (mapError) {
       console.error('❌ Error mapping inmueble detail:', mapError);
       console.error('📄 Problematic inmueble data:', externalData.data);
-      
+
       return res.status(500).json({
         success: false,
         data: null,
@@ -185,7 +187,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error in getInmuebleDetalle API:', error);
-    
+
     res.status(500).json({
       success: false,
       data: null,

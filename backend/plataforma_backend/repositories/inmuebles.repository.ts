@@ -7,7 +7,7 @@ export class InmueblesRepository {
    */
   async getAllInmuebles() {
     const query = `
-      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.capacidad, 
+      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina,
@@ -33,7 +33,7 @@ export class InmueblesRepository {
    */
   async getInmueblesByEmpresa(empresaId: number) {
     const query = `
-      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.capacidad, 
+      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina,
@@ -59,7 +59,7 @@ export class InmueblesRepository {
    */
   async getInmuebleById(inmuebleId: number) {
     const query = `
-      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.capacidad, 
+      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina,
@@ -84,7 +84,7 @@ export class InmueblesRepository {
    */
   async getInmueblesByEmpresaAndPropietario(empresaId: number, propietarioId: number) {
     const query = `
-      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.capacidad, 
+      SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina,
@@ -111,17 +111,18 @@ export class InmueblesRepository {
   async createInmueble(inmuebleData: CreateInmuebleData): Promise<{ data: Inmueble | null; error: any }> {
     const query = `
       INSERT INTO inmuebles (
-        nombre, descripcion, direccion, capacidad, id_propietario, id_empresa,
+        nombre, descripcion, direccion, ciudad, capacidad, id_propietario, id_empresa,
         edificio, apartamento, id_prod_sigo, comision, precio_limpieza,
         capacidad_maxima, nro_habitaciones, nro_bahnos, cocina, estado
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'activo')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'activo')
       RETURNING *
     `;
-    
+
     const values = [
       inmuebleData.nombre,
       inmuebleData.descripcion || null,
       inmuebleData.direccion,
+      inmuebleData.ciudad || null,
       inmuebleData.capacidad,
       inmuebleData.id_propietario,
       inmuebleData.id_empresa || null,
@@ -171,7 +172,7 @@ export class InmueblesRepository {
       WHERE id_inmueble = $${valueIndex}
       RETURNING *
     `;
-    
+
     values.push(inmuebleId);
 
     try {
@@ -206,7 +207,7 @@ export class InmueblesRepository {
    */
   async inmuebleExists(inmuebleId: number): Promise<{ exists: boolean; error: any }> {
     const query = `SELECT id_inmueble FROM inmuebles WHERE id_inmueble = $1 AND estado = 'activo'`;
-    
+
     try {
       const { rows } = await pool.query(query, [inmuebleId]);
       return { exists: rows.length > 0, error: null };
@@ -233,7 +234,7 @@ export class InmueblesRepository {
    */
   async propietarioExists(propietarioId: number): Promise<{ exists: boolean; error: any }> {
     const query = `SELECT id_propietario FROM propietarios WHERE id_propietario = $1`;
-    
+
     try {
       const { rows } = await pool.query(query, [propietarioId]);
       return { exists: rows.length > 0, error: null };

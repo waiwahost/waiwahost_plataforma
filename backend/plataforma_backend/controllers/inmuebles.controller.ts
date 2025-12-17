@@ -182,14 +182,14 @@ export const inmueblesController = {
       }
 
       const { id: inmuebleId } = queryValidation.data;
-      const inmuebleData = { ...bodyValidation.data, id_empresa: Number(ctx.empresaId) };
+      const inmuebleData = { ...bodyValidation.data };
 
       console.log('Editando inmueble:', {
         inmuebleId,
         nombre: inmuebleData.nombre,
         direccion: inmuebleData.direccion,
-        id_propietario: inmuebleData.id_propietario,
-        id_empresa: inmuebleData.id_empresa
+        //id_propietario: inmuebleData.id_propietario,
+        //id_empresa: inmuebleData.id_empresa
       });
 
       // Llamar al servicio

@@ -7,6 +7,7 @@ interface ExternalInmuebleResponse {
   nombre: string | null;
   descripcion: string | null;
   direccion: string | null;
+  ciudad: string | null;
   capacidad: number | null;
   id_propietario: number | null;
   id_empresa: number | null;
@@ -38,6 +39,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_inmueble: (inmuebleAPI.id_inmueble ?? 0).toString(),
     nombre: inmuebleAPI.nombre || 'Sin nombre',
     direccion: inmuebleAPI.direccion || 'Sin dirección',
+    ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio || 'Sin edificio',
     apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
     comision: inmuebleAPI.comision ?? 0, // Convertir porcentaje a valor monetario

@@ -74,12 +74,12 @@ const Properties: React.FC = () => {
   const handleViewDetailWithApi = async (inmuebleId: string) => {
     try {
       console.log('🔍 Fetching inmueble detail for ID:', inmuebleId);
-      
+
       // Obtener detalle del inmueble desde la API externa directamente
       const inmuebleDetalle = await getInmuebleDetalleApi(inmuebleId);
       setInmuebleToView(inmuebleDetalle);
       setDetailModalOpen(true);
-      
+
       console.log('✅ Inmueble detail loaded successfully');
     } catch (error) {
       console.error('❌ Error getting inmueble detail:', error);
@@ -89,22 +89,22 @@ const Properties: React.FC = () => {
 
   const handleEditSubmit = async (inmuebleData: IInmuebleForm) => {
     if (!inmuebleToEdit) return;
-    
+
     try {
       const response = await editInmuebleApi({
         id: inmuebleToEdit.id,
         ...inmuebleData
       });
-      
+
       if (response.success) {
         setSuccessMsg('Inmueble actualizado exitosamente');
         setSuccessOpen(true);
         setEditModalOpen(false);
         setInmuebleToEdit(null);
-        
+
         // Actualizar la lista local de inmuebles
-        setInmuebles(prev => prev.map(inmueble => 
-          inmueble.id === inmuebleToEdit.id 
+        setInmuebles(prev => prev.map(inmueble =>
+          inmueble.id === inmuebleToEdit.id
             ? { ...inmueble, ...inmuebleData }
             : inmueble
         ));
@@ -125,14 +125,14 @@ const Properties: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!inmuebleToDelete) return;
     setConfirmDeleteOpen(false);
-    
+
     try {
       const response = await deleteInmuebleApi(inmuebleToDelete.id);
-      
+
       if (response.success) {
         setSuccessMsg('Inmueble eliminado exitosamente');
         setSuccessOpen(true);
-        
+
         // Remover el inmueble de la lista local
         setInmuebles(prev => prev.filter(inmueble => inmueble.id !== inmuebleToDelete.id));
       } else {
@@ -143,7 +143,7 @@ const Properties: React.FC = () => {
       setSuccessMsg('Error eliminando inmueble');
       setSuccessOpen(true);
     }
-    
+
     setInmuebleToDelete(null);
   };
 
@@ -161,28 +161,29 @@ const Properties: React.FC = () => {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <InmueblesTable 
-          inmuebles={inmuebles} 
-          onEdit={handleEdit} 
-          onDelete={handleDelete} 
+        <InmueblesTable
+          inmuebles={inmuebles}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
           onViewDetail={handleViewDetail}
         />
       )}
-      <CreateInmuebleModal 
-        open={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onCreate={handleCreate} 
+      <CreateInmuebleModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreate={handleCreate}
       />
-      <CreateInmuebleModal 
-        open={editModalOpen} 
+      <CreateInmuebleModal
+        open={editModalOpen}
         onClose={() => {
           setEditModalOpen(false);
           setInmuebleToEdit(null);
-        }} 
+        }}
         onCreate={handleEditSubmit}
         initialData={inmuebleToEdit ? {
           nombre: inmuebleToEdit.nombre,
           direccion: inmuebleToEdit.direccion,
+          ciudad: inmuebleToEdit.ciudad,
           edificio: inmuebleToEdit.edificio,
           apartamento: inmuebleToEdit.apartamento,
           comision: inmuebleToEdit.comision,

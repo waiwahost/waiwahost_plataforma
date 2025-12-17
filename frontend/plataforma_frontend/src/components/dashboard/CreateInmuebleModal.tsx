@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { getPropietariosApi } from '../../auth/propietariosApi';
 import { IPropietarioTableData } from '../../interfaces/Propietario';
 import { getEmpresasApi } from '../../auth/getEmpresasApi';
+import { CIUDADES_COLOMBIA } from '../../constants/ciudades';
 
 interface CreateInmuebleModalProps {
   open: boolean;
@@ -33,11 +34,13 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
     reset,
     watch,
+    setValue, // Added setValue
     formState: { errors, isSubmitting }
   } = useForm<IInmuebleForm>({
     defaultValues: initialData || {
       nombre: '',
       direccion: '',
+      ciudad: '',
       edificio: '',
       apartamento: '',
       id_producto_sigo: '',
@@ -112,6 +115,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       reset({
         nombre: '',
         direccion: '',
+        ciudad: '',
         edificio: '',
         apartamento: '',
         id_producto_sigo: '',
@@ -126,7 +130,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
         id_empresa: '1'
       });
     }
-  }, [open, initialData, isEdit, reset, user]);
+  }, [open, initialData, isEdit, reset]);
 
   const onSubmit = async (data: IInmuebleForm) => {
     try {
@@ -207,19 +211,41 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
             </div>
 
             {/* Dirección y ubicación */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Dirección *
-              </label>
-              <input
-                type="text"
-                {...register('direccion', { required: 'La dirección es requerida' })}
-                className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                placeholder="Ej: Calle 10 #5-20, Centro"
-              />
-              {errors.direccion && (
-                <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Dirección *
+                </label>
+                <input
+                  type="text"
+                  {...register('direccion', { required: 'La dirección es requerida' })}
+                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Ej: Calle 10 #5-20, Centro"
+                />
+                {errors.direccion && (
+                  <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ciudad *
+                </label>
+                <select
+                  {...register('ciudad', { required: 'La ciudad es requerida' })}
+                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Seleccione una ciudad</option>
+                  {CIUDADES_COLOMBIA.map((ciudad) => (
+                    <option key={ciudad} value={ciudad}>
+                      {ciudad}
+                    </option>
+                  ))}
+                </select>
+                {errors.ciudad && (
+                  <p className="text-red-500 text-xs mt-1">{errors.ciudad.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -257,10 +283,10 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
             {/* Descripción */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Descripción *
+                Descripción
               </label>
               <textarea
-                {...register('descripcion', { required: 'La descripción es requerida' })}
+                {...register('descripcion')}
                 rows={3}
                 className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 placeholder="Descripción del inmueble"

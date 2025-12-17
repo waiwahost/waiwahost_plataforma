@@ -6,6 +6,7 @@ interface ExternalInmuebleCreateRequest {
   nombre: string;
   descripcion: string;
   direccion: string;
+  ciudad: string;
   capacidad: number;
   id_propietario: number;
   id_empresa: number;
@@ -26,6 +27,7 @@ interface ExternalInmuebleResponse {
   nombre: string | null;
   descripcion: string | null;
   direccion: string | null;
+  ciudad: string | null;
   capacidad: number | null;
   id_propietario: number | null;
   id_empresa: number | null;
@@ -59,12 +61,16 @@ const validateInmuebleData = (inmuebleData: any): string[] => {
     errors.push('El nombre del inmueble es obligatorio');
   }
 
-  if (!inmuebleData.descripcion || inmuebleData.descripcion.trim() === '') {
-    errors.push('La descripción del inmueble es obligatoria');
-  }
+  //if (!inmuebleData.descripcion || inmuebleData.descripcion.trim() === '') {
+  //  errors.push('La descripción del inmueble es obligatoria');
+  //}
 
   if (!inmuebleData.direccion || inmuebleData.direccion.trim() === '') {
     errors.push('La dirección del inmueble es obligatoria');
+  }
+
+  if (!inmuebleData.ciudad || inmuebleData.ciudad.trim() === '') {
+    errors.push('La ciudad del inmueble es obligatoria');
   }
 
   if (!inmuebleData.edificio || inmuebleData.edificio.trim() === '') {
@@ -117,6 +123,7 @@ const mapToExternalFormat = (inmuebleData: any): ExternalInmuebleCreateRequest =
     nombre: inmuebleData.nombre.trim(),
     descripcion: inmuebleData.descripcion.trim(),
     direccion: inmuebleData.direccion.trim(),
+    ciudad: inmuebleData.ciudad.trim(),
     capacidad: Number(inmuebleData.capacidad_maxima), // Usar capacidad_maxima como capacidad
     id_propietario: Number(inmuebleData.id_propietario),
     id_empresa: Number(inmuebleData.id_empresa),
@@ -139,6 +146,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_inmueble: (inmuebleAPI.id_inmueble ?? 0).toString(),
     nombre: inmuebleAPI.nombre || 'Sin nombre',
     direccion: inmuebleAPI.direccion || 'Sin dirección',
+    ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio || 'Sin edificio',
     apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
     comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
@@ -164,7 +172,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
 // Funciones auxiliares (reutilizadas de getInmuebles.ts)
 const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studio' | 'penthouse' | 'oficina' | 'local' => {
   if (!nombre) return 'apartamento';
-  
+
   const nombreLower = nombre.toLowerCase();
   if (nombreLower.includes('apartamento')) return 'apartamento';
   if (nombreLower.includes('casa')) return 'casa';
@@ -177,7 +185,7 @@ const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studi
 
 const mapEstadoInmueble = (estado: string | null): 'disponible' | 'ocupado' | 'mantenimiento' | 'inactivo' => {
   if (!estado) return 'disponible';
-  
+
   const estadoLower = estado.toLowerCase();
   if (estadoLower === 'activo') return 'disponible';
   if (estadoLower === 'ocupado') return 'ocupado';
@@ -200,9 +208,9 @@ const generateMockArea = (habitaciones: number | null): number => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido. Solo se permite POST.' 
+      message: 'Método no permitido. Solo se permite POST.'
     });
   }
 
@@ -217,7 +225,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Validar los datos del inmueble
     const validationErrors = validateInmuebleData(inmuebleData);
-    
+
     if (validationErrors.length > 0) {
       return res.status(400).json({
         success: false,
@@ -228,13 +236,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
+
     console.log('🚀 Calling external API:', `${apiUrl}/inmuebles/createInmueble`);
     console.log('🔑 Using token:', token ? 'Token present' : 'No token');
 
     // Mapear los datos al formato esperado por la API externa
     const externalFormatData = mapToExternalFormat(inmuebleData);
-    
+
     console.log('📤 Sending to external API:', externalFormatData);
 
     // Realizar la llamada a la API externa
@@ -253,7 +261,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData: ExternalApiResponse = await response.json();
-    
+
     console.log('📥 External API response:', {
       isError: externalData.isError,
       hasData: !!externalData.data,
@@ -271,7 +279,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     try {
       const nuevoInmueble = mapInmuebleFromAPI(externalData.data);
-      
+
       console.log('✅ Inmueble created successfully:', nuevoInmueble.id);
 
       res.status(201).json({
@@ -282,7 +290,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (mapError) {
       console.error('❌ Error mapping created inmueble:', mapError);
       console.error('📄 Problematic inmueble data:', externalData.data);
-      
+
       return res.status(500).json({
         success: false,
         message: 'Error procesando respuesta del inmueble creado'
@@ -291,7 +299,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error in createInmueble API:', error);
-    
+
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Error interno del servidor'

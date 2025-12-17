@@ -6,6 +6,7 @@ interface ExternalInmuebleEditRequest {
   nombre?: string;
   descripcion?: string;
   direccion?: string;
+  ciudad?: string;
   capacidad?: number;
   edificio?: string;
   apartamento?: string;
@@ -15,6 +16,8 @@ interface ExternalInmuebleEditRequest {
   nro_habitaciones?: number;
   nro_bahnos?: number;
   cocina?: boolean;
+  id_propietario?: number;
+  id_empresa?: number;
 }
 
 // Interfaz para la respuesta de la API externa
@@ -23,9 +26,8 @@ interface ExternalInmuebleResponse {
   nombre: string | null;
   descripcion: string | null;
   direccion: string | null;
+  ciudad: string | null;
   capacidad: number | null;
-  id_propietario: number | null;
-  id_empresa: number | null;
   estado: string | null;
   edificio: string | null;
   apartamento: string | null;
@@ -73,6 +75,12 @@ const validateInmuebleEditData = (inmuebleData: any): string[] => {
   if (inmuebleData.direccion !== undefined) {
     if (!inmuebleData.direccion || inmuebleData.direccion.trim() === '') {
       errors.push('La dirección del inmueble no puede estar vacía');
+    }
+  }
+
+  if (inmuebleData.ciudad !== undefined) {
+    if (!inmuebleData.ciudad || inmuebleData.ciudad.trim() === '') {
+      errors.push('La ciudad del inmueble no puede estar vacía');
     }
   }
 
@@ -130,6 +138,7 @@ const mapToExternalEditFormat = (inmuebleData: any): ExternalInmuebleEditRequest
   if (inmuebleData.nombre !== undefined) mapped.nombre = inmuebleData.nombre.trim();
   if (inmuebleData.descripcion !== undefined) mapped.descripcion = inmuebleData.descripcion.trim();
   if (inmuebleData.direccion !== undefined) mapped.direccion = inmuebleData.direccion.trim();
+  if (inmuebleData.ciudad !== undefined) mapped.ciudad = inmuebleData.ciudad.trim();
   if (inmuebleData.edificio !== undefined) mapped.edificio = inmuebleData.edificio.trim();
   if (inmuebleData.apartamento !== undefined) mapped.apartamento = inmuebleData.apartamento.trim();
   if (inmuebleData.comision !== undefined) mapped.comision = Number(inmuebleData.comision);
@@ -152,10 +161,11 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_inmueble: (inmuebleAPI.id_inmueble ?? 0).toString(),
     nombre: inmuebleAPI.nombre || 'Sin nombre',
     direccion: inmuebleAPI.direccion || 'Sin dirección',
+    ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio || 'Sin edificio',
     apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
     comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
-    id_propietario: (inmuebleAPI.id_propietario ?? 0).toString(),
+    //id_propietario: (inmuebleAPI.id_propietario ?? 0).toString(),
     tipo: mapTipoInmueble(inmuebleAPI.nombre), // Mockeo basado en el nombre
     estado: mapEstadoInmueble(inmuebleAPI.estado),
     precio: generateMockPrice(inmuebleAPI.capacidad_maxima ?? inmuebleAPI.capacidad ?? 1), // Mockeo basado en capacidad
@@ -167,7 +177,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     banos: inmuebleAPI.nro_bahnos ?? 1,
     area: generateMockArea(inmuebleAPI.nro_habitaciones ?? 1), // Mockeo basado en habitaciones
     tiene_cocina: inmuebleAPI.cocina ?? false,
-    id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
+    //id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
     fecha_creacion: new Date().toISOString(), // Mock ya que no viene de la API
     fecha_actualizacion: new Date().toISOString()
@@ -177,7 +187,7 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
 // Funciones auxiliares reutilizadas
 const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studio' | 'penthouse' | 'oficina' | 'local' => {
   if (!nombre) return 'apartamento';
-  
+
   const nombreLower = nombre.toLowerCase();
   if (nombreLower.includes('apartamento')) return 'apartamento';
   if (nombreLower.includes('casa')) return 'casa';
@@ -190,7 +200,7 @@ const mapTipoInmueble = (nombre: string | null): 'apartamento' | 'casa' | 'studi
 
 const mapEstadoInmueble = (estado: string | null): 'disponible' | 'ocupado' | 'mantenimiento' | 'inactivo' => {
   if (!estado) return 'disponible';
-  
+
   const estadoLower = estado.toLowerCase();
   if (estadoLower === 'activo') return 'disponible';
   if (estadoLower === 'ocupado') return 'ocupado';
@@ -232,7 +242,7 @@ const callExternalEditAPI = async (inmuebleId: string, editData: ExternalInmuebl
   }
 
   const externalData: ExternalApiResponse = await response.json();
-  
+
   console.log('📥 External API response:', {
     isError: externalData.isError,
     hasData: !!externalData.data,
@@ -250,9 +260,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method !== 'POST') {
     console.log('❌ Invalid method:', req.method);
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido. Solo se permite POST.' 
+      message: 'Método no permitido. Solo se permite POST.'
     });
   }
 
@@ -264,7 +274,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Validar los datos del inmueble
     const validationErrors = validateInmuebleEditData({ id, ...inmuebleData });
-    
+
     if (validationErrors.length > 0) {
       console.log('❌ Validation errors:', validationErrors);
       return res.status(400).json({
@@ -276,16 +286,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
+
     console.log('🌐 API URL:', apiUrl);
     console.log('🔑 Token status:', token ? `Token present (${token.substring(0, 10)}...)` : 'No token');
-    
+
     // Convertir ID a string para asegurar consistencia
     const inmuebleId = String(id);
 
     // Mapear los datos al formato esperado por la API externa
     const externalFormatData = mapToExternalEditFormat(inmuebleData);
-    
+
     // Realizar la llamada a la API externa
     const externalData = await callExternalEditAPI(inmuebleId, externalFormatData, token, apiUrl);
 
@@ -301,7 +311,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     try {
       const inmuebleActualizado = mapInmuebleFromAPI(externalData.data);
-      
+
       console.log('✅ Inmueble updated successfully:', inmuebleActualizado.id);
 
       res.status(200).json({
@@ -312,7 +322,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (mapError) {
       console.error('❌ Error mapping updated inmueble:', mapError);
       console.error('📄 Problematic inmueble data:', externalData.data);
-      
+
       return res.status(500).json({
         success: false,
         message: 'Error procesando respuesta del inmueble actualizado'
@@ -321,7 +331,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error in editInmueble API:', error);
-    
+
     // Manejar diferentes tipos de errores
     if (error instanceof Error) {
       // Error de red o HTTP
@@ -331,7 +341,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           message: 'Error de comunicación con el servidor externo'
         });
       }
-      
+
       // Error de parsing o estructura
       if (error.message.includes('JSON')) {
         return res.status(502).json({
@@ -340,7 +350,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
     }
-    
+
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Error interno del servidor'
