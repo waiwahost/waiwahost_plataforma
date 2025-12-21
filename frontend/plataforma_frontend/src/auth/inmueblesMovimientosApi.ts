@@ -56,30 +56,41 @@ const mapSelectorToInmueble = (selector: IInmuebleSelector): any => ({
 export const getInmueblesForMovimientos = async (): Promise<IInmuebleApiResponse> => {
   try {
     console.log('🔄 Obteniendo inmuebles para formularios');
-    
-    const response: InmueblesSelectorResponse = await apiFetch('/api/inmuebles/getInmueblesSelector', {
+
+    const response: any = await apiFetch('/api/inmuebles/getInmueblesSelector', {
       method: 'GET',
     });
-    
-    if (!response.success || !response.data) {
+
+    // apiFetch puede devolver directamente el array de data si detecta la propiedad 'data' en la respuesta
+    if (Array.isArray(response)) {
+      const inmuebles = response.map(mapSelectorToInmueble);
+      console.log('✅ Inmuebles para formularios obtenidos exitosamente:', inmuebles.length);
+
       return {
-        success: false,
-        message: response.message || 'Error al obtener inmuebles',
-        error: response.error
+        success: true,
+        data: inmuebles,
+        message: 'Inmuebles obtenidos exitosamente'
       };
     }
 
-    // Mapear los datos del selector a formato completo para compatibilidad
-    const inmuebles = response.data.map(mapSelectorToInmueble);
-    
-    console.log('✅ Inmuebles para formularios obtenidos exitosamente:', inmuebles.length);
-    
+    // Si apiFetch devuelve el objeto completo
+    if (response && response.success && Array.isArray(response.data)) {
+      const inmuebles = response.data.map(mapSelectorToInmueble);
+      return {
+        success: true,
+        data: inmuebles,
+        message: response.message || 'Inmuebles obtenidos exitosamente'
+      };
+    }
+
     return {
-      success: true,
-      data: inmuebles,
-      message: 'Inmuebles obtenidos exitosamente'
+      success: false,
+      message: response?.message || 'Error al obtener inmuebles',
+      error: response?.error
     };
-    
+
+
+
   } catch (error) {
     console.error('❌ Error en getInmueblesForMovimientos:', error);
     return {

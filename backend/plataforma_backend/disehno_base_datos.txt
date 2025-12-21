@@ -696,3 +696,5 @@ WHERE key IN (
     'ver_reportes', 'ver_caja', 'ver_propietarios', 'ver_ingresos', 'ver_egresos',
     'ver_disponibilidad', 'ver_huespedes', 'ver_usuarios', 'crear_usuario', 'crear_usuarios' 
 );
+
+ALTER TABLE inmuebles ADD COLUMN ciudad VARCHAR(60) DEFAULT 'Bucaramanga';
