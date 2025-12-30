@@ -12,3 +12,4 @@ frontend/plataforma_frontend/*.md
 frontend/plataforma_frontend/*.txt
 backend/plataforma_backend/*.md
 backend/plataforma_backend/*.txt
+backend/plataforma_backend/*.sql
