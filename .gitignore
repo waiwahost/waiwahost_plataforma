@@ -5,3 +5,7 @@ dist/
 .next/
 coverage/
 ejemplo-formulario
+
+backup_con_inserts.sql
+fix_database.sql
+frontend/plataforma_frontend/*.md
