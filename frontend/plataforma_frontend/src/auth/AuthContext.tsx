@@ -10,7 +10,9 @@ export interface User {
   email: string;
   permisos?: string[];
   role?: string;
-  // Add other fields as needed
+  empresaId?: number | null;
+  propietarioId?: number | null;
+  inmuebles?: number[];
 }
 
 interface AuthContextProps {

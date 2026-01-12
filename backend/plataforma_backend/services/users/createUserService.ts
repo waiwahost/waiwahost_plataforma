@@ -1,5 +1,6 @@
 import { ROLES } from '../../constants/globalConstants';
 import { UserRepository } from '../../repositories/user.repository';
+import bcrypt from 'bcryptjs';
 
 const userRepository = new UserRepository();
 
@@ -16,7 +17,7 @@ export async function createUserService(loggedUserId: number, newUserData: any) 
   }
 
   // 2. Validar campos obligatorios
-  const requiredFields = ['cedula', 'email', 'nombre', 'apellido', 'password_hash', 'id_roles'];
+  const requiredFields = ['cedula', 'email', 'nombre', 'apellido', 'password', 'id_roles'];
   for (const field of requiredFields) {
     if (!newUserData[field]) {
       return { error: { status: 400, message: `El campo ${field} es obligatorio` } };
@@ -26,16 +27,22 @@ export async function createUserService(loggedUserId: number, newUserData: any) 
   // 3. Username: si no viene, tomar parte antes del @ del correo
   let username = newUserData.username;
   if (!username || username.trim() === '') {
-    username = newUserData.correo.split('@')[0];
+    username = newUserData.email.split('@')[0];
   }
 
-  // 4. Reglas de negocio según el rol del autenticado
+  // 4. Hashear contraseña
+  const password_hash = await bcrypt.hash(newUserData.password, 10);
+  const userToCreate = { ...newUserData, username, password_hash };
+  // Eliminar plain password del objeto final
+  delete userToCreate.password;
+
+  // 5. Reglas de negocio según el rol del autenticado
   const rolNuevo = Number(newUserData.id_roles);
   const empresaNueva = Number(newUserData.id_empresa);
 
   if (loggedUser.id_roles === ROLES.SUPERADMIN) {
     // Puede crear cualquier usuario
-    return await userRepository.insert({ ...newUserData, username });
+    return await userRepository.insert(userToCreate);
   }
 
   if (loggedUser.id_roles === ROLES.EMPRESA) {
@@ -46,7 +53,7 @@ export async function createUserService(loggedUserId: number, newUserData: any) 
     if (empresaNueva !== loggedUser.id_empresa) {
       return { error: { status: 403, message: 'Solo puede crear usuarios en su empresa' } };
     }
-    return await userRepository.insert({ ...newUserData, username, id_empresa: loggedUser.id_empresa });
+    return await userRepository.insert({ ...userToCreate, id_empresa: loggedUser.id_empresa });
   }
 
   if (loggedUser.id_roles === ROLES.ADMINISTRADOR) {
@@ -57,7 +64,7 @@ export async function createUserService(loggedUserId: number, newUserData: any) 
     if (empresaNueva !== loggedUser.id_empresa) {
       return { error: { status: 403, message: 'Solo puede crear usuarios en su empresa' } };
     }
-    return await userRepository.insert({ ...newUserData, username, id_empresa: loggedUser.id_empresa });
+    return await userRepository.insert({ ...userToCreate, id_empresa: loggedUser.id_empresa });
   }
 
   // Propietario no puede crear usuarios

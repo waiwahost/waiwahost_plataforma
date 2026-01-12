@@ -15,7 +15,7 @@ import { useAuth } from '../../auth/AuthContext';
 type FormUser = {
   nombre: string;
   email: string;
-  password_hash: string;
+  password: string;
   username: string;
   id_empresa: string;
   id_roles: string;
@@ -53,9 +53,9 @@ const Usuarios: React.FC = () => {
       nombre: string;
       apellido: string;
       email: string;
-      password_hash: string;
+      password: string;
       id_roles: number;
-      id_empresa?: string | null;
+      id_empresa?: string | number | null;
       username: string;
       estado?: string;
     }) => {

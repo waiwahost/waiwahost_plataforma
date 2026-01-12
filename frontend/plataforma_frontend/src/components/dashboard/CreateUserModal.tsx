@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 //import { companies } from '../../lib/companiesAndRoles';
-import CryptoJS from 'crypto-js';
 import { useAuth } from '../../auth/AuthContext';
 import { getEmpresasApi } from '../../auth/getEmpresasApi';
 
@@ -14,7 +13,7 @@ const roles = [
 interface CreateUserModalProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (user: { cedula: string; nombre: string; apellido: string; email: string; password_hash: string; id_roles: number; id_empresa: null; username: string }) => Promise<void>;
+  onCreate: (user: { cedula: string; nombre: string; apellido: string; email: string; password: string; id_roles: number; id_empresa: string | number | null; username: string }) => Promise<void>;
   initialData?: Partial<typeof initialForm>;
   isEdit?: boolean;
 }
@@ -64,15 +63,17 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onClose, onCrea
     setErrors(validation);
     if (Object.keys(validation).length > 0) return;
     setSubmitting(true);
-    const password_hash = CryptoJS.SHA256(form.password).toString();
+    //    const password_hash = CryptoJS.SHA256(form.password).toString();
     await onCreate({
       cedula: form.cedula,
       nombre: form.nombre,
       apellido: form.apellido,
       email: form.email,
-      password_hash,
+      password: form.password,
       id_roles: Number(form.id_roles),
-      id_empresa: null,
+      id_empresa: user?.role === 'superadmin'
+        ? (form.id_empresa ? Number(form.id_empresa) : null)
+        : (user?.empresaId ? Number(user.empresaId) : null),
       username: form.username,
     });
     setSubmitting(false);
@@ -88,28 +89,35 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onClose, onCrea
         <h3 className="text-lg font-bold mb-4">{isEdit ? 'Editar usuario' : 'Crear nuevo usuario'}</h3>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <input name="cedula" value={form.cedula} onChange={handleChange} placeholder="Cédula" className="w-full border rounded px-3 py-2" disabled={isEdit} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
+            <input name="cedula" value={form.cedula} onChange={handleChange} placeholder="Ingrese la cédula" className="w-full border rounded px-3 py-2" disabled={isEdit} />
           </div>
           <div>
-            <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Nombre" className="w-full border rounded px-3 py-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <input name="nombre" value={form.nombre} onChange={handleChange} placeholder="Ingrese el nombre" className="w-full border rounded px-3 py-2" />
             {errors.nombre && <div className="text-red-500 text-xs mt-1">{errors.nombre}</div>}
           </div>
           <div>
-            <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Apellido" className="w-full border rounded px-3 py-2" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+            <input name="apellido" value={form.apellido} onChange={handleChange} placeholder="Ingrese el apellido" className="w-full border rounded px-3 py-2" />
           </div>
           <div>
-            <input name="email" value={form.email} onChange={handleChange} placeholder="Correo electrónico" className="w-full border rounded px-3 py-2" type="email" disabled={isEdit} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+            <input name="email" value={form.email} onChange={handleChange} placeholder="ejemplo@correo.com" className="w-full border rounded px-3 py-2" type="email" disabled={isEdit} />
             {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
           </div>
           <div>
-            <input name="username" value={form.username} onChange={handleChange} placeholder="Username" className="w-full border rounded px-3 py-2" disabled={isEdit} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input name="username" value={form.username} onChange={handleChange} placeholder="Ingrese nombre de usuario" className="w-full border rounded px-3 py-2" disabled={isEdit} />
             {errors.username && <div className="text-red-500 text-xs mt-1">{errors.username}</div>}
           </div>
           <div>
-            <input name="password" value={form.password} onChange={handleChange} placeholder="Contraseña" className="w-full border rounded px-3 py-2" type="password" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+            <input name="password" value={form.password} onChange={handleChange} placeholder={isEdit ? "Dejar en blanco para no cambiar" : "Ingrese contraseña"} className="w-full border rounded px-3 py-2" type="password" />
             {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
             <select name="id_roles" value={form.id_roles} onChange={handleChange} className="w-full border rounded px-3 py-2" disabled={isEdit}>
               <option value="">Selecciona rol</option>
               {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -118,6 +126,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onClose, onCrea
           </div>
           {user?.role === 'superadmin' && (
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
               <select
                 name="id_empresa"
                 value={form.id_empresa}
