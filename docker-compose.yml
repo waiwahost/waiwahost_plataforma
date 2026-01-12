@@ -67,6 +67,8 @@ services:
       # - "443:443" # Descomentar cuando configures SSL
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
     depends_on:
       - backend
       - frontend
