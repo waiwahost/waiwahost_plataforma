@@ -120,7 +120,13 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ open, onClose, onCrea
             <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
             <select name="id_roles" value={form.id_roles} onChange={handleChange} className="w-full border rounded px-3 py-2" disabled={isEdit}>
               <option value="">Selecciona rol</option>
-              {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              {user?.role === 'superadmin' && (
+                <>
+                  <option value="2">Empresa</option>
+                </>
+              )}
+              <option value="3">Administrador</option>
+              <option value="4">Propietario</option>
             </select>
             {errors.id_roles && <div className="text-red-500 text-xs mt-1">{errors.id_roles}</div>}
           </div>
