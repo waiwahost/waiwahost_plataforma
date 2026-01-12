@@ -508,7 +508,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="text"
                               value={huesped.documento_numero}
                               onChange={(e) => handleHuespedChange(index, 'documento_numero', e.target.value)}
-                              disabled={isEdit && !!huesped.documento_numero} // Deshabilitar en edición si ya tiene valor
+                              //disabled={isEdit && !!huesped.documento_numero} // Deshabilitar en edición si ya tiene valor
                               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
                                 }`}
                               placeholder="Número de documento"
