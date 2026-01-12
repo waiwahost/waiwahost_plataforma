@@ -64,7 +64,7 @@ services:
     restart: always
     ports:
       - "80:80"
-      # - "443:443" # Descomentar cuando configures SSL
+      - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt:/etc/letsencrypt
