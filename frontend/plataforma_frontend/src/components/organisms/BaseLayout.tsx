@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
+
+import { PanelRightClose, PanelRightOpen } from "lucide-react"
+
 import Logo from '../atoms/Logo';
 import UserMenu from '../molecules/UserMenu';
 import ThemeSwitcher from '../atoms/ThemeSwitcher';
@@ -16,6 +19,7 @@ import Cashbox from '../dashboard/Cashbox';
 import Incomes from '../dashboard/Incomes';
 import Deductions from '../dashboard/Deductions';
 import Usuarios from '../dashboard/Usuarios';
+import { Button } from '../atoms/Button';
 
 const COMPONENTS: Record<string, React.ReactNode> = {
   main: <MainPanel />,
@@ -33,10 +37,17 @@ const COMPONENTS: Record<string, React.ReactNode> = {
 
 const BaseLayout: React.FC = () => {
   const [activeKey, setActiveKey] = useState('main');
+  const [open, setOpen] = useState(false);
+
+
+
+
   return (
     <div className="flex min-h-screen bg-white text-foreground max-w-full overflow-hidden">
       {/* Sidebar a la izquierda, ocupa toda la altura */}
-      <aside className="w-64 flex-shrink-0 border-r border-gray-200 bg-gradient-to-br from-tourism-navy via-tourism-teal to-tourism-sage shadow-md flex flex-col rounded-tr-2xl rounded-br-2xl">
+      <aside className={`${open ? "translate-x-0 w-64" : "-translate-x-full w-0"} 
+    transition-all duration-300 ease-in-out md:relative flex-shrink-0 border-r border-gray-200 bg-gradient-to-br 
+    from-tourism-navy via-tourism-teal to-tourism-sage shadow-md flex flex-col rounded-tr-2xl rounded-br-2xl overflow-hidden`}>
         <div className="border-b border-gray-200 bg-white px-3 py-4 flex items-center space-x-3">
           <div className="bg-tourism-gold p-2 rounded-lg">
             <Logo />
@@ -45,6 +56,7 @@ const BaseLayout: React.FC = () => {
             <h1 className="font-bold text-lg text-tourism-navy">Waiwahost</h1>
             <p className="text-xs text-gray-500">Gestión Inmobiliaria</p>
           </div>
+          
         </div>
         <div className="flex-1 bg-white">
           <SidebarMenu activeKey={activeKey} onSelect={setActiveKey} />
@@ -60,6 +72,20 @@ const BaseLayout: React.FC = () => {
         <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setOpen(!open)}
+                className="!p-0 !bg-transparent !hover:bg-transparent !border-0 !shadow-none flex items-center justify-center"
+              >
+                {open ? (
+                  <PanelRightOpen size={20} color="#575757ff" />
+                ) : (
+                  <PanelRightClose size={20} color="#575757ff" />
+                )}
+              </button>
+
+
+
+
               {/* Puedes poner aquí un título de página si lo deseas */}
             </div>
             <div className="flex items-center space-x-3">
