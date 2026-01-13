@@ -19,7 +19,6 @@ import Cashbox from '../dashboard/Cashbox';
 import Incomes from '../dashboard/Incomes';
 import Deductions from '../dashboard/Deductions';
 import Usuarios from '../dashboard/Usuarios';
-import { Button } from '../atoms/Button';
 
 const COMPONENTS: Record<string, React.ReactNode> = {
   main: <MainPanel />,
@@ -74,7 +73,7 @@ const BaseLayout: React.FC = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setOpen(!open)}
-                className="!p-0 !bg-transparent !hover:bg-transparent !border-0 !shadow-none flex items-center justify-center"
+                className={`!p-0  !hover:bg-transparent !border-0 !shadow-none flex items-center justify-center ${open ? "!pr-9 !md:p-0" : "!p-0"}`}
               >
                 {open ? (
                   <PanelRightOpen size={20} color="#575757ff" />

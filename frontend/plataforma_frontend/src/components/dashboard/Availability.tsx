@@ -168,48 +168,86 @@ const Availability: React.FC = () => {
         <span className="text-sm">Disponible</span>
       </div>
       {/* Tabla tipo calendario */}
-      <div className="overflow-x-auto">
+      {/* ===================== DESKTOP ===================== */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className="px-2 py-1 border-b border-r border-gray-200 text-left bg-gray-50 sticky left-0 z-10">Inmueble</th>
+              <th className="px-2 py-1 border-b border-r bg-gray-50 sticky left-0">
+                Inmueble
+              </th>
               {fechas.map(date => (
-                <th key={date.toISOString()} className="px-2 py-1 border-b border-r border-gray-200 text-xs bg-gray-50">
+                <th
+                  key={date.toISOString()}
+                  className="px-2 py-1 border-b border-r bg-gray-50 text-xs"
+                >
                   {format(date, "dd MMM", { locale: es })}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center py-8">Cargando disponibilidad...</td></tr>
-            ) : error ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center text-red-500 py-8">{error}</td></tr>
-            ) : inmueblesFiltrados.length === 0 ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center py-8">No hay inmuebles para mostrar.</td></tr>
-            ) : (
-              inmueblesFiltrados.map(inmueble => (
-                <tr key={inmueble.id}>
-                  <td className="px-2 py-2.5 border-b border-r border-gray-200 font-medium whitespace-nowrap bg-white sticky left-0 z-10">{inmueble.nombre}</td>
-                  {fechas.map(date => {
-                    const ocupado = isOcupado(reservas, inmueble.id, date);
-                    if ((estado === "ocupado" || estado === "pendiente") && !ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
-                    if (estado === "disponible" && ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
-                    return (
-                      <td
-                        key={date.toISOString()}
-                        className={`border-b border-r border-gray-200 text-center transition-colors duration-200 ${ocupado ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"}`}
-                        title={ocupado ? "Ocupado" : "Disponible"}
-                      >
-                        {ocupado ? "●" : ""}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            )}
+            {inmueblesFiltrados.map(inmueble => (
+              <tr key={inmueble.id}>
+                <td className="px-2 py-2 border-b border-r sticky left-0 bg-white font-medium">
+                  {inmueble.nombre}
+                </td>
+                {fechas.map(date => {
+                  const ocupado = isOcupado(reservas, inmueble.id, date);
+                  return (
+                    <td
+                      key={date.toISOString()}
+                      className={`border-b border-r text-center ${
+                        ocupado
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {ocupado ? "●" : ""}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ===================== MOBILE ===================== */}
+      <div className="md:hidden space-y-5 mt-4">
+        {inmueblesFiltrados.map(inmueble => (
+          <div
+            key={inmueble.id}
+            className="border rounded-lg p-3 shadow-sm"
+          >
+            <h3 className="font-semibold mb-3">
+              {inmueble.nombre}
+            </h3>
+
+            <div className="grid grid-cols-4 gap-2">
+              {fechas.map(date => {
+                const ocupado = isOcupado(reservas, inmueble.id, date);
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className={`p-2 rounded text-center text-xs ${
+                      ocupado
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    <div className="font-medium">
+                      {format(date, "dd", { locale: es })}
+                    </div>
+                    <div className="uppercase">
+                      {format(date, "MMM", { locale: es })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
