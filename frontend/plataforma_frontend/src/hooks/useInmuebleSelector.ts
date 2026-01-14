@@ -1,52 +1,32 @@
-
 import { useEffect, useState } from 'react';
+import {
+  getInmueblesSelectorApi,
+  InmuebleSelector,
+} from '../auth/getInmueblesSelectorApi';
 
-export interface InmuebleOption {
-  id: number;
-  nombre: string;
-}
-
-export function useInmueblesSelector() {
-  const [inmuebles, setInmuebles] = useState<InmuebleOption[]>([]);
+export function useInmuebleSelector() {
+  const [inmuebles, setInmuebles] = useState<InmuebleSelector[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const backendUrl = process.env.API_URL || 'http://localhost:3001';
-  const url = `${backendUrl}/inmuebles/selector`;
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchInmuebles = async () => {
+    const loadInmuebles = async () => {
       setLoading(true);
+      setError(null);
+
       try {
-        const token = localStorage.getItem('token');
-
-        const res = await fetch(url, {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const json = await res.json();
-
-        console.log('INMUEBLES RESPONSE', json);
-
-        if (!json.isError && Array.isArray(json.data)) {
-          setInmuebles(
-            json.data.map((i: any) => ({
-              id: Number(i.id),
-              nombre: i.nombre,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Error cargando inmuebles selector:', error);
+        const data = await getInmueblesSelectorApi();
+        setInmuebles(data);
+      } catch (err) {
+        console.error('Error cargando inmuebles selector:', err);
+        setError('No se pudieron cargar los inmuebles');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInmuebles();
-  }, [url]);
+    loadInmuebles();
+  }, []);
 
-  return { inmuebles, loading };
+  return { inmuebles, loading, error };
 }

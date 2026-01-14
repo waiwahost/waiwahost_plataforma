@@ -12,7 +12,7 @@ import ConfirmModal from './ConfirmModal';
 import MonthSelector from './MonthSelector'
 import InmuebleSelector from './InmuebleSelector';
 
-import { useInmueblesSelector } from '../../hooks/useInmuebleSelector';
+import { useInmuebleSelector } from '../../hooks/useInmuebleSelector';
 import { useAuth } from '../../auth/AuthContext';
 import { IReservaForm, IReservaTableData, IHuesped } from '../../interfaces/Reserva';
 import { Inmueble } from '../../interfaces/Inmueble';
@@ -57,7 +57,8 @@ const Bookings: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
 
   // Inmuebles
-  const { inmuebles } = useInmueblesSelector();
+  const { inmuebles } = useInmuebleSelector();
+  console.log(inmuebles);
   const [selectedInmueble, setSelectedInmueble] = useState<number>(-1);  
 
 
