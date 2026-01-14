@@ -39,6 +39,15 @@ const BaseLayout: React.FC = () => {
   const [open, setOpen] = useState(false);
 
 
+  // Cerrar SIdebar Automaticamente en celular
+  const handleMenuSelect = (key: string) => {
+    setActiveKey(key);
+    if (window.innerWidth < 768) {
+      setOpen(false);
+    }
+  };
+
+
 
 
   return (
@@ -58,7 +67,7 @@ const BaseLayout: React.FC = () => {
           
         </div>
         <div className="flex-1 bg-white">
-          <SidebarMenu activeKey={activeKey} onSelect={setActiveKey} />
+          <SidebarMenu activeKey={activeKey} onSelect={handleMenuSelect} />
         </div>
         <div className="border-t border-gray-200 bg-white p-4 text-center">
           <p className="text-xs text-gray-500">© 2025 Waiwahost</p>
