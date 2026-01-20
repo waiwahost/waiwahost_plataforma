@@ -384,6 +384,9 @@ const PagosModal: React.FC<PagosModalProps> = ({
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha de Creacion
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fecha
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -408,6 +411,9 @@ const PagosModal: React.FC<PagosModalProps> = ({
                       <tr key={pago.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatDate(pago.fecha_creacion)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatDate(pago.fecha_pago)}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                           {formatCurrency(pago.monto)}
