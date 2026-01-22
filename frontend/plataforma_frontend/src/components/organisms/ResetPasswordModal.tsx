@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InputField } from '../molecules/InputField';
 import { Button } from '../atoms/Button';
+import { PasswordInput } from '../atoms/PasswordInput';
 import { resetPassword } from '../../auth/passwordApi';
 import { PasswordCriteria } from './PasswordCriteria';
 
@@ -52,7 +53,13 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, on
         <h3 className="text-lg font-bold mb-4 text-center">Restablecer contraseña</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <InputField label="Correo electrónico" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-          <InputField label="Nueva contraseña" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
+          <PasswordInput
+            label="Nueva contraseña"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            required
+            className="px-4"
+          />
           <PasswordCriteria password={newPassword} criteria={passwordCriteria} />
           {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           <div className="flex gap-2 mt-2">
