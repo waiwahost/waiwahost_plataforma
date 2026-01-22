@@ -9,6 +9,7 @@ const registerPagoAsMovimiento = async (pago: IPago): Promise<void> => {
   try {
     const movimientoData = {
       id_reserva: pago.id_reserva,
+      fecha_pago: pago.fecha_pago,
       codigo_reserva: pago.codigo_reserva,
       monto: pago.monto,
       metodo_pago: pago.metodo_pago,
