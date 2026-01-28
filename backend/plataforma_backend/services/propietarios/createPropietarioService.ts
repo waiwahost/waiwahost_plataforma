@@ -18,35 +18,35 @@ export async function createPropietarioService(loggedUserId: number, propietario
         // 1. Verificar usuario autenticado
         const { data: loggedUser } = await userRepository.findById(loggedUserId);
         if (!loggedUser) {
-            return { 
-                data: null, 
-                error: { 
-                    status: 401, 
-                    message: 'No autenticado' 
-                } 
+            return {
+                data: null,
+                error: {
+                    status: 401,
+                    message: 'No autenticado'
+                }
             };
         }
 
         // 2. Validar permisos según rol del usuario autenticado
         if (![ROLES.SUPERADMIN, ROLES.EMPRESA, ROLES.ADMINISTRADOR].includes(loggedUser.id_roles)) {
-            return { 
-                data: null, 
-                error: { 
-                    status: 403, 
-                    message: 'No tiene permisos para crear propietarios' 
-                } 
+            return {
+                data: null,
+                error: {
+                    status: 403,
+                    message: 'No tiene permisos para crear propietarios'
+                }
             };
         }
 
         // 3. Validar que el usuario empresa/administrador solo cree en su empresa
         if (loggedUser.id_roles === ROLES.EMPRESA || loggedUser.id_roles === ROLES.ADMINISTRADOR) {
             if (propietarioData.id_empresa !== loggedUser.id_empresa) {
-                return { 
-                    data: null, 
-                    error: { 
-                        status: 403, 
-                        message: 'Solo puede crear propietarios en su empresa' 
-                    } 
+                return {
+                    data: null,
+                    error: {
+                        status: 403,
+                        message: 'Solo puede crear propietarios en su empresa'
+                    }
                 };
             }
         }
@@ -61,13 +61,21 @@ export async function createPropietarioService(loggedUserId: number, propietario
         // 6. Convertir estado de string a boolean
         const estado_activo = propietarioData.estado === 'activo';
 
+        // TRUNCATE VALUES TO MATCH DB SCHEMA (VARCHAR(20))
+        // TODO: Migrar la base de datos para aumentar estos límites
+        const limitStr = (str: string, len: number) => str ? str.substring(0, len) : str;
+
+        const safeUsername = limitStr(username, 20);
+        const safeApellido = limitStr(propietarioData.apellido, 20);
+        const safeCedula = limitStr(propietarioData.cedula, 20);
+
         // 7. Crear el usuario
         const { data: usuarioCreado, error: errorUsuario } = await propietarioRepository.createUsuario({
-            nombre: propietarioData.nombre,
-            apellido: propietarioData.apellido,
+            nombre: propietarioData.nombre, // Nombre es varchar sin limite (según schema dump)
+            apellido: safeApellido,
             email: propietarioData.email,
-            cedula: propietarioData.cedula,
-            username,
+            cedula: safeCedula,
+            username: safeUsername,
             password_hash,
             id_roles: ROLES.PROPIETARIO,
             id_empresa: propietarioData.id_empresa,
@@ -75,13 +83,13 @@ export async function createPropietarioService(loggedUserId: number, propietario
         });
 
         if (errorUsuario) {
-            return { 
-                data: null, 
-                error: { 
-                    status: 400, 
-                    message: 'Error al crear usuario', 
-                    details: errorUsuario 
-                } 
+            return {
+                data: null,
+                error: {
+                    status: 400,
+                    message: 'Error al crear usuario',
+                    details: errorUsuario
+                }
             };
         }
 
@@ -94,13 +102,13 @@ export async function createPropietarioService(loggedUserId: number, propietario
 
         if (errorPropietario) {
             // TODO: Aquí deberíamos hacer rollback del usuario creado
-            return { 
-                data: null, 
-                error: { 
-                    status: 400, 
-                    message: 'Error al crear propietario', 
-                    details: errorPropietario 
-                } 
+            return {
+                data: null,
+                error: {
+                    status: 400,
+                    message: 'Error al crear propietario',
+                    details: errorPropietario
+                }
             };
         }
 
@@ -108,30 +116,30 @@ export async function createPropietarioService(loggedUserId: number, propietario
         const { data: propietarioCompleto, error: errorGet } = await propietarioRepository.getPropietarioById(propietarioCreado.id_propietario);
 
         if (errorGet) {
-            return { 
-                data: null, 
-                error: { 
-                    status: 500, 
-                    message: 'Error al obtener propietario creado', 
-                    details: errorGet 
-                } 
+            return {
+                data: null,
+                error: {
+                    status: 500,
+                    message: 'Error al obtener propietario creado',
+                    details: errorGet
+                }
             };
         }
 
-        return { 
-            data: propietarioCompleto, 
-            error: null 
+        return {
+            data: propietarioCompleto,
+            error: null
         };
 
     } catch (error) {
         console.error('Error en createPropietarioService:', error);
-        return { 
-            data: null, 
-            error: { 
-                status: 500, 
-                message: 'Error interno del servidor', 
-                details: error 
-            } 
+        return {
+            data: null,
+            error: {
+                status: 500,
+                message: 'Error interno del servidor',
+                details: error
+            }
         };
     }
 }

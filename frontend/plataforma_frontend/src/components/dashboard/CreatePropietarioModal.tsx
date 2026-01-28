@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { IPropietarioForm } from '../../interfaces/Propietario';
+import PhoneInput from '../atoms/PhoneInput';
 
 interface CreatePropietarioModalProps {
   open: boolean;
@@ -126,9 +127,8 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => handleInputChange('nombre', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                  errors.nombre ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.nombre ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Nombre del propietario"
               />
               {errors.nombre && (
@@ -144,9 +144,8 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
                 type="text"
                 value={formData.apellido}
                 onChange={(e) => handleInputChange('apellido', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                  errors.apellido ? 'border-red-300' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.apellido ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 placeholder="Apellido del propietario"
               />
               {errors.apellido && (
@@ -165,9 +164,8 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
               value={formData.cedula}
               onChange={(e) => handleInputChange('cedula', e.target.value)}
               disabled={isEdit}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                errors.cedula ? 'border-red-300' : 'border-gray-300'
-              } ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.cedula ? 'border-red-300' : 'border-gray-300'
+                } ${isEdit ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
               placeholder="Número de cédula"
             />
             {errors.cedula && (
@@ -183,9 +181,8 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                errors.email ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.email ? 'border-red-300' : 'border-gray-300'
+                }`}
               placeholder="correo@ejemplo.com"
             />
             {errors.email && (
@@ -194,21 +191,13 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Teléfono *
-            </label>
-            <input
-              type="tel"
+            <PhoneInput
+              label="Teléfono *"
               value={formData.telefono}
-              onChange={(e) => handleInputChange('telefono', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                errors.telefono ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="+57 300 123 4567"
+              onChange={(value) => handleInputChange('telefono', value)}
+              error={errors.telefono}
+              placeholder="300 123 4567"
             />
-            {errors.telefono && (
-              <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>
-            )}
           </div>
 
           <div>
@@ -218,9 +207,8 @@ const CreatePropietarioModal: React.FC<CreatePropietarioModalProps> = ({
             <textarea
               value={formData.direccion}
               onChange={(e) => handleInputChange('direccion', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
-                errors.direccion ? 'border-red-300' : 'border-gray-300'
-              }`}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.direccion ? 'border-red-300' : 'border-gray-300'
+                }`}
               placeholder="Dirección completa"
               rows={3}
             />

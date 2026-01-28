@@ -131,6 +131,7 @@ const PagosModal: React.FC<PagosModalProps> = ({
       
       // Resetear formulario
       setFormData({
+        fecha_pago: '',
         monto: 0,
         metodo_pago: 'efectivo',
         concepto: 'Pago de reserva',
@@ -290,6 +291,21 @@ const PagosModal: React.FC<PagosModalProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha *
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_pago || ''}
+                  onChange={(e) => handleInputChange('fecha_pago', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${
+                    errors.fecha_pago ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                />
+                {errors.fecha_pago && <p className="text-red-500 text-xs mt-1">{errors.fecha_pago}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Método de Pago *
                 </label>
                 <select
@@ -384,6 +400,9 @@ const PagosModal: React.FC<PagosModalProps> = ({
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha de Creacion
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fecha
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -408,6 +427,9 @@ const PagosModal: React.FC<PagosModalProps> = ({
                       <tr key={pago.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatDate(pago.fecha_creacion)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatDate(pago.fecha_pago)}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                           {formatCurrency(pago.monto)}

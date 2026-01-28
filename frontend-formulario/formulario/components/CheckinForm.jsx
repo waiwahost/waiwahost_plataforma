@@ -6,6 +6,7 @@ import {
     User, Mail, Phone, Calendar, Users, FileText, Check, ShieldCheck,
     CreditCard, ChevronDown, ChevronUp, CheckCircle, AlertCircle, X, Building
 } from 'lucide-react';
+import PhoneInput from './PhoneInput';
 
 const CheckinFormContent = () => {
     const searchParams = useSearchParams();
@@ -509,13 +510,13 @@ const CheckinFormContent = () => {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label>
-                                                        <input
-                                                            type="tel"
+                                                        <PhoneInput
+                                                            label="Teléfono *"
                                                             value={huesped.telefono}
-                                                            onChange={(e) => handleHuespedChange(index, 'telefono', e.target.value)}
-                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                                            placeholder="+57 300 123 4567"
+                                                            onChange={(value) => handleHuespedChange(index, 'telefono', value)}
+                                                            placeholder="300 123 4567"
+                                                            error={errors.huespedes && !huesped.telefono.trim() ? "Requerido" : ""}
+                                                            required
                                                         />
                                                     </div>
                                                     <div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { getEmpresasApi } from '../../auth/getEmpresasApi';
+import PhoneInput from '../atoms/PhoneInput';
 
 interface CreateHuespedModalProps {
   open: boolean;
@@ -58,33 +59,33 @@ const CreateHuespedModal: React.FC<CreateHuespedModalProps> = ({
 
   const validate = () => {
     const newErrors: { [k: string]: string } = {};
-    
+
     if (!form.nombre.trim()) {
       newErrors.nombre = 'El nombre es obligatorio';
     }
-    
+
     if (!form.apellido.trim()) {
       newErrors.apellido = 'El apellido es obligatorio';
     }
-    
+
     if (!form.documento_numero.trim()) {
       newErrors.documento_numero = 'El número de documento es obligatorio';
     }
-    
+
     if (!form.email.trim()) {
       newErrors.email = 'El correo es obligatorio';
     } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) {
       newErrors.email = 'Correo inválido';
     }
-    
+
     if (!form.telefono.trim()) {
       newErrors.telefono = 'El teléfono es obligatorio';
     }
-    
+
     if (form.fecha_nacimiento && !/^\d{4}-\d{2}-\d{2}$/.test(form.fecha_nacimiento)) {
       newErrors.fecha_nacimiento = 'Formato de fecha inválido (YYYY-MM-DD)';
     }
-    
+
     return newErrors;
   };
 
@@ -95,14 +96,14 @@ const CreateHuespedModal: React.FC<CreateHuespedModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validation = validate();
     setErrors(validation);
-    
+
     if (Object.keys(validation).length > 0) return;
-    
+
     setSubmitting(true);
-    
+
     try {
       await onCreate({
         nombre: form.nombre,
@@ -125,17 +126,17 @@ const CreateHuespedModal: React.FC<CreateHuespedModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
-        <button 
-          className="absolute top-2 right-3 text-gray-500 text-xl hover:text-gray-700" 
+        <button
+          className="absolute top-2 right-3 text-gray-500 text-xl hover:text-gray-700"
           onClick={onClose}
         >
           &times;
         </button>
-        
+
         <h3 className="text-lg font-bold mb-4">
           {isEdit ? 'Editar huésped' : 'Crear nuevo huésped'}
         </h3>
-        
+
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <input
@@ -192,16 +193,12 @@ const CreateHuespedModal: React.FC<CreateHuespedModalProps> = ({
           </div>
 
           <div>
-            <input
-              name="telefono"
+            <PhoneInput
+              label="Teléfono *"
               value={form.telefono}
-              onChange={handleChange}
-              placeholder="Teléfono *"
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+              onChange={(value) => setForm({ ...form, telefono: value })}
+              error={errors.telefono}
             />
-            {errors.telefono && (
-              <div className="text-red-500 text-xs mt-1">{errors.telefono}</div>
-            )}
           </div>
 
           <div>
@@ -259,14 +256,14 @@ const CreateHuespedModal: React.FC<CreateHuespedModalProps> = ({
               className="px-4 py-2 bg-tourism-teal text-white rounded hover:bg-tourism-navy transition-colors"
               disabled={submitting}
             >
-              {submitting 
-                ? (isEdit ? 'Editando...' : 'Creando...') 
+              {submitting
+                ? (isEdit ? 'Editando...' : 'Creando...')
                 : (isEdit ? 'Editar' : 'Crear')
               }
             </button>
           </div>
         </form>
-        
+
         <div className="text-xs text-gray-500 mt-2">
           * Campos obligatorios
         </div>
