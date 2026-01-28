@@ -73,9 +73,29 @@ export const extractTokenFromRequest = (req: any): string | undefined => {
  * Función para obtener empresa_id del token (simplificada)
  * En una implementación real, decodificarías el JWT
  */
+import { jwtDecode } from 'jwt-decode';
+
+/**
+ * Función para obtener empresa_id del token
+ * Decodifica el JWT y busca el empresaId en el payload
+ */
 export const getEmpresaIdFromToken = (token?: string): string => {
-  // Por ahora retornamos un valor por defecto
-  // En producción, decodificar el JWT y extraer empresa_id
-  const empresaId = '1';
-  return empresaId;
+  if (!token) return '';
+
+  try {
+    const decoded: any = jwtDecode(token);
+
+    // Buscar empresaId en diferentes ubicaciones posibles del payload
+    // Ajustar según la estructura real de tu token
+    if (decoded.empresaId) return String(decoded.empresaId);
+    if (decoded.userContext?.empresaId) return String(decoded.userContext.empresaId);
+    if (decoded.user?.empresaId) return String(decoded.user.empresaId);
+    if (decoded.id_empresa) return String(decoded.id_empresa);
+
+    console.warn('⚠️ No se encontró empresaId en el token:', decoded);
+    return ''; // Retornar vacío si no se encuentra
+  } catch (error) {
+    console.error('❌ Error al decodificar token:', error);
+    return '';
+  }
 };
