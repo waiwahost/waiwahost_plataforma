@@ -4,7 +4,7 @@ import { PlataformaOrigen } from '../constants/plataformas';
 export interface IMovimiento {
   id: string;
   fecha: string;
-  tipo: 'ingreso' | 'egreso';
+  tipo: 'ingreso' | 'egreso' | 'deducible';
   concepto: string;
   descripcion: string;
   monto: number;
@@ -22,7 +22,7 @@ export interface IMovimiento {
 
 // Para formularios de creación/edición
 export interface IMovimientoForm {
-  tipo: 'ingreso' | 'egreso';
+  tipo: 'ingreso' | 'egreso' | 'deducible';
   concepto: string;
   descripcion: string;
   monto: number;
@@ -47,6 +47,7 @@ export interface IResumenDiario {
   fecha: string;
   total_ingresos: number;
   total_egresos: number;
+  total_deducibles: number;
   balance: number;
   cantidad_movimientos: number;
 }
@@ -68,4 +69,14 @@ export type ConceptoEgreso =
   | 'comision'
   | 'devolucion'
   | 'impuestos'
+  | 'otro';
+
+export type ConceptoDeducible = 
+  | 'mantenimiento'
+  | 'limpieza'
+  | 'servicios_publicos'
+  | 'suministros'
+  | 'comision'
+  | 'impuestos'
+  | 'multa'
   | 'otro';
