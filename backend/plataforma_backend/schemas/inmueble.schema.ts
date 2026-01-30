@@ -22,7 +22,36 @@ export const CreateInmuebleSchema = z.object({
   nro_habitaciones: z.number().optional(),
   nro_bahnos: z.number().optional(),
   cocina: z.boolean().optional(),
-}).strict();
+  rnt: z.string().min(1, 'El RNT del inmueble es requerido'),
+  tra_token: z.string().min(1, 'El token del inmueble es requerido'),
+  tipo_acomodacion: z.enum([
+    'Apartamento',
+    'Casa',
+    'Habitación',
+    'Suite',
+    'Cama',
+    'Finca',
+    'Camping',
+    'Otro'
+  ], {
+    required_error: 'La acomodación es requerida'
+  }),
+  especificacion_acomodacion: z.string().optional()
+}).strict().superRefine((data, ctx) => { 
+  // Validar Especificacion de Inmueble, si no es un Apartamento
+  const tieneEdificioYApto = data.edificio && data.apartamento;
+  const tieneEspecificacion = data.especificacion_acomodacion;
+
+  if (!tieneEdificioYApto && !tieneEspecificacion) {
+    ctx.addIssue({
+      path: ['especificacion_acomodacion'],
+      message: 'Debe indicar edificio y apartamento, o una especificación de acomodación',
+      code: z.ZodIssueCode.custom
+    });
+  }
+});
+
+
 
 export const EditInmuebleSchema = z.object({
   nombre: z.string().min(1, 'El nombre es requerido').optional(),
