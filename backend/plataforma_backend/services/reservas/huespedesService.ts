@@ -24,6 +24,24 @@ export class HuespedesService {
   }
 
   /**
+   * Valida que los campos de TRA para huesped Principal
+   */
+  private validateDatosTRA(huespedes: CreateHuespedData[]): void {
+  const principal = huespedes.find(h => h.es_principal);
+
+  if (!principal) {
+    throw new Error('Debe existir un huésped principal');
+  }
+
+  if (!principal.ciudad_residencia || !principal.ciudad_procedencia || !principal.motivo) {
+    throw new Error(
+      'El huésped principal debe tener ciudad de residencia, ciudad de procedencia y motivo'
+    );
+  }
+}
+
+
+  /**
    * Valida que no haya documentos duplicados en el array
    */
   private validateDocumentosDuplicados(huespedes: CreateHuespedData[]): void {
@@ -67,7 +85,8 @@ export class HuespedesService {
   private validateHuespedes(numeroHuespedes: number, huespedes: CreateHuespedData[]): void {
     // Validaciones básicas
     this.validateNumeroHuespedes(numeroHuespedes, huespedes);
-    //this.validateHuespedPrincipal(huespedes);
+    this.validateHuespedPrincipal(huespedes);
+    this.validateDatosTRA(huespedes)
     //this.validateDocumentosDuplicados(huespedes);
     // Ya no validamos estricto documento duplicado si no hay documento
     // this.validateDocumentosDuplicados(huespedes); 
@@ -90,6 +109,9 @@ export class HuespedesService {
   async processHuespedes(numeroHuespedes: number, huespedesData: CreateHuespedData[]): Promise<Array<{
     id: number;
     esPrincipal: boolean;
+    ciudadResidencia: string;
+    ciudadProcedencia: string;
+    motivo: string;
     existia: boolean;
   }>> {
     try {
@@ -118,6 +140,13 @@ export class HuespedesService {
         existia: boolean;
       }> = [];
 
+      const principal = huespedesData.find(h => h.es_principal);
+
+      if (!principal) {
+        throw new Error('Debe existir un huésped principal');
+      }
+
+
       for (const huespedData of huespedesData) {
         let existeHuesped = null;
 
@@ -134,6 +163,9 @@ export class HuespedesService {
           resultados.push({
             id: existeHuesped.id,
             esPrincipal: huespedData.es_principal,
+            ciudadResidencia: principal.ciudad_residencia!,
+            ciudadProcedencia: principal.ciudad_procedencia!,
+            motivo: principal.motivo!,
             existia: true
           });
         } else {
@@ -152,8 +184,12 @@ export class HuespedesService {
           resultados.push({
             id: nuevoHuesped.id,
             esPrincipal: huespedData.es_principal,
+            ciudadResidencia: principal.ciudad_residencia!,
+            ciudadProcedencia: principal.ciudad_procedencia!,
+            motivo: principal.motivo!,
             existia: false
           });
+
         }
       }
 
@@ -228,12 +264,23 @@ export class HuespedesService {
   async linkHuespedesConReserva(idReserva: number, huespedesIds: Array<{
     id: number;
     esPrincipal: boolean;
+    ciudadResidencia: string;
+    ciudadProcedencia: string;
+    motivo: string;
+    
   }>): Promise<void> {
     try {
+      const principal = huespedesIds.find(h => h.esPrincipal)!;
+
       const relaciones = huespedesIds.map(huesped => ({
         idReserva,
         idHuesped: huesped.id,
-        esPrincipal: huesped.esPrincipal
+        esPrincipal: huesped.esPrincipal,
+      
+        ciudad_residencia: principal.ciudadResidencia,
+        ciudad_procedencia: principal.ciudadProcedencia,
+        motivo: principal.motivo
+
       }));
 
       await this.reservasRepository.linkMultipleHuespedesReserva(relaciones);

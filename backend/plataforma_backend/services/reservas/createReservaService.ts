@@ -135,7 +135,10 @@ export class CreateReservaService {
         nuevaReserva.id,
         huespedesProcessados.map(h => ({
           id: h.id,
-          esPrincipal: h.esPrincipal
+          esPrincipal: h.esPrincipal,
+          ciudadResidencia: h.ciudadResidencia,
+          ciudadProcedencia: h.ciudadProcedencia,
+          motivo: h.motivo
         }))
       );
 

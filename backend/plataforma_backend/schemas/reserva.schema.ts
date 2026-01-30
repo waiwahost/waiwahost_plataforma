@@ -50,7 +50,13 @@ export const getReservasSchema: FastifySchema = {
                     documento_numero: { type: 'string' },
                     fecha_nacimiento: { type: 'string' },
                     es_principal: { type: 'boolean' },
-                    id_reserva: { type: 'number' }
+                    id_reserva: { type: 'number' },
+                    ciudad_residencia: { type: 'string' },
+                    ciudad_procedencia: { type: 'string' },
+                    motivo: {
+                      type: 'string',
+                      enum: ['Negocios', 'Vacaciones', 'Visitas', 'Educacion', 'Salud', 'Religion', 'Compras', 'Transito', 'Otros']
+                    }
                   }
                 }
               },
@@ -140,7 +146,13 @@ export const createReservaSchema: FastifySchema = {
                   documento_numero: { type: 'string', minLength: 1 },
                   fecha_nacimiento: { type: ['string', 'null'] },
                   es_principal: { type: 'boolean' },
-                  id_reserva: { type: 'number' }
+                  id_reserva: { type: 'number' },
+                  ciudad_residencia: { type: ['string', 'null'] },
+                  ciudad_procedencia: { type: ['string', 'null'] },
+                  motivo: {
+                    type: ['string', 'null'],
+                    enum: ['Negocios', 'Vacaciones', 'Visitas', 'Educacion', 'Salud', 'Religion', 'Compras', 'Transito', 'Otros']
+                  }
                 }
               }
             },
@@ -186,7 +198,13 @@ export const editReservaSchema: FastifySchema = {
             documento_tipo: { type: ['string', 'null'] },
             documento_numero: { type: ['string', 'null'] },
             fecha_nacimiento: { type: ['string', 'null'] },
-            es_principal: { type: 'boolean' }
+            es_principal: { type: 'boolean' },
+            ciudad_residencia: { type: ['string', 'null'] },
+            ciudad_procedencia: { type: ['string', 'null'] },
+            motivo: {
+              type: ['string', 'null'],
+              enum: ['Negocios', 'Vacaciones', 'Visitas', 'Educacion', 'Salud', 'Religion', 'Compras', 'Transito', 'Otros']
+            }
           }
         }
       },

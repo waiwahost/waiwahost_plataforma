@@ -71,6 +71,19 @@ export const EditInmuebleSchema = z.object({
   nro_habitaciones: z.number().optional(),
   nro_bahnos: z.number().optional(),
   cocina: z.boolean().optional(),
+  rnt: z.string().optional(),
+  tra_token: z.string().optional(),
+  tipo_acomodacion: z.enum([
+    'Apartamento',
+    'Casa',
+    'Habitación',
+    'Suite',
+    'Cama',
+    'Finca',
+    'Camping',
+    'Otro'
+  ]).optional(),
+  especificacion_acomodacion: z.string().optional()
 }).strict();
 
 export const EditInmuebleQuerySchema = z.object({

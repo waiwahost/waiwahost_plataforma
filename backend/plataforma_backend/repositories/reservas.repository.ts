@@ -127,7 +127,10 @@ export class ReservasRepository {
           h.documento_numero,
           h.fecha_nacimiento,
           hr.es_principal,
-          hr.id_reserva
+          hr.id_reserva,
+          hr.ciudad_residencia,
+          hr.ciudad_procedencia,
+          hr.motivo
         FROM huespedes h
         INNER JOIN huespedes_reservas hr ON h.id_huesped = hr.id_huesped
         WHERE hr.id_reserva IN (${placeholders})
@@ -388,23 +391,31 @@ export class ReservasRepository {
     idReserva: number;
     idHuesped: number;
     esPrincipal: boolean;
+    ciudad_residencia?: string | null;
+    ciudad_procedencia?: string | null;
+    motivo?: string | null;
   }>) {
     try {
       if (relaciones.length === 0) return;
 
-      const values = relaciones.map((rel, index) =>
-        `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+      const values = relaciones.map((_, index) =>
+        `($${index * 6 + 1}, $${index * 6 + 2}, $${index * 6 + 3},
+          $${index * 6 + 4}, $${index * 6 + 5}, $${index * 6 + 6})`
       ).join(', ');
 
+
       const query = `
-        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal)
+        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal, ciudad_residencia, ciudad_procedencia, motivo)
         VALUES ${values}
       `;
 
       const params = relaciones.flatMap(rel => [
         rel.idReserva,
         rel.idHuesped,
-        rel.esPrincipal
+        rel.esPrincipal,
+        rel.ciudad_residencia ?? null,
+        rel.ciudad_procedencia ?? null,
+        rel.motivo ?? null
       ]);
 
       await dbClient.query(query, params);
