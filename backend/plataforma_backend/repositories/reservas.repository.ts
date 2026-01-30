@@ -92,7 +92,10 @@ export class ReservasRepository {
           h.documento_numero,
           h.fecha_nacimiento,
           hr.es_principal,
-          hr.id_reserva
+          hr.id_reserva,
+          hr.ciudad_residencia,
+          hr.ciudad_procedencia,
+          hr.motivo
         FROM huespedes h
         INNER JOIN huespedes_reservas hr ON h.id_huesped = hr.id_huesped
         WHERE hr.id_reserva = $1
@@ -349,6 +352,9 @@ export class ReservasRepository {
     documento_tipo?: string | null;
     documento_numero?: string | null;
     fecha_nacimiento?: string | null;
+    ciudad_procedencia?: string | null;
+    ciudad_residencia?: string | null;
+    motivo?: string | null;
   }) {
     try {
       if (!id) return null;
@@ -370,6 +376,12 @@ export class ReservasRepository {
         setClauses.push(`documento_identidad = $${idx - 1}`); // Update legacy column too
       }
       if (huespedData.fecha_nacimiento !== undefined) { setClauses.push(`fecha_nacimiento = $${idx++}`); values.push(huespedData.fecha_nacimiento); }
+
+      if (huespedData.ciudad_procedencia !== undefined) { setClauses.push(`ciudad_procedencia = $${idx++}`); values.push(huespedData.ciudad_procedencia); }
+
+      if (huespedData.ciudad_residencia !== undefined) { setClauses.push(`ciudad_residencia = $${idx++}`); values.push(huespedData.ciudad_residencia); }
+
+      if (huespedData.motivo !== undefined) { setClauses.push(`motivo = $${idx++}`); values.push(huespedData.motivo); }
 
       if (setClauses.length === 0) return null;
 

@@ -22,7 +22,13 @@ export class GetReservaPublicService {
             documento_numero: baseData.documento_numero || 'Sin documento',
             fecha_nacimiento: baseData.fecha_nacimiento ? new Date(baseData.fecha_nacimiento).toISOString().split('T')[0] : '',
             es_principal: isPrincipal,
-            id_reserva: baseData.id_reserva
+            id_reserva: baseData.id_reserva,
+            ...(isPrincipal &&{
+                ciudad_procedencia: baseData.ciudad_procedencia,
+                ciudad_residencia: baseData.ciudad_residencia,
+                motivo: baseData.motivo
+            }
+            )
         };
     }
 
@@ -45,7 +51,11 @@ export class GetReservaPublicService {
             nombre: principal.nombre,
             apellido: principal.apellido,
             email: principal.email,
-            telefono: principal.telefono
+            telefono: principal.telefono,
+
+            ciudadResidencia: principal.ciudad_residencia,
+            ciudadProcedencia: principal.ciudad_procedencia,
+            motivo: principal.motivo
         };
     }
 

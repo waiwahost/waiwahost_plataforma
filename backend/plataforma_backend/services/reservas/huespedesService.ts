@@ -239,7 +239,10 @@ export class HuespedesService {
             telefono: huespedData.telefono || null,
             documento_tipo: huespedData.documento_tipo || null,
             documento_numero: huespedData.documento_numero || null, // Aunque no debería cambiar, se incluye
-            fecha_nacimiento: huespedData.fecha_nacimiento || null
+            fecha_nacimiento: huespedData.fecha_nacimiento || null,
+            ciudad_procedencia: huespedData.ciudad_procedencia || null,
+            ciudad_residencia: huespedData.ciudad_residencia || null,
+            motivo: huespedData.motivo || null
           });
         } else {
           // Crear nuevo y linkear

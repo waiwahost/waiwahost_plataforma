@@ -28,6 +28,9 @@ export interface HuespedPrincipal {
   apellido: string;
   email?: string;
   telefono?: string;
+  ciudadResidencia?: string,
+  ciudadProcedencia?: string,
+  motivo?: string
 }
 
 export interface Reserva {
