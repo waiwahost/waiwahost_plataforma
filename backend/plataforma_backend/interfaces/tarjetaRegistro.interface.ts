@@ -30,17 +30,18 @@ export type MotivoViaje =
 
 export interface PayloadTarjeta {
     tipo_identificacion: string;
-    numero_identificacion: string;
+    numero_identificacion: number;
     nombres: string;
     apellidos: string;
-    ciudad_residencia: string;
-    ciudad_procedencia: string;
+    numero_acompanantes: number;
+    cuidad_residencia: string;
+    cuidad_procedencia: string;
     motivo: MotivoViaje;
     numero_habitacion: string;
     tipo_acomodacion: TipoAcomodacion;
     nombre_establecimiento: string;
-    rnt_establecimiento: string;
-    costo: number;
+    rnt_establecimiento: number;
+    costo: number;  
     check_in: string;
     check_out: string;
 }
