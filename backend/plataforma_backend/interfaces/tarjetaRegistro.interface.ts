@@ -6,6 +6,28 @@ export type EstadoTarjeta =
   | 'reintento';
 
 
+export type TipoAcomodacion=
+  | 'Apartamento'
+  | 'Casa'
+  | 'Habitación'
+  | 'Suite'
+  | 'Cama'
+  | 'Finca'
+  | 'Camping'
+  | 'Otro';
+
+
+export type MotivoViaje = 
+ 'Negocios'
+  | 'Vacaciones'
+  | 'Visitas'
+  | 'Educacion'
+  | 'Salud'
+  | 'Religion'
+  | 'Compras'
+  | 'Transito'
+  | 'Otros';
+
 export interface PayloadTarjeta {
     tipo_identificacion: string;
     numero_identificacion: string;
@@ -13,9 +35,9 @@ export interface PayloadTarjeta {
     apellidos: string;
     ciudad_residencia: string;
     ciudad_procedencia: string;
-    motivo: string;
+    motivo: MotivoViaje;
     numero_habitacion: string;
-    tipo_acomodacion: string;
+    tipo_acomodacion: TipoAcomodacion;
     nombre_establecimiento: string;
     rnt_establecimiento: string;
     costo: number;
@@ -44,6 +66,13 @@ export interface TarjetaRegistro {
 
     created_at: string;
     updated_at: string;
+}
+
+export interface CreateTarjetaRegistro {
+    id_reserva: number;
+    id_huesped: number;
+    id_inmueble: number;
+    payload: PayloadTarjeta;
 }
 
 export interface TarjetaResponse {

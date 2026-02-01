@@ -1,5 +1,29 @@
 import { z } from "zod";
 
+const TipoAcomodacionSchema = z.enum([
+    'Apartamento',
+    'Casa',
+    'Habitación',
+    'Suite',
+    'Cama',
+    'Finca',
+    'Camping',
+    'Otro'
+]);
+
+const MotivoViajeSchema = z.enum([
+    'Negocios',
+    'Vacaciones',
+    'Visitas',
+    'Educacion',
+    'Salud',
+    'Religion',
+    'Compras',
+    'Transito',
+    'Otros'
+]);
+
+
 export const PayloadTarjetaAlojamientoSchema = z.object({
     tipo_identificacion: z.string().min(1, "Tipo de identificación es requerido"),
     numero_identificacion: z.string().min(1, "Número de identificación es requerido"),
@@ -7,12 +31,12 @@ export const PayloadTarjetaAlojamientoSchema = z.object({
     apellidos: z.string().min(1, "Apellidos es requerido"),
     ciudad_residencia: z.string().min(1, "Ciudad de residencia es requerida"),
     ciudad_procedencia: z.string().min(1, "Ciudad de procedencia es requerida"),
-    motivo: z.string().min(1, "Motivo es requerido"),
+    motivo: MotivoViajeSchema,
     numero_habitacion: z.string().min(1, "Número de habitación es requerido"),
-    tipo_acomodacion: z.string().min(1, "Tipo de acomodación es requerido"),
+    tipo_acomodacion: TipoAcomodacionSchema,
     nombre_establecimiento: z.string().min(1, "Nombre del establecimiento es requerido"),
     rnt_establecimiento: z.string().min(1, "RNT del establecimiento es requerido"),
-    costo: z.number().positive().min(1, "Costo es requerido"),
+    costo: z.number().min(1, "Costo es requerido"),
     check_in: z.string().min(1, "Check-in es requerido"),
     check_out: z.string().min(1, "Check-out es requerido"),
 });
@@ -92,3 +116,4 @@ export type EditPayloadTarjetaAlojamientoInput = z.infer<typeof EditPayloadTarje
 export type EditTarjetaAlojamientoInput = z.infer<typeof EditTarjetaAlojamientoSchema>;
 export type EditTarjetaAlojamientoQueryInput = z.infer<typeof EditTarjetaAlojamientoQuerySchema>;
 export type GetTarjetaAlojamientoQueryInput = z.infer<typeof GetTarjetaAlojamientoQuerySchema>;
+export type PayloadTarjetaAlojamientoInput = z.infer<typeof PayloadTarjetaAlojamientoSchema>;
