@@ -14,11 +14,12 @@ interface ReservasTableProps {
   onViewPagos: (reserva: IReservaTableData) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  tarjetas: any[];
 }
 
 const ReservasTable: React.FC<ReservasTableProps> = ({
   reservas,
-  tarjetas,
+  tarjetas = [],
   onEdit,
   onDelete,
   onViewDetail,
@@ -89,6 +90,9 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
+
+  console.log(tarjetas);
+  
 
   return (
     <ScrollableTable className="shadow-sm">
@@ -232,11 +236,22 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     {reserva.estado.replace('_', ' ')}
                   </span>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <span className={getEstadoBadge(reserva.estado)}>
-                    {reserva.estado.replace('_', ' ')}
-                  </span>
+                
+
+                  <td className="px-4 py-4 whitespace-nowrap">
+                  {tarjetas
+                    .filter((t) => t.id_reserva === reserva.id) // <--- FILTRAR POR RESERVA
+                    .map((tarjeta) => (
+                      <span key={tarjeta.id} className={getEstadoBadge(tarjeta.estado)}>
+                        {tarjeta.estado.replace('_', ' ')}
+                      </span>
+                    ))}
+                  {/* Opcional: Mostrar algo si no hay tarjeta */}
+                  {tarjetas.filter(t => t.id_reserva === reserva.id).length === 0 && (
+                    <span className="text-gray-400 text-xs italic">No generado</span>
+                  )}
                 </td>
+
                 <td className="px-1 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button

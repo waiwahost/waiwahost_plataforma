@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import ReservasTable from './ReservasTable';
 import CreateReservaModal from './CreateReservaModal';
 import CreateReservaButton from './CreateReservaButton';
@@ -17,7 +17,9 @@ import {
   editReservaApi,
   deleteReservaApi
 } from '../../auth/reservasApi';
+import { getEstadoTarjetaApi } from '../../auth/tarjetaRegistroApi';
 import { useReservasConTotales } from '../../hooks/useReservasConTotales';
+import { IEstadoTarjetaResponse } from '@libs/interfaces/Tarjeta';
 
 const Bookings: React.FC = () => {
   // Hook personalizado para manejar reservas con totales automáticos
@@ -47,12 +49,12 @@ const Bookings: React.FC = () => {
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
+  const [tarjetas, setTarjetas] = useState<IEstadoTarjetaResponse[]>([]);
 
   const { user } = useAuth();
   const canCreate = user?.permisos?.includes('crear_reservas') || true; // TEMPORAL: siempre true para debugging
   const canEdit = user?.permisos?.includes('editar_reservas') || true; // TEMPORAL: siempre true para debugging
   const canDelete = user?.permisos?.includes('eliminar_reservas') || true; // TEMPORAL: siempre true para debugging
-
 
   const filteredReservas = useMemo(() => {
     if (selectedMonth === -1) {
@@ -167,6 +169,28 @@ const Bookings: React.FC = () => {
     setReservaToViewPagos(reserva);
     setPagosModalOpen(true);
   };
+
+
+
+  useEffect(() => {
+  const cargarEstados = async () => {
+    if (filteredReservas.length === 0) return;
+
+    try {
+      // Obtenemos los estados de todas las reservas filtradas
+      const promesas = filteredReservas.map(res => getEstadoTarjetaApi(res.id));
+      const resultados = await Promise.all(promesas);
+      
+      // Aplanamos el array de arrays en uno solo
+      const todasLasTarjetas = resultados.flat();
+      setTarjetas(todasLasTarjetas);
+    } catch (err) {
+      console.error("Error cargando tarjetas", err);
+    }
+  };
+
+  cargarEstados();
+}, [filteredReservas]);
 
   return (
     <div className="p-4 space-y-6">
