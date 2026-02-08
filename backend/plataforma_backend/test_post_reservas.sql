@@ -1,0 +1,147 @@
+-- ============================================
+-- SCRIPT PARA PROBAR POST /reservas (NUEVO FORMATO)
+-- ============================================
+-- Ejecutar después de tener datos de inmuebles
+
+-- Verificar que existen inmuebles para usar en las pruebas
+SELECT id_inmueble, nombre, id_empresa FROM inmuebles WHERE estado = 'activo' LIMIT 5;
+
+-- EJEMPLO 1: Reserva con huéspedes nuevos
+-- POST /reservas
+-- Body:
+-- {
+--   "id_inmueble": 3,
+--   "fecha_entrada": "2024-12-01",
+--   "fecha_salida": "2024-12-05",
+--   "numero_huespedes": 2,
+--   "huespedes": [
+--     {
+--       "nombre": "Laura",
+--       "apellido": "Martínez Sánchez",
+--       "email": "laura.martinez@email.com",
+--       "telefono": "+57 300 777 8888",
+--       "documento_tipo": "cedula",
+--       "documento_numero": "98765432",
+--       "fecha_nacimiento": "1990-05-20",
+--       "es_principal": true
+--     },
+--     {
+--       "nombre": "Diego",
+--       "apellido": "Martínez López",
+--       "email": "diego.martinez@email.com",
+--       "telefono": "+57 300 777 8889",
+--       "documento_tipo": "cedula",
+--       "documento_numero": "98765433",
+--       "fecha_nacimiento": "1988-09-15",
+--       "es_principal": false
+--     }
+--   ],
+--   "precio_total": 600000,
+--   "estado": "confirmada",
+--   "observaciones": "Primera reserva de la pareja",
+--   "id_empresa": 1
+-- }
+
+-- EJEMPLO 2: Reserva con un huésped existente + uno nuevo
+-- (Usando documento 12345678 que ya existe de pruebas anteriores)
+-- POST /reservas  
+-- Body:
+-- {
+--   "id_inmueble": 4,
+--   "fecha_entrada": "2024-12-10",
+--   "fecha_salida": "2024-12-15",
+--   "numero_huespedes": 2,
+--   "huespedes": [
+--     {
+--       "nombre": "María",
+--       "apellido": "García",
+--       "email": "maria.garcia@email.com",
+--       "telefono": "+57 300 123 4567",
+--       "documento_tipo": "cedula",
+--       "documento_numero": "12345678",
+--       "fecha_nacimiento": "1985-03-15",
+--       "es_principal": true
+--     },
+--     {
+--       "nombre": "Roberto",
+--       "apellido": "Silva Hernández",
+--       "email": "roberto.silva@familia.com",
+--       "telefono": "+57 300 999 0000",
+--       "documento_tipo": "pasaporte",
+--       "documento_numero": "AB98765432",
+--       "fecha_nacimiento": "1980-12-03",
+--       "es_principal": false
+--     }
+--   ],
+--   "precio_total": 1250000,
+--   "estado": "pendiente",
+--   "observaciones": "María ya es cliente, Roberto es nuevo",
+--   "id_empresa": 1
+-- }
+
+-- EJEMPLO 3: Reserva individual con huésped nuevo
+-- POST /reservas
+-- Body:
+-- {
+--   "id_inmueble": 3,
+--   "fecha_entrada": "2024-12-20",
+--   "fecha_salida": "2024-12-22",
+--   "numero_huespedes": 1,
+--   "huespedes": [
+--     {
+--       "nombre": "Diana Patricia",
+--       "apellido": "Torres Vargas",
+--       "email": "diana.torres@empresa.com",
+--       "telefono": "+57 300 111 2222",
+--       "documento_tipo": "cedula",
+--       "documento_numero": "55566677",
+--       "fecha_nacimiento": "1992-08-10",
+--       "es_principal": true
+--     }
+--   ],
+--   "precio_total": 300000,
+--   "estado": "confirmada",
+--   "observaciones": "Viaje de negocios ejecutiva",
+--   "id_empresa": 1
+-- }
+
+-- CASOS DE ERROR PARA PROBAR:
+
+-- ERROR 1: Múltiples huéspedes principales
+-- {
+--   "numero_huespedes": 2,
+--   "huespedes": [
+--     { "es_principal": true, ... },
+--     { "es_principal": true, ... }
+--   ]
+-- }
+-- Debe retornar: "Solo puede haber un huésped principal por reserva"
+
+-- ERROR 2: Documentos duplicados
+-- {
+--   "numero_huespedes": 2,
+--   "huespedes": [
+--     { "documento_numero": "12345678", ... },
+--     { "documento_numero": "12345678", ... }
+--   ]
+-- }
+-- Debe retornar: "No pueden existir huéspedes con el mismo número de documento en una reserva"
+
+-- ERROR 3: Número de huéspedes no coincide
+-- {
+--   "numero_huespedes": 3,
+--   "huespedes": [
+--     { ... },
+--     { ... }
+--   ]
+-- }
+-- Debe retornar: "El número de huéspedes (3) no coincide con la cantidad en el array (2)"
+
+-- Verificar reservas creadas
+-- SELECT * FROM reservas ORDER BY id_reserva DESC LIMIT 5;
+
+-- Verificar huéspedes creados/utilizados
+-- SELECT h.*, hr.es_principal, hr.id_reserva
+-- FROM huespedes h 
+-- JOIN huespedes_reservas hr ON h.id_huesped = hr.id_huesped 
+-- ORDER BY hr.id_reserva DESC, hr.es_principal DESC LIMIT 10;
