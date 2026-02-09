@@ -350,15 +350,20 @@ const Availability: React.FC = () => {
       </div>
 
       {/* Tabla tipo calendario */}
-      <div className="overflow-x-auto border rounded-lg">
-        <table className="min-w-full border-collapse">
+      {/* ===================== DESKTOP ===================== */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full border-separate border-spacing-0">
           <thead>
             <tr>
-              <th className="px-3 py-2 border-b border-r border-gray-200 text-left bg-gray-50 sticky left-0 z-10 min-w-[200px]">Inmueble</th>
+              <th className="px-2 py-1 border-b border-r bg-gray-50 sticky left-0">
+                Inmueble
+              </th>
               {fechas.map(date => (
-                <th key={date.toISOString()} className="px-2 py-2 border-b border-r border-gray-200 text-xs bg-gray-50 text-center min-w-[60px]">
-                  <div className="font-semibold">{format(date, "dd", { locale: es })}</div>
-                  <div className="text-gray-500 font-normal">{format(date, "MMM", { locale: es })}</div>
+                <th
+                  key={date.toISOString()}
+                  className="px-2 py-1 border-b border-r bg-gray-50 text-xs"
+                >
+                  {format(date, "dd MMM", { locale: es })}
                 </th>
               ))}
             </tr>
@@ -369,83 +374,70 @@ const Availability: React.FC = () => {
             ) : error ? (
               <tr><td colSpan={fechas.length + 1} className="text-center text-red-500 py-12">{error}</td></tr>
             ) : inmueblesFiltrados.length === 0 ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center py-12 text-gray-500">No se encontraron inmuebles con los filtros seleccionados.</td></tr>
-            ) : (
-              inmueblesFiltrados.map(inmueble => (
-                <tr key={inmueble.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-3 border-b border-r border-gray-200 font-medium whitespace-nowrap bg-white sticky left-0 z-10 shadow-sm">
-                    {inmueble.nombre}
-                    {inmueble.ciudad && <div className="text-xs text-gray-400 font-normal">{inmueble.ciudad}</div>}
-                  </td>
-                  {fechas.map(date => {
-                    const reservaEnFecha = getReservaEnFecha(reservas, inmueble.id, date);
-                    const ocupado = !!reservaEnFecha;
-
-                    // Lógica visual básica según estado
-                    let cellColor = "bg-gray-100 text-gray-400 hover:bg-gray-200"; // Disponible
-                    if (ocupado) {
-                      if (reservaEnFecha.estado === 'pendiente') cellColor = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer";
-                      else cellColor = "bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer";
-                    }
-
-                    // Si estamos filtrando disponible y está ocupado, mostrar vacío (o ocultar, pero mejor mostramos vacío para mantener estructura)
-                    if (estado === "disponible" && ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
-                    // Si estamos filtrando ocupado y no está ocupado
-                    if ((estado === "ocupado") && !ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
-
-                    return (
-                      <td
-                        key={date.toISOString()}
-                        className={`border-b border-r border-gray-200 text-center transition-colors duration-200 h-12 p-1`}
-                      >
-                        <div
-                          className={`w-full h-full rounded flex items-center justify-center ${cellColor}`}
-                          title={ocupado ? `Reservado: ${reservaEnFecha.estado}` : "Disponible"}
-                          onClick={() => handleCellClick(reservaEnFecha)}
-                        >
-                          {ocupado && <span className="text-xs font-bold">●</span>}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
-            )}
+              <tr><td colSpan={fechas.length + 1} className="text-center py-8">No hay inmuebles para mostrar.</td></tr>
+            ) :
+            inmueblesFiltrados.map(inmueble => (
+              <tr key={inmueble.id}>
+                <td className="px-2 py-2.5 border-b border-r border-gray-200 font-medium whitespace-nowrap bg-white sticky left-0 z-10">
+                  {inmueble.nombre}
+                </td>
+                {fechas.map(date => {
+                  const ocupado = isOcupado(reservas, inmueble.id, date);
+                  return (
+                    <td
+                      key={date.toISOString()}
+                      className={`border-b border-r text-center ${
+                        ocupado
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {ocupado ? "●" : ""}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Modales */}
-      <CreateReservaModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreate={handleCreateReserva}
-        initialData={isEditMode && selectedReservaDetail ? {
-          id_inmueble: parseInt((selectedReservaDetail as any).id_inmueble) || 0,
-          fecha_inicio: selectedReservaDetail.fecha_inicio,
-          fecha_fin: selectedReservaDetail.fecha_fin,
-          numero_huespedes: selectedReservaDetail.numero_huespedes,
-          huespedes: selectedReservaDetail.huespedes,
-          id_empresa: selectedReservaDetail.id_empresa,
-          observaciones: selectedReservaDetail.observaciones,
-          precio_total: selectedReservaDetail.precio_total,
-          total_reserva: selectedReservaDetail.total_reserva,
-          total_pagado: selectedReservaDetail.total_pagado,
-          estado: selectedReservaDetail.estado,
-          plataforma_origen: selectedReservaDetail.plataforma_origen,
-        } : undefined}
-        isEdit={isEditMode}
-      />
+      {/* ===================== MOBILE ===================== */}
+      <div className="md:hidden space-y-5 mt-4">
+        {inmueblesFiltrados.map(inmueble => (
+          <div
+            key={inmueble.id}
+            className="border rounded-lg p-3 shadow-sm"
+          >
+            <h3 className="font-semibold mb-3">
+              {inmueble.nombre}
+            </h3>
 
-      {selectedReservaDetail && (
-        <ReservaDetailModal
-          open={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          reserva={selectedReservaDetail}
-          onEdit={handleEditFromDetail}
-        />
-      )}
-
+            <div className="grid grid-cols-4 gap-2">
+              {fechas.map(date => {
+                const ocupado = isOcupado(reservas, inmueble.id, date);
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className={`p-2 rounded text-center text-xs ${
+                      ocupado
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    <div className="font-medium">
+                      {format(date, "dd", { locale: es })}
+                    </div>
+                    <div className="uppercase">
+                      {format(date, "MMM", { locale: es })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
