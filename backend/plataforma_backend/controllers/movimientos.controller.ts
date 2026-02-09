@@ -251,7 +251,7 @@ export const movimientosController = {
     const ctx = req.userContext;
 
     // Verificar autenticación
-    if (!ctx || !ctx.id) {
+    if (!ctx || !ctx.id || !ctx.empresaId) {
       return reply.status(401).send(
         errorResponse({
           message: 'No autenticado',
@@ -274,7 +274,10 @@ export const movimientosController = {
         );
       }
 
-      const movimientoData = bodyValidation.data;
+      const movimientoData = {
+        ...bodyValidation.data,
+        id_empresa: String(ctx.empresaId)
+      };
 
       // Llamar al servicio
       const { data, error } = await createMovimientoService(movimientoData);

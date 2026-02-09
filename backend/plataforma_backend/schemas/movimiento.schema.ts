@@ -63,7 +63,10 @@ const movimientoBaseSchema = z.object({
     errorMap: () => ({ message: "El método de pago debe ser 'efectivo', 'transferencia', 'tarjeta' u 'otro'" })
   }),
   comprobante: z.string().optional().nullable(),
-  id_empresa: z.string().min(1, { message: "El ID de la empresa es requerido" }),
+
+  // id_empresa: z.string().min(1, { message: "El ID de la empresa es requerido" }),
+
+  
   plataforma_origen: plataformaOrigenSchema
 });
 
