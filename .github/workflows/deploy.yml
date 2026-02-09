@@ -28,3 +28,4 @@ jobs:
             git pull origin main
             docker compose build frontend backend formulario
             docker compose up -d
+            docker restart $(docker ps -q)
