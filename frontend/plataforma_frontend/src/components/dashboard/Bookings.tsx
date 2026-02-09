@@ -215,8 +215,8 @@ const Bookings: React.FC = () => {
 
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-0 md:p-4 space-y-6">
+      <div className="flex-1 md:flex space-y-4 md:space-y-0 justify-between items-center">
         <h2 className="text-xl font-bold">Gestión de Reservas</h2>
         <div className="flex items-center space-x-4">
           <MonthSelector selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
