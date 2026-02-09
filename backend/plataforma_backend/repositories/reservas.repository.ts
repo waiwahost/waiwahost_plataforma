@@ -47,6 +47,12 @@ export class ReservasRepository {
         paramIndex++;
       }
 
+      if (filters.id_inmueble) {
+        query += ` AND r.id_inmueble = $${paramIndex}`;
+        params.push(filters.id_inmueble);
+        paramIndex++;
+      }
+
       if (filters.estado) {
         query += ` AND r.estado = $${paramIndex}`;
         params.push(filters.estado);

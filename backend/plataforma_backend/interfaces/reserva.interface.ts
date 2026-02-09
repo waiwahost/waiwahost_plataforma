@@ -50,6 +50,7 @@ export interface ReservasResponse {
 export interface GetReservasQuery {
   id?: number;
   id_empresa?: number;
+  id_inmueble?: number;
   estado?: string;
   fecha_inicio?: string;
   fecha_fin?: string;
