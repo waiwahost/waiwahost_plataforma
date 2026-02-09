@@ -49,8 +49,6 @@ export const editPropietarioApi = async (id: number, propietarioData: any): Prom
     if (propietarioData.estado !== undefined) editableFields.estado = propietarioData.estado;
     if (propietarioData.id_empresa !== undefined) editableFields.id_empresa = propietarioData.id_empresa;
 
-    console.log('Sending editable fields:', editableFields);
-
     const data = await apiFetch(`/api/propietarios/editPropietario?id=${id}`, {
       method: 'PUT',
       headers: {

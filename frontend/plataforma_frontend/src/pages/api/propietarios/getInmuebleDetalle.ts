@@ -23,9 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    console.log('🔄 Redirecting to inmuebles API for compatibility:', `${apiUrl}/inmuebles/getInmuebles?id=${id}`);
-    
+
     // Realizar la llamada a la API externa (misma que usa getInmuebleDetalle)
     const response = await fetch(`${apiUrl}/inmuebles/getInmuebles?id=${id}`, {
       method: 'GET',
@@ -84,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error in legacy getInmuebleDetalle API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

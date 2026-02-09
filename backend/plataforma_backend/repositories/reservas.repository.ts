@@ -28,16 +28,28 @@ export class ReservasRepository {
           i.id_empresa
         FROM reservas r
         INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
-        WHERE 1=1
+        WHERE i.estado = 'activo'
       `;
 
       const params: any[] = [];
       let paramIndex = 1;
 
       // Agregar filtros dinámicamente
+      if (filters.id) {
+        query += ` AND r.id_reserva = $${paramIndex}`;
+        params.push(filters.id);
+        paramIndex++;
+      }
+
       if (filters.id_empresa) {
         query += ` AND i.id_empresa = $${paramIndex}`;
         params.push(filters.id_empresa);
+        paramIndex++;
+      }
+
+      if (filters.id_inmueble) {
+        query += ` AND r.id_inmueble = $${paramIndex}`;
+        params.push(filters.id_inmueble);
         paramIndex++;
       }
 
@@ -468,7 +480,6 @@ export class ReservasRepository {
   async updateReserva(id: number, fields: Partial<Omit<Reserva, 'id' | 'codigo_reserva'>>): Promise<Reserva | null> {
     if (!id || Object.keys(fields).length === 0) return null;
     // Mapeo de campos del modelo a la base de datos
-    console.log('Updating reserva id:', id, 'with fields:', fields);
     const fieldMap: Record<string, string> = {
       fecha_inicio: 'fecha_inicio',
       fecha_fin: 'fecha_fin',
@@ -482,7 +493,6 @@ export class ReservasRepository {
       plataforma_origen: 'plataforma_origen',
     };
     const allowedFields = Object.keys(fieldMap);
-    console.log('Allowed fields for update:', allowedFields);
     const setClauses: string[] = [];
     const values: any[] = [];
     let idx = 1;
@@ -493,11 +503,8 @@ export class ReservasRepository {
         idx++;
       }
     }
-    console.log('Set clauses for update:', setClauses);
     if (setClauses.length === 0) return null;
     values.push(id);
-    console.log('Final query:', `UPDATE reservas SET ${setClauses.join(', ')} WHERE id_reserva = $${idx} RETURNING *`);
-    console.log('With values:', values);
     const query = `UPDATE reservas SET ${setClauses.join(', ')} WHERE id_reserva = $${idx} RETURNING *`;
     const { rows } = await dbClient.query(query, values);
     return rows[0] || null;
@@ -508,8 +515,35 @@ export class ReservasRepository {
    */
   async deleteReserva(id: number): Promise<boolean> {
     if (!id) return false;
-    const query = "UPDATE reservas SET estado = 'anulado' WHERE id_reserva = $1";
-    const result = await dbClient.query(query, [id]);
-    return (result.rowCount ?? 0) > 0;
+
+    // Obtener un cliente del pool para manejar la transacción
+    const client = await dbClient.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 1. Eliminar pagos asociados
+      const pagosResult = await client.query('DELETE FROM pagos WHERE id_reserva = $1', [id]);
+
+      // 2. Eliminar movimientos (ingresos/egresos) asociados
+      // Nota: movimientos usa id_reserva como string en algunas partes, asegurar compatibilidad
+      const movimientosResult = await client.query('DELETE FROM movimientos WHERE id_reserva = $1', [id.toString()]);
+
+      // 3. Eliminar relación huespedes_reservas
+      const huespedesResult = await client.query('DELETE FROM huespedes_reservas WHERE id_reserva = $1', [id]);
+
+      // 4. Eliminar la reserva
+      const reservaResult = await client.query('DELETE FROM reservas WHERE id_reserva = $1', [id]);
+
+      await client.query('COMMIT');
+
+      return (reservaResult.rowCount ?? 0) > 0;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error(`[CASCADE DELETE] TRANSACTION ROLLED BACK due to error:`, error);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }

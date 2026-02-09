@@ -59,10 +59,8 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
 
     // Procesar Huéspedes usando el HuespedesService para consistencia
     const reservaId = resultReserva?.id || resultReserva?.id_reserva;
-    console.log(`[PublicService] ResultReserva raw ID check: id=${resultReserva?.id}, id_reserva=${resultReserva?.id_reserva}, resolved=${reservaId}`);
 
     if (reservaId && Array.isArray(data.huespedes) && data.huespedes.length > 0) {
-        console.log(`[PublicService] Processing ${data.huespedes.length} guests for reservation ${reservaId}`);
         const { HuespedesService } = await import('./huespedesService');
         const huespedesService = new HuespedesService();
 

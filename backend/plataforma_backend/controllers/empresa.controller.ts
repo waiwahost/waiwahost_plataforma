@@ -25,9 +25,7 @@ export const empresaController = {
       id_empresa = Number(ctx.empresaId);
     }
 
-    console.log('Listando empresas con filtro:', { id_empresa });
     const { data, error } = await getEmpresas(id_empresa);
-    console.log('Empresas obtenidas:', data);
     if (error) {
       return reply.status(403).send(errorResponse({ message: error.message, code: 403, error: 'Forbidden' }));
     }

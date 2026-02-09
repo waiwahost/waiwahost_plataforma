@@ -223,9 +223,6 @@ const generateMockArea = (habitaciones: number | null): number => {
 
 // Función para realizar la llamada a la API externa
 const callExternalEditAPI = async (inmuebleId: string, editData: ExternalInmuebleEditRequest, token: string, apiUrl: string): Promise<ExternalApiResponse> => {
-  console.log('🚀 Calling external edit API:', `${apiUrl}/inmuebles/editInmueble?id=${inmuebleId}`);
-  console.log('🔑 Using token:', token ? 'Token present' : 'No token');
-  console.log('📤 Sending edit data:', editData);
 
   const response = await fetch(`${apiUrl}/inmuebles/editInmueble?id=${inmuebleId}`, {
     method: 'PUT',
@@ -243,23 +240,11 @@ const callExternalEditAPI = async (inmuebleId: string, editData: ExternalInmuebl
 
   const externalData: ExternalApiResponse = await response.json();
 
-  console.log('📥 External API response:', {
-    isError: externalData.isError,
-    hasData: !!externalData.data,
-    message: externalData.message
-  });
-
   return externalData;
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('🔄 EDIT INMUEBLE API CALLED');
-  console.log('📥 Request method:', req.method);
-  console.log('📥 Request body:', req.body);
-  console.log('📥 Request headers authorization:', req.headers.authorization ? 'Present' : 'Missing');
-
   if (req.method !== 'POST') {
-    console.log('❌ Invalid method:', req.method);
     return res.status(405).json({
       success: false,
       message: 'Método no permitido. Solo se permite POST.'
@@ -269,14 +254,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { id, ...inmuebleData } = req.body;
 
-    console.log('📥 Received inmueble edit request for ID:', id);
-    console.log('📝 Fields to update:', Object.keys(inmuebleData));
-
     // Validar los datos del inmueble
     const validationErrors = validateInmuebleEditData({ id, ...inmuebleData });
 
     if (validationErrors.length > 0) {
-      console.log('❌ Validation errors:', validationErrors);
       return res.status(400).json({
         success: false,
         message: 'Errores de validación',
@@ -286,9 +267,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-
-    console.log('🌐 API URL:', apiUrl);
-    console.log('🔑 Token status:', token ? `Token present (${token.substring(0, 10)}...)` : 'No token');
 
     // Convertir ID a string para asegurar consistencia
     const inmuebleId = String(id);
@@ -301,7 +279,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
-      console.log('❌ External API returned error:', externalData.message);
       return res.status(400).json({
         success: false,
         message: externalData.message || 'Error actualizando inmueble desde la API externa'
@@ -311,8 +288,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     try {
       const inmuebleActualizado = mapInmuebleFromAPI(externalData.data);
-
-      console.log('✅ Inmueble updated successfully:', inmuebleActualizado.id);
 
       res.status(200).json({
         success: true,

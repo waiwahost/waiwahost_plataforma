@@ -3,13 +3,13 @@ import { InmueblesRepository } from '../../repositories/inmuebles.repository';
 const inmueblesRepository = new InmueblesRepository();
 
 export async function deleteInmuebleService(
-  userId: number, 
+  userId: number,
   inmuebleId: number
 ) {
   try {
     // Verificar que el inmueble existe
     const { exists: inmuebleExists, error: inmuebleExistsError } = await inmueblesRepository.inmuebleExists(inmuebleId);
-    
+
     if (inmuebleExistsError) {
       console.error('Error al verificar inmueble:', inmuebleExistsError);
       return {
@@ -35,7 +35,7 @@ export async function deleteInmuebleService(
 
     // Realizar eliminación lógica (cambiar estado a inactivo)
     const { data: inmueble, error } = await inmueblesRepository.deleteInmueble(inmuebleId);
-    
+
     if (error) {
       console.error('Error al eliminar inmueble:', error);
       return {
@@ -59,13 +59,12 @@ export async function deleteInmuebleService(
       };
     }
 
-    console.log('Inmueble eliminado exitosamente:', inmueble.id_inmueble);
-    
+
     return {
       data: inmueble,
       error: null
     };
-    
+
   } catch (err) {
     console.error('Error inesperado en deleteInmuebleService:', err);
     return {

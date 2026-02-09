@@ -15,8 +15,6 @@ interface ServiceResponse<T> {
  */
 export async function getResumenIngresosService(filtros: FiltrosIngresos): Promise<ServiceResponse<ResumenIngresos>> {
   try {
-    console.log('🔄 Ejecutando getResumenIngresosService con filtros:', filtros);
-
     // Importar repository y pool
     const { MovimientosRepository } = await import('../../repositories/movimientos.repository');
     const pool = (await import('../../libs/db')).default;
@@ -53,14 +51,14 @@ export async function getResumenIngresosService(filtros: FiltrosIngresos): Promi
         WHERE m.fecha = $1 AND m.tipo = 'ingreso' AND m.id_inmueble = $2
       `;
       params = [filtros.fecha, filtros.id_inmueble.toString()];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\' AND m.id_inmueble = $2', 
-                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\' AND m.id_inmueble = $3');
+        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\' AND m.id_inmueble = $2',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\' AND m.id_inmueble = $3');
         params = [filtros.fecha, filtros.empresa_id.toString(), filtros.id_inmueble.toString()];
       }
-      
+
       query += ' GROUP BY i.nombre';
     } else {
       // Resumen general con desglose por inmueble
@@ -73,18 +71,18 @@ export async function getResumenIngresosService(filtros: FiltrosIngresos): Promi
         WHERE m.fecha = $1 AND m.tipo = 'ingreso'
       `;
       params = [filtros.fecha];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\'', 
-                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\'');
+        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\'',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\'');
         params.push(filtros.empresa_id.toString());
       }
     }
 
     // Ejecutar consulta principal
     const { rows: resumenRows } = await pool.query(query, params);
-    
+
     const totalIngresos = parseFloat(resumenRows[0]?.total_ingresos) || 0;
     const cantidadIngresos = parseInt(resumenRows[0]?.cantidad_ingresos) || 0;
     const promedioIngreso = parseFloat(resumenRows[0]?.promedio_ingreso) || 0;
@@ -102,20 +100,20 @@ export async function getResumenIngresosService(filtros: FiltrosIngresos): Promi
         LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
         WHERE m.fecha = $1 AND m.tipo = 'ingreso'
       `;
-      
+
       let desgloseParams = [filtros.fecha];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        desgloseQuery = desgloseQuery.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\'', 
-                                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\'');
+        desgloseQuery = desgloseQuery.replace('WHERE m.fecha = $1 AND m.tipo = \'ingreso\'',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'ingreso\'');
         desgloseParams.push(filtros.empresa_id.toString());
       }
-      
+
       desgloseQuery += ' GROUP BY m.id_inmueble, i.nombre ORDER BY total DESC';
-      
+
       const { rows: desgloseRows } = await pool.query(desgloseQuery, desgloseParams);
-      
+
       desgloseInmuebles = desgloseRows.map(row => ({
         id_inmueble: row.id_inmueble,
         nombre_inmueble: row.nombre_inmueble || 'Sin nombre',
@@ -132,8 +130,6 @@ export async function getResumenIngresosService(filtros: FiltrosIngresos): Promi
       promedio_ingreso: Math.round(promedioIngreso),
       desglose_inmuebles: desgloseInmuebles
     };
-
-    console.log('✅ Resumen de ingresos generado:', resumen);
 
     return { data: resumen, error: null };
 

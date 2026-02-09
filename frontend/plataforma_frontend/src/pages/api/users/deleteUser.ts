@@ -18,19 +18,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'No autorizado: token faltante' });
-      }
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No autorizado: token faltante' });
+    }
     const token = authHeader.replace('Bearer ', '');
-    console.log(`Token recibido: ${token}`);
-    console.log(`ID de usuario a eliminar: ${id}`);
     const response = await fetch(`${apiUrl}/users/${id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(`Respuesta del API: ${response.status} ${response.statusText}`);
     const apiData = await response.json();
     if (apiData.isError) {
       return res.status(apiData.code || 500).json({ success: false, message: apiData.message || 'Error eliminando usuario' });

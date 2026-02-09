@@ -8,7 +8,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!apiUrl) {
         return res.status(500).json({ success: false, message: 'API URL no configurada' });
       }
-      console.log(req.body);
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'No autorizado: token faltante' });

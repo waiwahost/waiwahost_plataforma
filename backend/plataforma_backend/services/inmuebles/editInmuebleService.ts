@@ -102,8 +102,6 @@ export async function editInmuebleService(
       };
     }
 
-    console.log('Inmueble actualizado exitosamente:', inmueble.id_inmueble);
-
     return {
       data: inmueble,
       error: null

@@ -34,24 +34,21 @@ export const getInmueblesSelectorExternal = async (): Promise<{
   error?: string;
 }> => {
   try {
-    console.log('🔄 Obteniendo inmuebles selector desde API externa');
-    
+
     const empresaId = getEmpresaIdFromContext();
     const queryParams = buildQueryParams({ empresa_id: empresaId });
     const url = `${EXTERNAL_API_ENDPOINTS.INMUEBLES.SELECTOR}${queryParams}`;
-    
+
     const response: ExternalInmueblesSelectorResponse = await externalApiFetch(url, {
       method: 'GET',
     });
 
-    console.log('✅ Inmuebles selector obtenidos exitosamente:', response.data.length);
-    
     return {
       success: true,
       data: response.data,
       message: 'Inmuebles obtenidos exitosamente'
     };
-    
+
   } catch (error) {
     console.error('❌ Error al obtener inmuebles selector:', error);
     return {

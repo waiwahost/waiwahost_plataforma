@@ -25,7 +25,7 @@ export default async function handler(
 
   try {
     const { fecha, id_inmueble } = req.query;
-    
+
     // Validar parámetros
     if (!fecha || typeof fecha !== 'string') {
       return res.status(400).json({
@@ -79,8 +79,6 @@ export default async function handler(
         cantidad_egresos: inmueble.cantidad
       })) || []
     };
-
-    console.log('✅ Datos de egresos transformados para frontend:', transformedData);
 
     // Respuesta exitosa
     return res.status(200).json({

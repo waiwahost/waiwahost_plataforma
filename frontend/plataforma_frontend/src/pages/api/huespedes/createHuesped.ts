@@ -12,9 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const huespedData = req.body;
-    
-    console.log('Creating huesped with data (MOCK):', huespedData);
-    
+
     // Simular validaciones básicas
     if (!huespedData.nombre || !huespedData.apellido || !huespedData.documento_numero || !huespedData.email || !huespedData.telefono) {
       return res.status(400).json({
@@ -26,10 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Simular pequeña demora
     await new Promise(resolve => setTimeout(resolve, 800));
-    
+
     // Simular creación exitosa - generar ID aleatorio
     const newId = Math.floor(Math.random() * 1000) + 100;
-    
+
     const newHuesped: IHuespedTableData = {
       id_huesped: newId,
       nombre: huespedData.nombre,
@@ -40,8 +38,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       estado: huespedData.estado || 'activo'
     };
 
-    console.log('Mock huesped created:', newHuesped);
-
     res.status(201).json({
       isError: false,
       data: newHuesped,
@@ -50,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in createHuesped API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

@@ -100,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id } = req.query;
-    
+
     if (!id) {
       return res.status(400).json({
         isError: true,
@@ -109,14 +109,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log('Getting huesped detail for ID (MOCK):', id);
-    
+
     // Simular pequeña demora
     await new Promise(resolve => setTimeout(resolve, 400));
-    
+
     // Buscar el huésped en los datos simulados
     const huespedDetail = mockHuespedesDetalle.find(h => h.id_huesped === parseInt(id as string));
-    
+
     if (!huespedDetail) {
       return res.status(404).json({
         isError: true,
@@ -124,8 +123,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Huésped no encontrado'
       });
     }
-
-    console.log('Mock huesped detail found:', huespedDetail);
 
     const mappedDetail: IHuespedDetailData = {
       id_huesped: huespedDetail.id_huesped,
@@ -150,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in getHuespedDetalle API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

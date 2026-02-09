@@ -36,7 +36,7 @@ export class ReportesService {
             JOIN huespedes h ON hr.id_huesped = h.id_huesped
             WHERE hr.es_principal = true
         ) hp ON r.id_reserva = hp.id_reserva
-        WHERE 1=1
+        WHERE i.estado = 'activo'
       `;
 
             const reservasParams: any[] = [];
@@ -79,7 +79,7 @@ export class ReportesService {
           i.nombre as nombre_inmueble
         FROM movimientos m
         INNER JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::varchar
-        WHERE m.tipo = 'egreso'
+        WHERE m.tipo = 'egreso' AND i.estado = 'activo'
       `;
 
             const gastosParams: any[] = [];
@@ -139,7 +139,7 @@ export class ReportesService {
                     // For simplicity, let's count unique properties in the reservations list for now, 
                     // OR better, query the count of properties matching the filter.
 
-                    let countInmueblesQuery = `SELECT COUNT(*) as total FROM inmuebles WHERE 1=1`;
+                    let countInmueblesQuery = `SELECT COUNT(*) as total FROM inmuebles WHERE estado = 'activo'`;
                     const countParams = [];
                     let cIndex = 1;
                     if (empresaId) { countInmueblesQuery += ` AND id_empresa = $${cIndex++}`; countParams.push(empresaId); }
@@ -178,10 +178,9 @@ export class ReportesService {
     }
     async getOpciones(empresaId?: number, tipo?: string) {
         try {
-            console.log('ReportesService.getOpciones called with:', { empresaId, tipo });
             const params: any[] = [];
             let queryEmpresas = `SELECT id_empresa as id, nombre FROM empresas WHERE 1=1`;
-            let queryInmuebles = `SELECT id_inmueble as id, nombre FROM inmuebles WHERE 1=1`;
+            let queryInmuebles = `SELECT id_inmueble as id, nombre FROM inmuebles WHERE estado = 'activo'`;
             let queryPropietarios = `SELECT id_propietario as id, nombre, apellido FROM propietarios WHERE 1=1`;
 
             if (empresaId) {

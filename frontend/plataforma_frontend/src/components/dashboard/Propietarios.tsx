@@ -9,10 +9,10 @@ import SuccessModal from './SuccessModal';
 import ConfirmModal from './ConfirmModal';
 import { useAuth } from '../../auth/AuthContext';
 import { IPropietarioForm, IPropietarioTableData } from '../../interfaces/Propietario';
-import { 
-  getPropietariosApi, 
-  createPropietarioApi, 
-  editPropietarioApi, 
+import {
+  getPropietariosApi,
+  createPropietarioApi,
+  editPropietarioApi,
   deletePropietarioApi,
   getInmueblesPropietarioApi,
   getInmuebleDetalleApi
@@ -34,26 +34,19 @@ const Propietarios: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { user } = useAuth();
   const canCreate = user?.permisos?.includes('crear_propietarios') || true; // TEMPORAL: siempre true para debugging
   const canEdit = user?.permisos?.includes('editar_propietarios') || true; // TEMPORAL: siempre true para debugging
   const canDelete = user?.permisos?.includes('eliminar_propietarios') || true; // TEMPORAL: siempre true para debugging
 
-  console.log('=== PROPIETARIOS DEBUG ===');
-  console.log('user:', user);
-  console.log('user permisos:', user?.permisos);
-  console.log('canCreate:', canCreate);
-  console.log('canEdit:', canEdit);
-  console.log('canDelete:', canDelete);
-  console.log('============================');
 
   useEffect(() => {
     const loadPropietarios = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Obtener propietarios de la API
         const data = await getPropietariosApi(1); // Temporal: usar empresa 1
         setPropietarios(data);
@@ -72,7 +65,7 @@ const Propietarios: React.FC = () => {
     try {
       // Crear propietario usando API
       const newPropietario = await createPropietarioApi(propietarioData);
-      
+
       setPropietarios(prev => [...prev, newPropietario]);
       setSuccessMsg('Propietario creado exitosamente');
       setSuccessOpen(true);
@@ -92,17 +85,17 @@ const Propietarios: React.FC = () => {
 
   const handleEditSubmit = async (propietarioData: IPropietarioForm) => {
     if (!propietarioToEdit) return;
-    
+
     try {
       // Actualizar propietario usando API
       const updatedPropietario = await editPropietarioApi(propietarioToEdit.id, propietarioData);
-      
-      setPropietarios(prev => prev.map(propietario => 
-        propietario.id === propietarioToEdit.id 
+
+      setPropietarios(prev => prev.map(propietario =>
+        propietario.id === propietarioToEdit.id
           ? updatedPropietario
           : propietario
       ));
-      
+
       setSuccessMsg('Propietario actualizado exitosamente');
       setSuccessOpen(true);
       setEditModalOpen(false);
@@ -123,11 +116,11 @@ const Propietarios: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (!propietarioToDelete) return;
     setConfirmDeleteOpen(false);
-    
+
     try {
       // Eliminar propietario usando API
       await deletePropietarioApi(propietarioToDelete.id);
-      
+
       setPropietarios(prev => prev.filter(propietario => propietario.id !== propietarioToDelete.id));
       setSuccessMsg('Propietario eliminado exitosamente');
       setSuccessOpen(true);
@@ -137,13 +130,13 @@ const Propietarios: React.FC = () => {
       setSuccessOpen(true);
       console.error('Error deleting propietario:', error);
     }
-    
+
     setPropietarioToDelete(null);
   };
 
   const handleViewDetail = async (propietario: IPropietarioTableData) => {
     setPropietarioToView(propietario);
-    
+
     // Cargar inmuebles del propietario
     try {
       const inmuebles = await getInmueblesForPropietario(propietario);
@@ -152,7 +145,7 @@ const Propietarios: React.FC = () => {
       console.error('Error loading inmuebles for propietario:', error);
       setPropietarioInmuebles([]);
     }
-    
+
     setPropietarioDetailOpen(true);
   };
 
@@ -198,9 +191,9 @@ const Propietarios: React.FC = () => {
       ) : error ? (
         <div className="text-red-500">{error}</div>
       ) : (
-        <PropietariosTable 
-          propietarios={propietarios} 
-          onEdit={handleEdit} 
+        <PropietariosTable
+          propietarios={propietarios}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           onViewDetail={handleViewDetail}
           onInmuebleClick={handleInmuebleClick}
@@ -208,19 +201,19 @@ const Propietarios: React.FC = () => {
           canDelete={canDelete}
         />
       )}
-      
-      <CreatePropietarioModal 
-        open={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onCreate={handleCreate} 
+
+      <CreatePropietarioModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreate={handleCreate}
       />
-      
-      <CreatePropietarioModal 
-        open={editModalOpen} 
+
+      <CreatePropietarioModal
+        open={editModalOpen}
         onClose={() => {
           setEditModalOpen(false);
           setPropietarioToEdit(null);
-        }} 
+        }}
         onCreate={handleEditSubmit}
         initialData={propietarioToEdit ? {
           nombre: propietarioToEdit.nombre,
@@ -234,7 +227,7 @@ const Propietarios: React.FC = () => {
         } : undefined}
         isEdit={true}
       />
-      
+
       <ConfirmModal
         open={confirmDeleteOpen}
         message={`¿Estás seguro de que deseas eliminar al propietario "${propietarioToDelete?.nombre || ''} ${propietarioToDelete?.apellido || ''}"?`}
@@ -244,11 +237,11 @@ const Propietarios: React.FC = () => {
           setPropietarioToDelete(null);
         }}
       />
-      
-      <SuccessModal 
-        open={successOpen} 
-        message={successMsg} 
-        onClose={() => setSuccessOpen(false)} 
+
+      <SuccessModal
+        open={successOpen}
+        message={successMsg}
+        onClose={() => setSuccessOpen(false)}
       />
 
       <PropietarioDetailModal

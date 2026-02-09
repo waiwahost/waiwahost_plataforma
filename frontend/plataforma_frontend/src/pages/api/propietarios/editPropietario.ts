@@ -11,8 +11,8 @@ const mapPropietarioFromAPI = (propietarioAPI: any): IPropietarioTableData => {
     telefono: propietarioAPI.telefono || 'Sin teléfono',
     direccion: propietarioAPI.direccion || 'Sin dirección',
     cedula: propietarioAPI.cedula || 'Sin cédula',
-    fecha_registro: propietarioAPI.fecha_registro ? 
-      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] : 
+    fecha_registro: propietarioAPI.fecha_registro ?
+      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] :
       new Date().toISOString().split('T')[0],
     estado: propietarioAPI.estado === 'activo' ? 'activo' : 'inactivo',
     id_empresa: propietarioAPI.id_empresa || 1,
@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Filtrar solo los campos editables (excluir cedula y username)
     const editableFields: IPropietarioEditableFields = {};
-    
+
     if (propietarioData.nombre !== undefined) editableFields.nombre = propietarioData.nombre;
     if (propietarioData.apellido !== undefined) editableFields.apellido = propietarioData.apellido;
     if (propietarioData.email !== undefined) editableFields.email = propietarioData.email;
@@ -84,10 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Al menos un campo editable debe ser proporcionado'
       });
     }
-
-    console.log('Editing propietario with ID:', id);
-    console.log('Editable fields:', editableFields);
-    console.log('Calling external API:', `${apiUrl}/api/propietarios/editPropietario?id=${id}`);
 
     // Hacer la llamada a la API externa
     const response = await fetch(`${apiUrl}/propietarios/editPropietario?id=${id}`, {
@@ -106,7 +102,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData = await response.json();
-    console.log('External API response:', externalData);
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
@@ -120,8 +115,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     const updatedPropietario = mapPropietarioFromAPI(externalData.data);
 
-    console.log('Mapped updated propietario:', updatedPropietario);
-
     res.status(200).json({
       isError: false,
       data: updatedPropietario,
@@ -130,7 +123,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in editPropietario API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

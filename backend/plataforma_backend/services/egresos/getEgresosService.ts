@@ -15,8 +15,6 @@ interface ServiceResponse<T> {
  */
 export async function getEgresosService(filtros: FiltrosEgresos): Promise<ServiceResponse<Egreso[]>> {
   try {
-    console.log('🔄 Ejecutando getEgresosService con filtros:', filtros);
-
     // Importar repository aquí para evitar dependencias circulares
     const { MovimientosRepository } = await import('../../repositories/movimientos.repository');
 
@@ -95,9 +93,7 @@ export async function getEgresosService(filtros: FiltrosEgresos): Promise<Servic
       comprobante: row.comprobante
     }));
 
-    console.log(`✅ ${egresos.length} egresos encontrados`);
-
-    return { 
+    return {
       data: egresos,
       error: null
     };

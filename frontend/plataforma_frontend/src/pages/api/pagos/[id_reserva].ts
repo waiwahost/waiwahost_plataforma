@@ -55,11 +55,6 @@ export default async function handler(
       }
 
       const externalData: ExternalApiResponse = await response.json();
-      console.log('📥 External API response:', {
-        success: externalData.success,
-        dataCount: externalData.data?.pagos?.length || 0,
-        message: externalData.message
-      });
 
       // Verificar si la API externa retornó error
       if (!externalData.success) {

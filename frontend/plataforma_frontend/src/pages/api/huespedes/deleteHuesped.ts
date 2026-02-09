@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { id } = req.query;
-    
+
     if (!id) {
       return res.status(400).json({
         isError: true,
@@ -20,13 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log('Deleting huesped with ID (MOCK):', id);
-    
     // Simular pequeña demora
     await new Promise(resolve => setTimeout(resolve, 700));
-    
+
     // Simular eliminación exitosa
-    console.log('Mock huesped deleted successfully');
 
     res.status(200).json({
       isError: false,
@@ -36,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in deleteHuesped API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

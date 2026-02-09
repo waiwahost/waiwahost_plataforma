@@ -4,13 +4,13 @@ import { CreateInmuebleData } from '../../interfaces/inmueble.interface';
 const inmueblesRepository = new InmueblesRepository();
 
 export async function createInmuebleService(
-  userId: number, 
+  userId: number,
   inmuebleData: CreateInmuebleData
 ) {
   try {
     // Verificar que el propietario existe
     const { exists: propietarioExists, error: propietarioError } = await inmueblesRepository.propietarioExists(inmuebleData.id_propietario);
-    
+
     if (propietarioError) {
       console.error('Error al verificar propietario:', propietarioError);
       return {
@@ -36,10 +36,10 @@ export async function createInmuebleService(
 
     // Crear el inmueble
     const { data: inmueble, error } = await inmueblesRepository.createInmueble(inmuebleData);
-    
+
     if (error) {
       console.error('Error al crear inmueble:', error);
-      
+
       // Manejar errores específicos de base de datos
       if (error.code === '23503') { // Foreign key violation
         return {
@@ -73,13 +73,11 @@ export async function createInmuebleService(
       };
     }
 
-    console.log('Inmueble creado exitosamente:', inmueble.id_inmueble);
-    
     return {
       data: inmueble,
       error: null
     };
-    
+
   } catch (err) {
     console.error('Error inesperado en createInmuebleService:', err);
     return {

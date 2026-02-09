@@ -27,8 +27,6 @@ export const getMovimientosInmuebleApi = async (
   fecha: string
 ): Promise<{ ingresos: number; egresos: number; movimientos: IMovimiento[] }> => {
   try {
-    console.log('🔄 Obteniendo movimientos para inmueble:', idInmueble, 'fecha:', fecha);
-
     const response = await apiFetch(
       `/api/inmuebles/movimientos?id_inmueble=${idInmueble}&fecha=${fecha}`,
       {
@@ -50,11 +48,6 @@ export const getMovimientosInmuebleApi = async (
 
     const { ingresos, egresos, movimientos } = response;
 
-    console.log('✅ Movimientos del inmueble obtenidos exitosamente:', {
-      cantidad: movimientos?.length || 0,
-      ingresos,
-      egresos
-    });
 
     return { ingresos, egresos, movimientos: movimientos || [] };
 

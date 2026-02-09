@@ -10,7 +10,6 @@ export async function createUserApi(
     id_roles: number;
     estado?: string;
   }) {
-  console.log('Creating user:', user);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const res = await fetch('/api/users/createUser', {
     method: 'POST',

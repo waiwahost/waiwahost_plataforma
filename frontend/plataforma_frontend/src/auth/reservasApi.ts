@@ -17,6 +17,7 @@ interface ReservaApiResponse<T> {
 export interface ReservasFilters {
   estado?: 'pendiente' | 'confirmada' | 'en_proceso' | 'completada' | 'cancelada';
   id_empresa?: number;
+  id_inmueble?: number;
   fecha_inicio?: string;
   fecha_fin?: string;
 }
@@ -26,8 +27,6 @@ export interface ReservasFilters {
  */
 export const getReservasApi = async (filters?: ReservasFilters): Promise<IReservaTableData[]> => {
   try {
-    console.log('🔄 Llamando API getReservas...', filters ? 'con filtros:' : 'sin filtros', filters);
-
     // Construir URL con parámetros de query
     let url = '/api/reservas/getReservas';
     const queryParams = new URLSearchParams();
@@ -38,6 +37,9 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
       }
       if (filters.id_empresa) {
         queryParams.append('id_empresa', filters.id_empresa.toString());
+      }
+      if (filters.id_inmueble) {
+        queryParams.append('id_inmueble', filters.id_inmueble.toString());
       }
       if (filters.fecha_inicio) {
         queryParams.append('fecha_inicio', filters.fecha_inicio);
@@ -52,12 +54,9 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
       url += `?${queryString}`;
     }
 
-    console.log('URL final:', url);
     const data = await apiFetch(url, {
       method: 'GET',
     });
-
-    console.log('✅ Reservas obtenidas exitosamente:', Array.isArray(data) ? data.length : 'Data received');
     return data as IReservaTableData[];
 
   } catch (error) {
@@ -71,13 +70,10 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
  */
 export const getReservaDetalleApi = async (id: number): Promise<IReservaTableData> => {
   try {
-    console.log('🔄 Llamando API getReservaDetalle para ID:', id);
-
-    const data = await apiFetch(`/api/reservas/getReservaDetalle?id=${id}`, {
+    const data = await apiFetch(`/api/reservas/${id}`, {
       method: 'GET',
     });
 
-    console.log('✅ Detalle de reserva obtenido exitosamente:', (data as any).codigo_reserva);
     return data as IReservaTableData;
 
   } catch (error) {
@@ -91,14 +87,10 @@ export const getReservaDetalleApi = async (id: number): Promise<IReservaTableDat
  */
 export const createReservaApi = async (reservaData: IReservaForm): Promise<IReservaTableData> => {
   try {
-    console.log('🔄 Llamando API createReserva...');
-
-    const data = await apiFetch('/api/reservas/createReserva', {
+    const data = await apiFetch('/api/reservas', {
       method: 'POST',
       body: JSON.stringify(reservaData),
     });
-
-    console.log('✅ Reserva creada exitosamente:', (data as any).codigo_reserva);
     return data as IReservaTableData;
 
   } catch (error) {
@@ -112,14 +104,11 @@ export const createReservaApi = async (reservaData: IReservaForm): Promise<IRese
  */
 export const editReservaApi = async (reservaData: IReservaForm & { id: number; codigo_reserva?: string; fecha_creacion?: string; huespedes?: any[] }): Promise<IReservaTableData> => {
   try {
-    console.log('🔄 Llamando API editReserva para ID:', reservaData.id);
-
-    const data = await apiFetch(`/api/reservas/editReserva`, {
+    const data = await apiFetch(`/api/reservas/${reservaData.id}`, {
       method: 'PUT',
       body: JSON.stringify(reservaData),
     });
 
-    console.log('✅ Reserva editada exitosamente:', (data as any).codigo_reserva);
     return data as IReservaTableData;
 
   } catch (error) {
@@ -133,13 +122,10 @@ export const editReservaApi = async (reservaData: IReservaForm & { id: number; c
  */
 export const deleteReservaApi = async (id: number): Promise<{ id: number }> => {
   try {
-    console.log('🔄 Llamando API deleteReserva para ID:', id);
-
-    const data = await apiFetch(`/api/reservas/deleteReserva?id=${id}`, {
+    const data = await apiFetch(`/api/reservas/${id}`, {
       method: 'DELETE',
     });
 
-    console.log('✅ Reserva eliminada exitosamente, ID:', (data as any).id);
     return data as { id: number };
 
   } catch (error) {

@@ -15,8 +15,6 @@ interface ServiceResponse<T> {
  */
 export async function getResumenEgresosService(filtros: FiltrosEgresos): Promise<ServiceResponse<ResumenEgresos>> {
   try {
-    console.log('🔄 Ejecutando getResumenEgresosService con filtros:', filtros);
-
     // Importar repository y pool
     const { MovimientosRepository } = await import('../../repositories/movimientos.repository');
     const pool = (await import('../../libs/db')).default;
@@ -53,14 +51,14 @@ export async function getResumenEgresosService(filtros: FiltrosEgresos): Promise
         WHERE m.fecha = $1 AND m.tipo = 'egreso' AND m.id_inmueble = $2
       `;
       params = [filtros.fecha, filtros.id_inmueble.toString()];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\' AND m.id_inmueble = $2', 
-                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\' AND m.id_inmueble = $3');
+        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\' AND m.id_inmueble = $2',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\' AND m.id_inmueble = $3');
         params = [filtros.fecha, filtros.empresa_id.toString(), filtros.id_inmueble.toString()];
       }
-      
+
       query += ' GROUP BY i.nombre';
     } else {
       // Resumen general con desglose por inmueble
@@ -73,18 +71,18 @@ export async function getResumenEgresosService(filtros: FiltrosEgresos): Promise
         WHERE m.fecha = $1 AND m.tipo = 'egreso'
       `;
       params = [filtros.fecha];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\'', 
-                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\'');
+        query = query.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\'',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\'');
         params.push(filtros.empresa_id.toString());
       }
     }
 
     // Ejecutar consulta principal
     const { rows: resumenRows } = await pool.query(query, params);
-    
+
     const totalEgresos = parseFloat(resumenRows[0]?.total_egresos) || 0;
     const cantidadEgresos = parseInt(resumenRows[0]?.cantidad_egresos) || 0;
     const promedioEgreso = parseFloat(resumenRows[0]?.promedio_egreso) || 0;
@@ -102,20 +100,20 @@ export async function getResumenEgresosService(filtros: FiltrosEgresos): Promise
         LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
         WHERE m.fecha = $1 AND m.tipo = 'egreso'
       `;
-      
+
       let desgloseParams = [filtros.fecha];
-      
+
       // Agregar filtro de empresa si se especifica
       if (filtros.empresa_id && filtros.empresa_id > 0) {
-        desgloseQuery = desgloseQuery.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\'', 
-                                             'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\'');
+        desgloseQuery = desgloseQuery.replace('WHERE m.fecha = $1 AND m.tipo = \'egreso\'',
+          'WHERE m.fecha = $1 AND m.id_empresa = $2 AND m.tipo = \'egreso\'');
         desgloseParams.push(filtros.empresa_id.toString());
       }
-      
+
       desgloseQuery += ' GROUP BY m.id_inmueble, i.nombre ORDER BY total DESC';
-      
+
       const { rows: desgloseRows } = await pool.query(desgloseQuery, desgloseParams);
-      
+
       desgloseInmuebles = desgloseRows.map(row => ({
         id_inmueble: row.id_inmueble,
         nombre_inmueble: row.nombre_inmueble || 'Sin nombre',
@@ -133,9 +131,7 @@ export async function getResumenEgresosService(filtros: FiltrosEgresos): Promise
       desglose_inmuebles: desgloseInmuebles
     };
 
-    console.log(`✅ Resumen calculado: ${totalEgresos} en ${cantidadEgresos} movimientos`);
-
-    return { 
+    return {
       data: resumen,
       error: null
     };

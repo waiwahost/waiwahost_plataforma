@@ -27,7 +27,6 @@ export async function POST(request) {
       })) : [],
     };
 
-    console.log('Payload enviado al API externo:', payload);
     // Call external API
     const response = await fetch('http://localhost:3001/reservas/public', {
       method: 'POST',

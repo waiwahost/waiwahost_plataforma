@@ -51,13 +51,13 @@ interface ExternalApiResponse {
  */
 const buildApiUrl = (baseUrl: string, queryParams: Record<string, string>): string => {
   const url = new URL('/reservas', baseUrl);
-  
+
   Object.entries(queryParams).forEach(([key, value]) => {
     if (value && value.trim() !== '') {
       url.searchParams.append(key, value);
     }
   });
-  
+
   return url.toString();
 };
 
@@ -100,45 +100,45 @@ const mapReservaFromAPI = (reservaAPI: ExternalReservaResponse): IReservaTableDa
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
+    return res.status(405).json({
       success: false,
-      message: 'Método no permitido' 
+      message: 'Método no permitido'
     });
   }
 
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
+
     // Extraer parámetros de query de la request
-    const { estado, id_empresa, fecha_inicio, fecha_fin } = req.query;
+    const { estado, id_empresa, id_inmueble, fecha_inicio, fecha_fin } = req.query;
     
     // Construir parámetros de query para la API externa
     const queryParams: Record<string, string> = {};
-    
+
     if (estado && typeof estado === 'string') {
       queryParams.estado = estado;
     }
-    
+
     if (id_empresa && typeof id_empresa === 'string') {
       queryParams.id_empresa = id_empresa;
+    }
+
+    if (id_inmueble && typeof id_inmueble === 'string') {
+      queryParams.id_inmueble = id_inmueble;
     }
     
     if (fecha_inicio && typeof fecha_inicio === 'string') {
       queryParams.fecha_inicio = fecha_inicio;
     }
-    
+
     if (fecha_fin && typeof fecha_fin === 'string') {
       queryParams.fecha_fin = fecha_fin;
     }
 
     // Construir URL completa con parámetros
     const fullUrl = buildApiUrl(apiUrl, queryParams);
-    
-    console.log('🚀 Llamando API externa:', fullUrl);
-    console.log('🔑 Token presente:', token ? 'Sí' : 'No');
-    console.log('📋 Parámetros:', queryParams);
-    
+
     // Realizar la llamada a la API externa
     const response = await fetch(fullUrl, {
       method: 'GET',
@@ -153,13 +153,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData: ExternalApiResponse = await response.json();
-    console.log('📦 Respuesta API externa:', {
-      isError: externalData.isError,
-      dataCount: externalData.data?.length || 0,
-      message: externalData.message
-    });
-
-
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
@@ -181,8 +174,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return null;
       }
     }).filter((reserva): reserva is IReservaTableData => reserva !== null);
-    
-    console.log('✅ Reservas mapeadas exitosamente:', reservas.length);
 
     res.status(200).json({
       success: true,
@@ -192,7 +183,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('❌ Error en getReservas API:', error);
-    
+
     res.status(500).json({
       success: false,
       data: null,

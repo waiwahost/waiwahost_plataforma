@@ -55,7 +55,6 @@ const mapSelectorToInmueble = (selector: IInmuebleSelector): any => ({
  */
 export const getInmueblesForMovimientos = async (): Promise<IInmuebleApiResponse> => {
   try {
-    console.log('🔄 Obteniendo inmuebles para formularios');
 
     const response: any = await apiFetch('/api/inmuebles/getInmueblesSelector', {
       method: 'GET',
@@ -64,8 +63,6 @@ export const getInmueblesForMovimientos = async (): Promise<IInmuebleApiResponse
     // apiFetch puede devolver directamente el array de data si detecta la propiedad 'data' en la respuesta
     if (Array.isArray(response)) {
       const inmuebles = response.map(mapSelectorToInmueble);
-      console.log('✅ Inmuebles para formularios obtenidos exitosamente:', inmuebles.length);
-
       return {
         success: true,
         data: inmuebles,

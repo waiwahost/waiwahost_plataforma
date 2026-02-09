@@ -52,8 +52,6 @@ export const editHuespedApi = async (id: number, huespedData: any): Promise<IHue
     if (huespedData.estado !== undefined) editableFields.estado = huespedData.estado;
     if (huespedData.id_empresa !== undefined) editableFields.id_empresa = huespedData.id_empresa;
 
-    console.log('Sending editable fields:', editableFields);
-
     const data = await apiFetch(`/api/huespedes/editHuesped/${id}`, {
       method: 'PUT',
       headers: {

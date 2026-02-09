@@ -12,8 +12,6 @@ import { apiFetch } from './apiFetch';
  */
 export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: string): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Obteniendo movimientos por fecha:', fecha, plataformaOrigen ? `con filtro de plataforma: ${plataformaOrigen}` : 'sin filtro de plataforma');
-
     // Construir URL con parámetros de consulta
     let url = `/api/movimientos/getMovimientosByFecha?fecha=${fecha}`;
     if (plataformaOrigen) {
@@ -24,7 +22,6 @@ export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: st
       method: 'GET',
     });
 
-    console.log('✅ Movimientos por fecha obtenidos exitosamente:', Array.isArray(data) ? data.length : 1);
     // apiFetch devuelve la data directamente, pero la interfaz espera { success, data }
     // Ajustamos para devolver la estructura esperada por el frontend
     return {
@@ -49,8 +46,6 @@ export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: st
  */
 export const getResumenDiario = async (fecha: string): Promise<{ success: boolean; data?: IResumenDiario; message: string; error?: string }> => {
   try {
-    console.log('🔄 Obteniendo resumen diario:', fecha);
-
     const data = await apiFetch(
       `/api/movimientos/getResumenDiario?fecha=${fecha}`,
       {
@@ -58,7 +53,6 @@ export const getResumenDiario = async (fecha: string): Promise<{ success: boolea
       }
     );
 
-    console.log('✅ Resumen diario obtenido exitosamente:', data);
     return {
       success: true,
       data: data,
@@ -81,14 +75,11 @@ export const getResumenDiario = async (fecha: string): Promise<{ success: boolea
  */
 export const createMovimiento = async (movimientoData: IMovimientoForm): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Creando movimiento:', movimientoData);
-
     const data = await apiFetch('/api/movimientos/createMovimiento', {
       method: 'POST',
       body: JSON.stringify(movimientoData),
     });
 
-    console.log('✅ Movimiento creado exitosamente:', data);
     return {
       success: true,
       data: data,
@@ -111,14 +102,10 @@ export const createMovimiento = async (movimientoData: IMovimientoForm): Promise
  */
 export const updateMovimiento = async (id: string, movimientoData: Partial<IMovimientoForm>): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Actualizando movimiento:', { id, data: movimientoData });
-
     const data = await apiFetch(`/api/movimientos/updateMovimiento?id=${id}`, {
       method: 'PUT',
       body: JSON.stringify(movimientoData),
     });
-
-    console.log('✅ Movimiento actualizado exitosamente:', data);
     return {
       success: true,
       data: data,
@@ -141,13 +128,9 @@ export const updateMovimiento = async (id: string, movimientoData: Partial<IMovi
  */
 export const deleteMovimiento = async (id: string): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Eliminando movimiento:', id);
-
     const data = await apiFetch(`/api/movimientos/deleteMovimiento?id=${id}`, {
       method: 'DELETE',
     });
-
-    console.log('✅ Movimiento eliminado exitosamente:', id);
     return {
       success: true,
       data: { id } as any,
@@ -170,8 +153,6 @@ export const deleteMovimiento = async (id: string): Promise<IMovimientoApiRespon
  */
 export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma: string): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Filtrando movimientos por plataforma:', { fecha, plataforma });
-
     const data = await apiFetch(
       `/api/movimientos/filtrarPorPlataforma?fecha=${fecha}&plataforma=${plataforma}`,
       {
@@ -179,7 +160,6 @@ export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma:
       }
     );
 
-    console.log('✅ Movimientos filtrados por plataforma exitosamente:', Array.isArray(data) ? data.length : 1);
     return {
       success: true,
       data: data,
@@ -202,13 +182,10 @@ export const filtrarMovimientosPorPlataforma = async (fecha: string, plataforma:
  */
 export const getMovimientoById = async (id: string): Promise<IMovimientoApiResponse> => {
   try {
-    console.log('🔄 Obteniendo movimiento por ID:', id);
-
     const data = await apiFetch(`/api/movimientos/getMovimientoById?id=${id}`, {
       method: 'GET',
     });
 
-    console.log('✅ Movimiento por ID obtenido exitosamente:', data);
     return {
       success: true,
       data: data,

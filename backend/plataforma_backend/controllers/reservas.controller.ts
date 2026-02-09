@@ -47,6 +47,58 @@ export class ReservasController {
   }
 
   /**
+   * Controlador para obtener una reserva por ID
+   * GET /reservas/:id
+   */
+  async getReservaById(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const ctx = (request as any).userContext || (request as any).user?.userContext;
+      if (!ctx) {
+        return reply.code(401).send(errorResponse({ message: 'No autenticado o token inválido', code: 401 }));
+      }
+
+      const id = Number((request.params as any).id);
+      if (!id || isNaN(id)) {
+        return reply.code(400).send(errorResponse({ message: 'ID de reserva inválido', code: 400 }));
+      }
+
+      const getReservasService = new GetReservasService();
+      const filters: GetReservasQuery = { id };
+
+      // Lógica de seguridad por empresa
+      if (ctx.id_roles === 1 && (ctx.empresaId === null || ctx.empresaId === undefined)) {
+        // superadmin sin empresa seleccionada: puede ver todo
+      } else {
+        const id_empresa = ctx.empresaId;
+        if (!id_empresa) {
+          return reply.code(401).send(errorResponse({ message: 'No autenticado o token inválido', code: 401 }));
+        }
+        filters.id_empresa = id_empresa;
+      }
+
+      const reservas = await getReservasService.execute(filters);
+
+      if (reservas.length === 0) {
+        return reply.code(404).send(errorResponse({ message: 'Reserva no encontrada', code: 404 }));
+      }
+
+      const response = {
+        isError: false,
+        data: reservas[0],
+        message: 'Reserva obtenida exitosamente'
+      };
+      reply.code(200).send(response);
+    } catch (error) {
+      console.error('Error en ReservasController.getReservaById:', error);
+      const response = errorResponse({
+        message: 'Error interno del servidor',
+        code: 500
+      });
+      reply.code(500).send(response);
+    }
+  }
+
+  /**
    * Controlador para crear una nueva reserva
    * POST /reservas
    */
@@ -99,8 +151,6 @@ export class ReservasController {
     try {
       const id = Number((request.params as any).id);
       const data = request.body as EditReservaRequest;
-      console.log('Request params id:', request.params);
-      console.log('Request body data:', data);
       if (!id || isNaN(id)) {
         return reply.code(400).send(errorResponse({ message: 'ID de reserva inválido', code: 400 }));
       }
@@ -124,7 +174,7 @@ export class ReservasController {
       }
       const { deleteReservaService } = await import('../services/reservas/deleteReservaService');
       const result = await deleteReservaService(id);
-      return reply.code(200).send(successResponse({ data: result, message: 'Reserva anulada exitosamente' }));
+      return reply.code(200).send(successResponse({ data: result, message: 'Reserva eliminada exitosamente' }));
     } catch (error: any) {
       console.error('Error en ReservasController.deleteReserva:', error);
       return reply.code(400).send(errorResponse({ message: error.message || 'Error al anular reserva', code: 400 }));

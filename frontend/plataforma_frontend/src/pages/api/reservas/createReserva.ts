@@ -192,21 +192,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
 
-    console.log('🚀 Creando reserva en API externa:', `${apiUrl}/reservas`);
-    console.log('🔑 Token presente:', token ? 'Sí' : 'No');
-    console.log('📋 Datos de reserva:', {
-      id_inmueble: reservaData.id_inmueble,
-      numero_huespedes: reservaData.numero_huespedes,
-      huespedes_count: reservaData.huespedes.length,
-      huesped_principal: reservaData.huespedes.find(h => h.es_principal)?.nombre + ' ' + reservaData.huespedes.find(h => h.es_principal)?.apellido,
-      fecha_inicio: reservaData.fecha_inicio,
-      fecha_fin: reservaData.fecha_fin,
-      precio_total: reservaData.precio_total,
-      total_reserva: reservaData.total_reserva,
-      total_pagado: reservaData.total_pagado,
-      estado: reservaData.estado,
-      id_empresa: reservaData.id_empresa
-    });
 
     // Realizar la llamada a la API externa
     const response = await fetch(`${apiUrl}/reservas`, {
@@ -223,13 +208,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData: ExternalApiResponse = await response.json();
-    console.log(' Respuesta API externa:', {
-      isError: externalData.isError,
-      message: externalData.message,
-      reservaId: externalData.data?.id,
-      codigoReserva: externalData.data?.codigo_reserva
-    });
-
     // Verificar si la API externa retornó error
     if (externalData.isError) {
       return res.status(400).json({
@@ -241,8 +219,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Mapear los datos al formato esperado por el frontend
     const nuevaReserva = mapReservaFromAPI(externalData.data);
-
-    console.log(' Reserva creada exitosamente:', nuevaReserva.codigo_reserva);
 
     res.status(201).json({
       success: true,

@@ -7,10 +7,10 @@ import { IReservaTableData } from '../interfaces/Reserva';
 import { IPago } from '../interfaces/Pago';
 import { getReservasApi, ReservasFilters } from '../auth/reservasApi';
 import { getPagosReservaApi } from '../auth/pagosApi';
-import { 
-  calcularTotalesReserva, 
+import {
+  calcularTotalesReserva,
   actualizarTotalesEnReservas,
-  validarConsistenciaTotales 
+  validarConsistenciaTotales
 } from '../lib/reservasUtils';
 
 interface UseReservasConTotalesReturn {
@@ -43,14 +43,14 @@ export const useReservasConTotales = (
     try {
       setLoading(true);
       setError(null);
-      
+
       const filtrosAplicar = filtros || filtrosIniciales;
       const data = await getReservasApi(filtrosAplicar);
-      
+
       // Validar y inicializar totales si es necesario
       const reservasConTotales = data.map(reserva => {
         const validacion = validarConsistenciaTotales(reserva);
-        
+
         // Log warnings for inconsistent data
         if (!validacion.esConsistente || validacion.advertencias.length > 0) {
           console.warn(`⚠️ Inconsistencia en reserva ${reserva.codigo_reserva}:`, {
@@ -58,10 +58,10 @@ export const useReservasConTotales = (
             advertencias: validacion.advertencias
           });
         }
-        
+
         return reserva;
       });
-      
+
       setReservas(reservasConTotales);
     } catch (error) {
       console.error('Error cargando reservas:', error);
@@ -96,14 +96,12 @@ export const useReservasConTotales = (
 
       // Calcular nuevos totales
       const nuevosTotales = calcularTotalesReserva(reservaActual, pagosReserva);
-      
+
       // Actualizar la lista de reservas
-      setReservas(prevReservas => 
+      setReservas(prevReservas =>
         actualizarTotalesEnReservas(prevReservas, reservaId, nuevosTotales)
       );
 
-      console.log(`✅ Totales actualizados para reserva ${reservaActual.codigo_reserva}:`, nuevosTotales);
-      
     } catch (error) {
       console.error(`Error actualizando totales para reserva ${reservaId}:`, error);
     }
@@ -113,8 +111,8 @@ export const useReservasConTotales = (
    * Actualiza una reserva específica en la lista
    */
   const actualizarReservaEnLista = useCallback((reservaActualizada: IReservaTableData) => {
-    setReservas(prevReservas => 
-      prevReservas.map(reserva => 
+    setReservas(prevReservas =>
+      prevReservas.map(reserva =>
         reserva.id === reservaActualizada.id ? reservaActualizada : reserva
       )
     );
@@ -124,7 +122,7 @@ export const useReservasConTotales = (
    * Elimina una reserva de la lista
    */
   const eliminarReservaDeLista = useCallback((reservaId: number) => {
-    setReservas(prevReservas => 
+    setReservas(prevReservas =>
       prevReservas.filter(reserva => reserva.id !== reservaId)
     );
   }, []);
@@ -149,7 +147,7 @@ export const useReservasConTotales = (
   const validarConsistenciaReserva = useCallback((reservaId: number) => {
     const reserva = reservas.find(r => r.id === reservaId);
     if (!reserva) return null;
-    
+
     return validarConsistenciaTotales(reserva);
   }, [reservas]);
 

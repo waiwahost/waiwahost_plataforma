@@ -7,6 +7,7 @@ import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { Label } from '../../components/atoms/Label';
 import { Spinner } from '../../components/atoms/Spinner';
+import { PasswordInput } from "../../components/atoms/PasswordInput";
 import { ResetPasswordModal } from '../../components/organisms/ResetPasswordModal';
 import { loginUser } from '../../auth/loginApi';
 
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,16 +118,27 @@ export default function LoginPage() {
                     Contraseña
                   </Label>
                   <div className="relative">
-                    <svg className="absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                    <Input
+                    <PasswordInput
                       id="password"
-                      type="password"
                       placeholder="••••••••"
-                      className="pl-10 pr-10 h-12 border-gray-200 focus:border-tourism-teal focus:ring-tourism-teal"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
+                      className="focus:border-tourism-teal focus:ring-tourism-teal"
+                      leftIcon={
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                        >
+                          <rect x="3" y="11" width="18" height="11" rx="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      }
                     />
+
                   </div>
                 </div>
                 {error && <div className="text-red-500 text-center text-sm">{error}</div>}

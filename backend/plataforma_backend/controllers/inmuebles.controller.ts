@@ -120,7 +120,6 @@ export const inmueblesController = {
         );
       }
 
-      console.log('Inmueble creado exitosamente:', data?.id_inmueble);
       return reply.status(201).send(
         successResponse(data, 201)
       );
@@ -184,13 +183,6 @@ export const inmueblesController = {
       const { id: inmuebleId } = queryValidation.data;
       const inmuebleData = { ...bodyValidation.data };
 
-      console.log('Editando inmueble:', {
-        inmuebleId,
-        nombre: inmuebleData.nombre,
-        direccion: inmuebleData.direccion,
-        //id_propietario: inmuebleData.id_propietario,
-        //id_empresa: inmuebleData.id_empresa
-      });
 
       // Llamar al servicio
       const { data, error } = await editInmuebleService(
@@ -210,7 +202,6 @@ export const inmueblesController = {
         );
       }
 
-      console.log('Inmueble editado exitosamente:', data?.id_inmueble);
       return reply.send(successResponse(data));
 
     } catch (err) {
@@ -257,8 +248,6 @@ export const inmueblesController = {
 
       const { id: inmuebleId } = queryValidation.data;
 
-      console.log('Eliminando inmueble:', { inmuebleId });
-
       // Llamar al servicio
       const { data, error } = await deleteInmuebleService(Number(ctx.id), inmuebleId);
 
@@ -273,7 +262,6 @@ export const inmueblesController = {
         );
       }
 
-      console.log('Inmueble eliminado exitosamente:', data?.id_inmueble);
       return reply.send(successResponse(data));
 
     } catch (err) {

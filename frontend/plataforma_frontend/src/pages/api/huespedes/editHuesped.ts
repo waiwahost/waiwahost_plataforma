@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { id } = req.query;
     const updateData = req.body;
-    
+
     if (!id) {
       return res.status(400).json({
         isError: true,
@@ -22,12 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log('Editing huesped with ID (MOCK):', id);
-    console.log('Update data:', updateData);
-    
+
     // Simular pequeña demora
     await new Promise(resolve => setTimeout(resolve, 600));
-    
+
     // Simular actualización exitosa - combinar datos existentes con nuevos
     const updatedHuesped: IHuespedTableData = {
       id_huesped: parseInt(id as string),
@@ -39,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       estado: updateData.estado || 'activo'
     };
 
-    console.log('Mock huesped updated:', updatedHuesped);
 
     res.status(200).json({
       isError: false,
@@ -49,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in editHuesped API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

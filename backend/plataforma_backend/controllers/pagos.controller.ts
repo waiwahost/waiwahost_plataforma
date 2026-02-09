@@ -1,14 +1,14 @@
 import { FastifyRequest, FastifyReply, RouteGenericInterface } from 'fastify';
 import { PagosRepository } from '../repositories/pagos.repository';
 import { PagoMovimientoService } from '../services/pagoMovimiento.service';
-import { 
-  CreatePagoRequest, 
-  UpdatePagoRequest, 
+import {
+  CreatePagoRequest,
+  UpdatePagoRequest,
   PagosQueryRequest
 } from '../schemas/pago.schema';
-import { 
-  Pago, 
-  PagoConMovimiento, 
+import {
+  Pago,
+  PagoConMovimiento,
   DeletePagoResult,
   ResumenPagosReserva
 } from '../interfaces/pago.interface';
@@ -24,7 +24,7 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const id_reserva = parseInt((request as any).params.id_reserva);
+      const id_reserva = parseInt((request as any).params.id_reserva);
       if (isNaN(id_reserva) || id_reserva <= 0) {
         return responseHelper.error(reply, 'ID de reserva inválido', 400);
       }
@@ -86,7 +86,7 @@ export class PagosController {
         page: query.page ? parseInt(query.page) : 1,
         limit: query.limit ? parseInt(query.limit) : 50
       };
-      
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -97,7 +97,7 @@ export class PagosController {
       queryParams.id_empresa = id_empresa;
 
       const { pagos, total } = await PagosRepository.getPagosWithFilters(queryParams);
-      
+
       const totalPages = Math.ceil(total / (queryParams.limit || 50));
       const currentPage = queryParams.page || 1;
 
@@ -125,12 +125,12 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const id = parseInt((request as any).params.id);
-      
+      const id = parseInt((request as any).params.id);
+
       if (isNaN(id) || id <= 0) {
         return responseHelper.error(reply, 'ID de pago inválido', 400);
       }
-      
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -145,7 +145,7 @@ export class PagosController {
       }
 
       const pago = await PagosRepository.getPagoById(id);
-      
+
       return responseHelper.success(reply, { pago }, 'Pago encontrado exitosamente');
 
     } catch (error) {
@@ -168,29 +168,24 @@ export class PagosController {
       if (!id_empresa && id_roles !== 1) {
         return responseHelper.error(reply, 'No autenticado o token inválido', 401);
       }
-  const pagoData = { ...(request as any).body, id_empresa: Number(id_empresa) };
+      const pagoData = { ...(request as any).body, id_empresa: Number(id_empresa) };
       // Crear el pago
       const pagoCreado = await PagosRepository.createPago(pagoData);
-      
+
       // Intentar crear el movimiento asociado
       let movimientoCreado = false;
       let movimientoId: string | undefined;
-      
+
       try {
-        console.log(`[DEBUG] Creando movimiento para pago ID: ${pagoCreado.id}, reserva: ${pagoData.id_reserva}`);
-        
         // Obtener el ID del inmueble de la reserva
         const idInmueble = await PagoMovimientoService.obtenerInmuebleDeReserva(pagoData.id_reserva);
-        console.log(`[DEBUG] ID inmueble obtenido: ${idInmueble}`);
-        
+
         if (idInmueble) {
           const movimientoIdResult = await PagoMovimientoService.crearMovimientoDesdePago(pagoCreado, idInmueble);
-          console.log(`[DEBUG] Resultado creación movimiento: ${movimientoIdResult}`);
-          
+
           if (movimientoIdResult) {
             movimientoId = movimientoIdResult;
             movimientoCreado = true;
-            console.log(`[DEBUG] Movimiento creado exitosamente con ID: ${movimientoId}`);
           } else {
             console.warn(`[DEBUG] No se pudo crear el movimiento para el pago ${pagoCreado.id}`);
           }
@@ -218,11 +213,13 @@ export class PagosController {
 
     } catch (error) {
       console.error('Error al crear pago:', error);
-      
+
       if (error instanceof Error) {
+        console.error('Error detail:', error.message);
+        // Include the original error message in the response for debugging
         return responseHelper.error(reply, error.message, 400);
       }
-      
+
       return responseHelper.error(reply, 'Error interno del servidor', 500);
     }
   }
@@ -235,14 +232,14 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const id = parseInt((request as any).params.id);
-      
+      const id = parseInt((request as any).params.id);
+
       if (isNaN(id) || id <= 0) {
         return responseHelper.error(reply, 'ID de pago inválido', 400);
       }
-      
-  const updateData = (request as any).body;
-      
+
+      const updateData = (request as any).body;
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -257,7 +254,7 @@ export class PagosController {
       }
 
       const pagoActualizado = await PagosRepository.updatePago(id, updateData);
-      
+
       // Obtener resumen actualizado de la reserva
       const resumenActualizado = await PagosRepository.getResumenPagosReserva(pagoActualizado.id_reserva);
 
@@ -268,11 +265,11 @@ export class PagosController {
 
     } catch (error) {
       console.error('Error al actualizar pago:', error);
-      
+
       if (error instanceof Error) {
         return responseHelper.error(reply, error.message, 400);
       }
-      
+
       return responseHelper.error(reply, 'Error interno del servidor', 500);
     }
   }
@@ -285,12 +282,12 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const id = parseInt((request as any).params.id);
-      
+      const id = parseInt((request as any).params.id);
+
       if (isNaN(id) || id <= 0) {
         return responseHelper.error(reply, 'ID de pago inválido', 400);
       }
-      
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -312,10 +309,9 @@ export class PagosController {
 
       // Eliminar movimientos asociados al pago
       let movimientosEliminados = { movimientos_eliminados: 0, movimientos_encontrados: [] as string[] };
-      
+
       try {
         movimientosEliminados = await PagoMovimientoService.eliminarMovimientoAsociado(id);
-        console.log(`Eliminados ${movimientosEliminados.movimientos_eliminados} movimientos asociados al pago ${id}`);
       } catch (movimientoError) {
         console.error('Error al eliminar movimientos asociados:', movimientoError);
         // Continuar con la eliminación del pago aunque falle la eliminación del movimiento
@@ -343,19 +339,19 @@ export class PagosController {
         }
       };
 
-      const mensaje = movimientosEliminados.movimientos_eliminados > 0 
+      const mensaje = movimientosEliminados.movimientos_eliminados > 0
         ? `Pago y ${movimientosEliminados.movimientos_eliminados} movimiento(s) asociado(s) eliminados exitosamente`
         : 'Pago eliminado exitosamente (sin movimientos asociados)';
-      
+
       return responseHelper.success(reply, resultado, mensaje);
 
     } catch (error) {
       console.error('Error al eliminar pago:', error);
-      
+
       if (error instanceof Error) {
         return responseHelper.error(reply, error.message, 400);
       }
-      
+
       return responseHelper.error(reply, 'Error interno del servidor', 500);
     }
   }
@@ -368,12 +364,12 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const id_reserva = parseInt((request as any).params.id_reserva);
-      
+      const id_reserva = parseInt((request as any).params.id_reserva);
+
       if (isNaN(id_reserva) || id_reserva <= 0) {
         return responseHelper.error(reply, 'ID de reserva inválido', 400);
       }
-      
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -388,7 +384,7 @@ export class PagosController {
       }
 
       const resumen = await PagosRepository.getResumenPagosReserva(id_reserva);
-      
+
       if (!resumen) {
         return responseHelper.error(reply, 'No se pudo obtener el resumen de la reserva', 404);
       }
@@ -409,8 +405,8 @@ export class PagosController {
     reply: FastifyReply
   ) {
     try {
-  const { fecha } = (request as any).query;
-      
+      const { fecha } = (request as any).query;
+
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -419,7 +415,7 @@ export class PagosController {
         return responseHelper.error(reply, 'No autenticado o token inválido', 401);
       }
       const pagos = await PagosRepository.getPagosByEmpresaFecha(Number(id_empresa), fecha);
-      
+
       // Calcular total del día
       const totalDia = pagos.reduce((sum, pago) => sum + pago.monto, 0);
 
@@ -445,8 +441,8 @@ export class PagosController {
   ) {
     try {
       // Convertir parámetros de query
-  const fecha_inicio = (request as any).query?.fecha_inicio;
-  const fecha_fin = (request as any).query?.fecha_fin;
+      const fecha_inicio = (request as any).query?.fecha_inicio;
+      const fecha_fin = (request as any).query?.fecha_fin;
       // Obtener id_empresa del usuario autenticado
       const ctx = (request as any).userContext || (request as any).user?.userContext;
       const id_empresa = ctx?.empresaId;
@@ -455,8 +451,8 @@ export class PagosController {
         return responseHelper.error(reply, 'No autenticado o token inválido', 401);
       }
       const estadisticas = await PagosRepository.getEstadisticasMetodosPago(
-        Number(id_empresa), 
-        fecha_inicio, 
+        Number(id_empresa),
+        fecha_inicio,
         fecha_fin
       );
 

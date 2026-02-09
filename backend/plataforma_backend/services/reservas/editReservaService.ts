@@ -6,7 +6,6 @@ const reservasRepository = new ReservasRepository();
 
 export async function editReservaService(id: number, data: EditReservaRequest) {
   // Validar que al menos un campo editable esté presente
-  console.log('Data received for editReservaService:', data);
   const editableFields = [
     'fecha_inicio',
     'fecha_fin',

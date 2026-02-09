@@ -32,13 +32,6 @@ const Properties: React.FC = () => {
   const canEdit = user?.permisos?.includes('editar_inmuebles') || true; // TEMPORAL: siempre true para debugging
   const canDelete = user?.permisos?.includes('eliminar_inmuebles') || true; // TEMPORAL: siempre true para debugging
 
-  console.log('=== PROPERTIES DEBUG ===');
-  console.log('user:', user);
-  console.log('user permisos:', user?.permisos);
-  console.log('canCreate:', canCreate);
-  console.log('canEdit:', canEdit);
-  console.log('canDelete:', canDelete);
-  console.log('========================');
 
   useEffect(() => {
     getInmueblesApi()
@@ -73,14 +66,10 @@ const Properties: React.FC = () => {
 
   const handleViewDetailWithApi = async (inmuebleId: string) => {
     try {
-      console.log('🔍 Fetching inmueble detail for ID:', inmuebleId);
-
       // Obtener detalle del inmueble desde la API externa directamente
       const inmuebleDetalle = await getInmuebleDetalleApi(inmuebleId);
       setInmuebleToView(inmuebleDetalle);
       setDetailModalOpen(true);
-
-      console.log('✅ Inmueble detail loaded successfully');
     } catch (error) {
       console.error('❌ Error getting inmueble detail:', error);
       alert(error instanceof Error ? error.message : 'Error al obtener detalle del inmueble');

@@ -11,8 +11,8 @@ const mapPropietarioFromAPI = (propietarioAPI: any): IPropietarioTableData => {
     telefono: propietarioAPI.telefono || 'Sin teléfono',
     direccion: propietarioAPI.direccion || 'Sin dirección',
     cedula: propietarioAPI.cedula || 'Sin cédula',
-    fecha_registro: propietarioAPI.fecha_registro ? 
-      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] : 
+    fecha_registro: propietarioAPI.fecha_registro ?
+      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] :
       new Date().toISOString().split('T')[0],
     estado: propietarioAPI.estado ? 'activo' : 'inactivo',
     id_empresa: propietarioAPI.id_empresa || 1,
@@ -33,9 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { id_empresa } = req.query;
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    console.log('Calling external API:', `${apiUrl}/propietarios/getPropietarios`);
-    
+
     // Hacer la llamada a la API externa
     const response = await fetch(`${apiUrl}/propietarios/getPropietarios`, {
       method: 'GET',
@@ -50,7 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData = await response.json();
-    console.log('External API response:', externalData);
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
@@ -71,8 +68,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
     }
 
-    console.log('Mapped propietarios:', propietarios);
-
     res.status(200).json({
       isError: false,
       data: propietarios,
@@ -81,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in getPropietarios API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

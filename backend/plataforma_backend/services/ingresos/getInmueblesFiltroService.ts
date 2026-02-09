@@ -15,8 +15,6 @@ interface ServiceResponse<T> {
  */
 export async function getInmueblesFiltroService(empresaId: number): Promise<ServiceResponse<InmuebleFiltro[]>> {
   try {
-    console.log('🔄 Ejecutando getInmueblesFiltroService para empresa:', empresaId);
-
     // Importar repository
     const { MovimientosRepository } = await import('../../repositories/movimientos.repository');
 
@@ -63,8 +61,6 @@ export async function getInmueblesFiltroService(empresaId: number): Promise<Serv
       nombre: inmueble.nombre,
       direccion: inmueble.direccion
     }));
-
-    console.log(`✅ ${inmueblesFiltro.length} inmuebles encontrados para filtro`);
 
     return { data: inmueblesFiltro, error: null };
 

@@ -25,7 +25,7 @@ export default async function handler(
 
   try {
     const { fecha, id_inmueble } = req.query;
-    
+
     // Validar parámetros
     if (!fecha || typeof fecha !== 'string') {
       return res.status(400).json({
@@ -49,10 +49,6 @@ export default async function handler(
 
     // Endpoint específico para resumen de ingresos
     const endpoint = `/ingresos/resumen?${params.toString()}`;
-    
-    console.log('🔍 DEBUG - URL final que se va a llamar:', endpoint);
-    console.log('🔍 DEBUG - Parámetros:', params.toString());
-    console.log('🔍 DEBUG - Token presente:', token ? 'SÍ' : 'NO');
 
     // Llamar a la API externa
     const externalResponse = await externalApiServerFetch(endpoint, {
@@ -70,8 +66,6 @@ export default async function handler(
 
     // Transformar los datos del backend al formato que espera el frontend
     const backendData = externalResponse.data;
-    console.log('✅ Datos recibidos del backend:', backendData);
-    console.log('Datos a transformar .data', externalResponse.data);
     const transformedData = {
       fecha: backendData.data.fecha,
       total_ingresos: backendData.data.total_ingresos,
@@ -85,8 +79,6 @@ export default async function handler(
         cantidad_ingresos: inmueble.cantidad
       })) || []
     };
-
-    console.log('✅ Datos transformados para frontend:', transformedData);
 
     // Respuesta exitosa
     return res.status(200).json({

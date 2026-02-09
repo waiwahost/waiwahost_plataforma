@@ -5,50 +5,50 @@ const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'otro'] as const;
 // Schema para crear un nuevo pago
 export const createPagoSchema = {
   type: 'object',
-  required: ['id_reserva', 'monto', 'metodo_pago', 'concepto', 'id_empresa'],
+  required: ['id_reserva', 'monto', 'metodo_pago', 'concepto'],
   properties: {
-    id_reserva: { 
+    id_reserva: {
       type: 'integer',
       minimum: 1,
       description: 'ID de la reserva'
     },
-    monto: { 
+    monto: {
       type: 'number',
       minimum: 0.01,
       description: 'Monto del pago'
     },
-    fecha_pago: { 
+    fecha_pago: {
       type: 'string',
       format: 'date',
       description: 'Fecha del pago (YYYY-MM-DD)'
     },
-    metodo_pago: { 
+    metodo_pago: {
       type: 'string',
       enum: METODOS_PAGO,
       description: 'Método de pago utilizado'
     },
-    concepto: { 
+    concepto: {
       type: 'string',
       minLength: 1,
       maxLength: 255,
       description: 'Concepto del pago'
     },
-    descripcion: { 
+    descripcion: {
       type: 'string',
       maxLength: 1000,
       description: 'Descripción detallada del pago'
     },
-    comprobante: { 
+    comprobante: {
       type: 'string',
       maxLength: 255,
       description: 'Número de comprobante'
     },
-    id_empresa: { 
+    id_empresa: {
       type: 'integer',
       minimum: 1,
       description: 'ID de la empresa'
     },
-    id_usuario_registro: { 
+    id_usuario_registro: {
       type: 'integer',
       minimum: 1,
       description: 'ID del usuario que registra el pago'
@@ -60,28 +60,28 @@ export const createPagoSchema = {
 export const updatePagoSchema = {
   type: 'object',
   properties: {
-    monto: { 
+    monto: {
       type: 'number',
       minimum: 0.01
     },
-    fecha_pago: { 
+    fecha_pago: {
       type: 'string',
       format: 'date'
     },
-    metodo_pago: { 
+    metodo_pago: {
       type: 'string',
       enum: METODOS_PAGO
     },
-    concepto: { 
+    concepto: {
       type: 'string',
       minLength: 1,
       maxLength: 255
     },
-    descripcion: { 
+    descripcion: {
       type: 'string',
       maxLength: 1000
     },
-    comprobante: { 
+    comprobante: {
       type: 'string',
       maxLength: 255
     }
@@ -92,32 +92,32 @@ export const updatePagoSchema = {
 export const pagosQuerySchema = {
   type: 'object',
   properties: {
-    id_reserva: { 
+    id_reserva: {
       type: 'string',
       pattern: '^[1-9]\\d*$'
     },
-    fecha_desde: { 
+    fecha_desde: {
       type: 'string',
       format: 'date'
     },
-    fecha_hasta: { 
+    fecha_hasta: {
       type: 'string',
       format: 'date'
     },
-    metodo_pago: { 
+    metodo_pago: {
       type: 'string',
       enum: METODOS_PAGO
     },
-    id_empresa: { 
+    id_empresa: {
       type: 'string',
       pattern: '^[1-9]\\d*$'
     },
-    page: { 
+    page: {
       type: 'string',
       pattern: '^[1-9]\\d*$',
       default: '1'
     },
-    limit: { 
+    limit: {
       type: 'string',
       pattern: '^[1-9]\\d*$',
       default: '50'
@@ -130,7 +130,7 @@ export const pagoIdSchema = {
   type: 'object',
   required: ['id'],
   properties: {
-    id: { 
+    id: {
       type: 'string',
       pattern: '^[1-9]\\d*$',
       description: 'ID del pago'
@@ -142,7 +142,7 @@ export const reservaIdSchema = {
   type: 'object',
   required: ['id_reserva'],
   properties: {
-    id_reserva: { 
+    id_reserva: {
       type: 'string',
       pattern: '^[1-9]\\d*$',
       description: 'ID de la reserva'
@@ -155,7 +155,7 @@ export const fechaSchema = {
   type: 'object',
   required: ['fecha'],
   properties: {
-    fecha: { 
+    fecha: {
       type: 'string',
       format: 'date',
       description: 'Fecha en formato YYYY-MM-DD'
@@ -167,17 +167,17 @@ export const fechaSchema = {
 export const estadisticasQuerySchema = {
   type: 'object',
   properties: {
-    fecha_inicio: { 
+    fecha_inicio: {
       type: 'string',
       format: 'date',
       description: 'Fecha de inicio del período'
     },
-    fecha_fin: { 
+    fecha_fin: {
       type: 'string',
       format: 'date',
       description: 'Fecha de fin del período'
     },
-    id_empresa: { 
+    id_empresa: {
       type: 'string',
       pattern: '^[1-9]\\d*$',
       description: 'ID de la empresa'

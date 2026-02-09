@@ -47,10 +47,6 @@ export default async function handler(
 
     const empresaId = getEmpresaIdFromToken(token);
 
-    console.log('🔍 DEBUG INGRESOS:');
-    console.log('  Token extraído:', token ? 'SÍ' : 'NO');
-    console.log('  Empresa ID obtenido:', empresaId);
-    console.log('  Tipo de empresaId:', typeof empresaId);
 
     // Construir endpoint EXACTAMENTE como movimientos
     let endpoint = `/ingresos?fecha=${fecha}&empresa_id=${empresaId}`;
@@ -59,8 +55,6 @@ export default async function handler(
     if (id_inmueble && typeof id_inmueble === 'string') {
       endpoint += `&id_inmueble=${id_inmueble}`;
     }
-
-    console.log('  Endpoint construido:', endpoint);
 
     // Llamar a la API externa
     const externalResponse = await externalApiServerFetch(endpoint, {

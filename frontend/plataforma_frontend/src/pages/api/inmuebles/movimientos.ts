@@ -108,12 +108,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    console.log(`✅ Movimientos del inmueble ${id_inmueble} obtenidos exitosamente:`, {
-      cantidad: responseData.movimientos?.length || 0,
-      ingresos: responseData.ingresos,
-      egresos: responseData.egresos
-    });
-
     // Respuesta exitosa
     return res.status(200).json({
       success: true,

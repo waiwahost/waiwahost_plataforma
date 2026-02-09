@@ -167,12 +167,6 @@ export class PagosRepository {
     // Obtener el total ya pagado para esta reserva
     const totalPagadoActual = await this.getTotalPagadoReserva(data.id_reserva);
 
-    console.log(`[DEBUG] createPago validation:
-      Monto a pagar: ${data.monto} (type: ${typeof data.monto})
-      Total Reserva: ${reservaInfo.total_reserva} (type: ${typeof reservaInfo.total_reserva})
-      Total Pagado: ${totalPagadoActual} (type: ${typeof totalPagadoActual})
-    `);
-
     // Asegurar que total_reserva sea número
     const totalReserva = parseFloat(reservaInfo.total_reserva as any);
 
@@ -184,6 +178,9 @@ export class PagosRepository {
 
     // Usar fecha actual si no se especifica
     const fechaPago = data.fecha_pago || new Date().toISOString().split('T')[0];
+
+    // Resolver id_empresa: si no viene en data (caso superadmin), usar el de la reserva
+    const idEmpresa = data.id_empresa || reservaInfo.id_empresa;
 
     const query = `
       INSERT INTO pagos (
@@ -203,7 +200,7 @@ export class PagosRepository {
       data.concepto,
       data.descripcion,
       data.comprobante,
-      reservaInfo.id_empresa,
+      idEmpresa,
       data.id_usuario_registro
     ];
 

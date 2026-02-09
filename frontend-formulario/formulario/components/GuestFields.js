@@ -1,4 +1,5 @@
 import React from "react";
+import PhoneInput from "./PhoneInput";
 
 const tiposDocumento = [
   { value: "dni", label: "DNI" },
@@ -12,7 +13,7 @@ export default function GuestFields({ index, data, onChange, principal }) {
   };
   return (
     <fieldset style={{ marginBottom: 16, border: "1px solid #ccc", padding: 12 }}>
-      <legend>{principal ? "Huésped principal" : `Acompañante #${index+1}`}</legend>
+      <legend>{principal ? "Huésped principal" : `Acompañante #${index + 1}`}</legend>
       <label>
         Nombre:
         <input name="nombre" value={data.nombre} onChange={handleField} required />
@@ -25,10 +26,14 @@ export default function GuestFields({ index, data, onChange, principal }) {
         Email:
         <input name="email" type="email" value={data.email} onChange={handleField} required />
       </label>
-      <label>
-        Teléfono:
-        <input name="telefono" value={data.telefono} onChange={handleField} required />
-      </label>
+      <div style={{ marginBottom: 16 }}>
+        <PhoneInput
+          label="Teléfono:"
+          value={data.telefono}
+          onChange={(value) => onChange(index, 'telefono', value)}
+          required
+        />
+      </div>
       <label>
         Tipo documento:
         <select name="tipoDocumento" value={data.tipoDocumento} onChange={handleField} required>

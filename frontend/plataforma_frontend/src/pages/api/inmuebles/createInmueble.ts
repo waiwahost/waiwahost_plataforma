@@ -217,12 +217,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const inmuebleData = req.body;
 
-    console.log('📥 Received inmueble creation request:', {
-      nombre: inmuebleData.nombre,
-      direccion: inmuebleData.direccion,
-      edificio: inmuebleData.edificio
-    });
-
     // Validar los datos del inmueble
     const validationErrors = validateInmuebleData(inmuebleData);
 
@@ -237,13 +231,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     const token = req.headers.authorization?.replace('Bearer ', '') || '';
 
-    console.log('🚀 Calling external API:', `${apiUrl}/inmuebles/createInmueble`);
-    console.log('🔑 Using token:', token ? 'Token present' : 'No token');
-
     // Mapear los datos al formato esperado por la API externa
     const externalFormatData = mapToExternalFormat(inmuebleData);
-
-    console.log('📤 Sending to external API:', externalFormatData);
 
     // Realizar la llamada a la API externa
     const response = await fetch(`${apiUrl}/inmuebles/createInmueble`, {
@@ -262,11 +251,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const externalData: ExternalApiResponse = await response.json();
 
-    console.log('📥 External API response:', {
-      isError: externalData.isError,
-      hasData: !!externalData.data,
-      message: externalData.message
-    });
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
@@ -279,8 +263,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     try {
       const nuevoInmueble = mapInmuebleFromAPI(externalData.data);
-
-      console.log('✅ Inmueble created successfully:', nuevoInmueble.id);
 
       res.status(201).json({
         success: true,

@@ -361,7 +361,7 @@ export const pagosSchemas = {
   },
   CreatePago: {
     type: 'object',
-    required: ['id_reserva', 'monto', 'metodo_pago', 'concepto', 'id_empresa'],
+    required: ['id_reserva', 'monto', 'metodo_pago', 'concepto'],
     properties: {
       id_reserva: { type: 'integer' },
       monto: { type: 'number', minimum: 0.01 },

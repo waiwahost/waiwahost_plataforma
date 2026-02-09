@@ -15,18 +15,16 @@ export class PagoMovimientoService {
    */
   static async crearMovimientoDesdePago(pago: Pago, idInmueble: string): Promise<string | null> {
     try {
-      console.log(`[DEBUG] Iniciando creación de movimiento para pago ID: ${pago.id}, monto: ${pago.monto}`);
-      
+
       // Obtener código de reserva directamente (más eficiente)
       let codigoReserva = 'RES-' + pago.id_reserva; // Valor por defecto
-      
+
       try {
         const reservaQuery = `SELECT codigo_reserva FROM reservas WHERE id_reserva = $1`;
         const { rows } = await pool.query(reservaQuery, [pago.id_reserva]);
         if (rows.length > 0) {
           codigoReserva = rows[0].codigo_reserva;
         }
-        console.log(`[DEBUG] Código de reserva obtenido: ${codigoReserva}`);
       } catch (reservaError) {
         console.warn(`[DEBUG] No se pudo obtener código de reserva, usando valor por defecto: ${codigoReserva}`);
       }
@@ -46,11 +44,8 @@ export class PagoMovimientoService {
         id_pago: pago.id // Relacionar el movimiento con el pago
       };
 
-      console.log(`[DEBUG] Datos del movimiento a crear:`, movimientoData);
-
       const movimiento = await MovimientosRepository.createMovimiento(movimientoData);
-      console.log(`[DEBUG] Movimiento creado exitosamente:`, { id: movimiento.id, monto: movimiento.monto });
-      
+
       return movimiento.id || null;
 
     } catch (error) {
@@ -83,7 +78,7 @@ export class PagoMovimientoService {
       // Primero obtener los movimientos asociados para registro
       const movimientosAsociados = await MovimientosRepository.getMovimientosByPago(pagoId);
       const idsMovimientos = movimientosAsociados.map(m => m.id!);
-      
+
       // Eliminar los movimientos asociados al pago
       const cantidadEliminados = await MovimientosRepository.deleteMovimientosByPago(pagoId);
 
@@ -104,7 +99,7 @@ export class PagoMovimientoService {
   static async actualizarMovimientoAsociado(pago: Pago, movimientoId: string): Promise<boolean> {
     try {
       const resumenReserva = await PagosRepository.getResumenPagosReserva(pago.id_reserva);
-      
+
       if (!resumenReserva) {
         throw new Error('No se pudo obtener información de la reserva');
       }
@@ -132,29 +127,25 @@ export class PagoMovimientoService {
    */
   static async obtenerInmuebleDeReserva(idReserva: number): Promise<string | null> {
     try {
-      console.log(`[DEBUG] Buscando inmueble para reserva ID: ${idReserva}`);
-      
+
       const query = `
         SELECT id_inmueble::text as id_inmueble 
         FROM reservas 
         WHERE id_reserva = $1
       `;
-      
+
       const { rows } = await pool.query(query, [idReserva]);
-      console.log(`[DEBUG] Consulta inmueble ejecutada, filas encontradas: ${rows.length}`);
-      
+
       if (rows.length === 0) {
-        console.warn(`[DEBUG] No se encontró la reserva ${idReserva} en la tabla reservas`);
+        console.warn(`No se encontró la reserva ${idReserva} en la tabla reservas`);
         return null;
       }
-      
+
       const inmuebleId = rows[0].id_inmueble;
-      console.log(`[DEBUG] ID inmueble encontrado: ${inmuebleId}`);
       return inmuebleId;
-      
+
     } catch (error) {
       console.error('Error al obtener inmueble de reserva:', error);
-      console.error('Error details:', error);
       return null;
     }
   }
@@ -170,7 +161,7 @@ export class PagoMovimientoService {
     try {
       // TODO: Implementar verificación de integridad
       // Comparar pagos vs movimientos para detectar inconsistencias
-      
+
       return {
         pagos_sin_movimiento: [],
         movimientos_sin_pago: [],
@@ -206,7 +197,7 @@ export class PagoMovimientoService {
    */
   private static generarDescripcionMovimiento(pago: Pago, codigoReserva: string): string {
     let descripcion = `Pago de reserva ${codigoReserva}`;
-    
+
     if (pago.concepto && pago.concepto !== 'otro') {
       descripcion += ` - ${pago.concepto.replace('_', ' ')}`;
     }
@@ -233,7 +224,7 @@ export class PagoMovimientoService {
     try {
       const pagos = await PagosRepository.getPagosByReserva(idReserva);
       const idInmueble = await this.obtenerInmuebleDeReserva(idReserva);
-      
+
       if (!idInmueble) {
         throw new Error('No se pudo obtener el inmueble de la reserva');
       }
@@ -276,13 +267,13 @@ export class PagoMovimientoService {
   }> {
     try {
       const pagos = await PagosRepository.getPagosByEmpresaFecha(empresaId, fecha);
-      
+
       const totalIngresos = pagos.reduce((sum, pago) => sum + pago.monto, 0);
       const cantidadPagos = pagos.length;
 
       // Agrupar por método de pago
       const metodosPago: Record<string, { cantidad: number; total: number }> = {};
-      
+
       pagos.forEach(pago => {
         if (!metodosPago[pago.metodo_pago]) {
           metodosPago[pago.metodo_pago] = { cantidad: 0, total: 0 };

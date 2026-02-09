@@ -15,8 +15,6 @@ interface ServiceResponse<T> {
  */
 export async function getIngresosService(filtros: FiltrosIngresos): Promise<ServiceResponse<Ingreso[]>> {
   try {
-    console.log('🔄 Ejecutando getIngresosService con filtros:', filtros);
-
     // Importar repository aquí para evitar dependencias circulares
     const { MovimientosRepository } = await import('../../repositories/movimientos.repository');
 
@@ -96,8 +94,6 @@ export async function getIngresosService(filtros: FiltrosIngresos): Promise<Serv
       fecha_creacion: row.fecha_creacion,
       comprobante: row.comprobante
     }));
-
-    console.log(`✅ ${ingresos.length} ingresos encontrados`);
 
     return { data: ingresos, error: null };
 

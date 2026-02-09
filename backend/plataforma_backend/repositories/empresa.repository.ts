@@ -15,7 +15,6 @@ export class EmpresaRepository {
 
     try {
       const { rows } = await pool.query(query, params);
-      console.log('Empresas obtenidas:', rows);
       return { data: rows, error: null };
     } catch (error: any) {
       console.error('Error al obtener empresas:', error);

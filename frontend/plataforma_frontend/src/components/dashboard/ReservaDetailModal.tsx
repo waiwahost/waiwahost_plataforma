@@ -9,12 +9,14 @@ interface ReservaDetailModalProps {
   open: boolean;
   onClose: () => void;
   reserva: IReservaTableData | null;
+  onEdit?: () => void;
 }
 
 const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
   open,
   onClose,
-  reserva
+  reserva,
+  onEdit
 }) => {
   const [pagos, setPagos] = useState<IPago[]>([]);
   const [loadingPagos, setLoadingPagos] = useState(false);
@@ -40,7 +42,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
    */
   const loadPagosReserva = async () => {
     if (!reserva) return;
-    
+
     try {
       setLoadingPagos(true);
       setErrorPagos(null);
@@ -64,12 +66,12 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
 
     try {
       await deletePagoApi(pago.id);
-      
+
       // Actualizar lista local
       setPagos(prev => prev.filter(p => p.id !== pago.id));
-      
+
       alert('Pago eliminado exitosamente');
-      
+
     } catch (error) {
       console.error('Error eliminando pago:', error);
       alert(error instanceof Error ? error.message : 'Error al eliminar el pago');
@@ -96,7 +98,8 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     });
   };
 
@@ -110,7 +113,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
 
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-sm font-medium";
-    
+
     switch (estado) {
       case 'pendiente':
         return `${baseClasses} bg-yellow-100 text-yellow-800`;
@@ -147,12 +150,23 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
           <h2 className="text-xl font-semibold">
             Detalle de Reserva - {reserva.codigo_reserva}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-gray-200 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-md text-sm transition-colors"
+                title="Editar reserva"
+              >
+                Editar
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
@@ -211,13 +225,12 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
               </h4>
               <div className="space-y-3">
                 {reserva.huespedes.map((huesped) => (
-                  <div 
-                    key={huesped.id} 
-                    className={`p-3 rounded-md border ${
-                      huesped.es_principal 
-                        ? 'bg-blue-50 border-blue-200' 
-                        : 'bg-white border-gray-200'
-                    }`}
+                  <div
+                    key={huesped.id}
+                    className={`p-3 rounded-md border ${huesped.es_principal
+                      ? 'bg-blue-50 border-blue-200'
+                      : 'bg-white border-gray-200'
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <h5 className="font-medium text-gray-900">
@@ -231,15 +244,15 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
                       <div>
-                        <span className="text-gray-600">Email:</span> 
+                        <span className="text-gray-600">Email:</span>
                         <span className="text-gray-900 ml-1">{huesped.email || 'No especificado'}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Teléfono:</span> 
+                        <span className="text-gray-600">Teléfono:</span>
                         <span className="text-gray-900 ml-1">{huesped.telefono || 'No especificado'}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Documento:</span> 
+                        <span className="text-gray-600">Documento:</span>
                         <span className="text-gray-900 ml-1">{huesped.documento_numero}</span>
                       </div>
                     </div>
@@ -308,17 +321,16 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                   {formatCurrency(reserva.total_pagado)}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {reserva.total_pagado === 0 ? 'Sin abonos' : 
-                   (reserva.total_pagado ?? 0) >= (reserva.total_reserva || reserva.precio_total) ? 'Pagado completo' : 
-                   'Abono parcial'}
+                  {reserva.total_pagado === 0 ? 'Sin abonos' :
+                    (reserva.total_pagado ?? 0) >= (reserva.total_reserva || reserva.precio_total) ? 'Pagado completo' :
+                      'Abono parcial'}
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Total Pendiente</label>
-                <p className={`font-medium ${
-                  (reserva.total_pendiente ?? 0) <= 0 ? 'text-green-600' :
+                <p className={`font-medium ${(reserva.total_pendiente ?? 0) <= 0 ? 'text-green-600' :
                   'text-orange-600'
-                }`}>
+                  }`}>
                   {formatCurrency(reserva.total_pendiente)}
                 </p>
               </div>
@@ -331,7 +343,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
               <CreditCard className="h-5 w-5 text-tourism-teal" />
               Historial de Pagos ({pagos.length})
             </h4>
-            
+
             {/* Estado de carga y errores */}
             {loadingPagos ? (
               <div className="text-center py-4">
@@ -357,8 +369,8 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
               /* Lista de pagos */
               <div className="space-y-3">
                 {pagos.map((pago, index) => (
-                  <div 
-                    key={pago.id} 
+                  <div
+                    key={pago.id}
                     className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -384,7 +396,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                         </button>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">Fecha de Pago:</span>

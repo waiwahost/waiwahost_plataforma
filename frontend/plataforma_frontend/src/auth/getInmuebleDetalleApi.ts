@@ -9,9 +9,7 @@ export interface GetInmuebleDetalleResponse {
 export const getInmuebleDetalleApi = async (inmuebleId: string): Promise<IInmueble> => {
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    console.log('🔍 Getting inmueble detail for ID:', inmuebleId);
-    
+
     const response = await fetch(`/api/inmuebles/getInmuebleDetalle?id=${inmuebleId}`, {
       method: 'GET',
       headers: {
@@ -35,7 +33,6 @@ export const getInmuebleDetalleApi = async (inmuebleId: string): Promise<IInmueb
       throw new Error('No se encontró el inmueble');
     }
 
-    console.log('✅ Inmueble detail obtained successfully');
     return result.data;
   } catch (error) {
     console.error('❌ Error en getInmuebleDetalleApi:', error);

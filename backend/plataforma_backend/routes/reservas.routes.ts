@@ -24,6 +24,11 @@ export async function reservasRoutes(server: FastifyInstance, opts: FastifyPlugi
   // GET /reservas/public/:id - Obtener reserva pública por ID
   server.get('/public/:id', {}, getReservaPublicController);
 
+  // GET /reservas/:id - Obtener reserva por ID (Protegido)
+  server.get('/:id', {
+    preHandler: [authMiddleware]
+  }, reservasController.getReservaById);
+
   // PUT /reservas/:id - Editar reserva
   server.put('/:id', {
     preHandler: [authMiddleware],

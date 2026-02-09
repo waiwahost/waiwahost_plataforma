@@ -1,4 +1,5 @@
 import React from 'react';
+import PhoneInput from './PhoneInput';
 
 function CompanyBillingFields({ values, onChange, labels }) {
   return (
@@ -31,12 +32,10 @@ function CompanyBillingFields({ values, onChange, labels }) {
         />
       </div>
       <div>
-        <label>{labels.phone}</label>
-        <input
-          type="text"
-          name="phone"
+        <PhoneInput
+          label={labels.phone}
           value={values.phone || ''}
-          onChange={onChange}
+          onChange={(value) => onChange({ target: { name: 'phone', value } })}
         />
       </div>
       <div>

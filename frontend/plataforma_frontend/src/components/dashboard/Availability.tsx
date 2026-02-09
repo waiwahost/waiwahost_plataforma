@@ -2,10 +2,17 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "../atoms/Button";
+import { Plus, Filter } from "lucide-react";
+import CreateReservaModal from "./CreateReservaModal";
+import ReservaDetailModal from "./ReservaDetailModal";
+import { IReservaForm, IReservaTableData } from "../../interfaces/Reserva";
+import { createReservaApi, getReservaDetalleApi, editReservaApi } from "../../auth/reservasApi";
 
 interface AvailabilityInmueble {
   id: string;
   nombre: string;
+  ciudad?: string;
 }
 
 interface AvailabilityReserva {
@@ -14,6 +21,18 @@ interface AvailabilityReserva {
   start: string;
   end: string;
   estado?: string; // puede ser 'pendiente', 'confirmado', 'anulado', etc.
+}
+
+// Función auxiliar para parsear fechas YYYY-MM-DD sin ajuste de zona horaria
+// Crea la fecha como si fuera local a las 00:00:00
+function parseDateNoTz(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  // Asumimos formato YYYY-MM-DD
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
+  return parseISO(dateStr);
 }
 
 // Genera un array de fechas entre dos fechas
@@ -28,16 +47,41 @@ function getDatesInRange(start: Date, end: Date) {
 }
 
 // Determina si un inmueble está ocupado en una fecha
-function isOcupado(reservas: AvailabilityReserva[], inmuebleId: string, date: Date) {
-  // Solo cuenta como ocupado si el estado es pendiente o confirmado
-  return reservas.some(r =>
-    r.inmuebleId === inmuebleId &&
-    isWithinInterval(date, { start: parseISO(r.start), end: parseISO(r.end) }) &&
-    (r.estado === 'pendiente' || r.estado === 'confirmado' || r.estado === undefined) // undefined por compatibilidad
-  );
+function getReservaEnFecha(reservas: AvailabilityReserva[], inmuebleId: string, date: Date) {
+  return reservas.find(r => {
+    // Usar parseDateNoTz para evitar saltos de día por timezone
+    const rStart = parseDateNoTz(r.start);
+    const rEnd = parseDateNoTz(r.end);
+
+    // Un día está ocupado si cae dentro del rango [start, end)
+    // Normalmente check-out (end) no cuenta como ocupado para pernoctar, 
+    // pero depende de la lógica exacta. Aquí usamos isWithinInterval inclusivo.
+    // Ajuste: si la fecha es igual al end, suele ser día de salida y estar libre para otra entrada.
+    // Pero isWithinInterval incluye el end. Revisemos lógica de negocio estándar hotelera.
+    // Si r.start <= date < r.end => Ocupado. (Noche del check-in ocupada, noche antes del check-out ocupada).
+    // isWithinInterval(date, { start, end }) incluye ambos extremos.
+    // Para visualización de "Noches", solemos querer ver ocupado hasta el día antes de salida.
+
+    // Opción A: isWithinInterval estricto (incluye start y end)
+    // return r.inmuebleId === inmuebleId && isWithinInterval(date, { start: rStart, end: rEnd }) ...
+
+    // Opción B: Excluir fecha fin (check-out)
+    // Un día se ve "ocupado" si es >= start Y < end.
+    // Si date es igual a start, está ocupado (noche de entrada).
+    // Si date es igual a end, es salida (usualmente liberado a mediodía).
+
+    if (r.inmuebleId !== inmuebleId) return false;
+
+    // Normalizar 'date' para comparar solo fechas (sin horas)
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    return d >= rStart && d < rEnd &&
+      (r.estado === 'pendiente' || r.estado === 'confirmada' || r.estado === 'en_proceso' || r.estado === 'completada' || r.estado === undefined);
+  });
 }
 
 const today = new Date();
+today.setHours(0, 0, 0, 0); // Normalizar hoy
 const defaultStart = today;
 const defaultEnd = addDays(today, 14);
 
@@ -46,6 +90,7 @@ const periodosFijos = [
   { label: "2 semanas", days: 14 },
   { label: "3 semanas", days: 21 },
   { label: "1 mes", days: 30 },
+  { label: "2 meses", days: 60 },
 ];
 
 const Availability: React.FC = () => {
@@ -60,6 +105,15 @@ const Availability: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Filtro de Ciudad
+  const [ciudadFilter, setCiudadFilter] = useState<string>("");
+
+  // Modales
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedReservaDetail, setSelectedReservaDetail] = useState<IReservaTableData | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // Calcular fechas a mostrar
   const fechas = useMemo(() => {
     if (periodoFijo) {
@@ -69,40 +123,58 @@ const Availability: React.FC = () => {
   }, [startDate, endDate, periodoFijo]);
 
   // Fetch disponibilidad
+  const fetchDisponibilidad = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      const start = format(fechas[0], "yyyy-MM-dd");
+      const end = format(fechas[fechas.length - 1], "yyyy-MM-dd");
+      params.append("start", start);
+      params.append("end", end);
+      if (inmuebleId) params.append("inmuebleId", inmuebleId);
+      if (estado && estado !== "todos") params.append("estado", estado);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/disponibilidad?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error("Error consultando disponibilidad");
+      const data = await res.json();
+      setInmuebles(data.inmuebles);
+      setReservas(data.reservas);
+    } catch (err: any) {
+      setError(err.message || "Error desconocido");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDisponibilidad = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams();
-        const start = format(fechas[0], "yyyy-MM-dd");
-        const end = format(fechas[fechas.length - 1], "yyyy-MM-dd");
-        params.append("start", start);
-        params.append("end", end);
-        if (inmuebleId) params.append("inmuebleId", inmuebleId);
-        if (estado && estado !== "todos") params.append("estado", estado);
-        const res = await fetch(`/api/disponibilidad?${params.toString()}`);
-        if (!res.ok) throw new Error("Error consultando disponibilidad");
-        const data = await res.json();
-        setInmuebles(data.inmuebles);
-        setReservas(data.reservas);
-      } catch (err: any) {
-        setError(err.message || "Error desconocido");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDisponibilidad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fechas, inmuebleId, estado]);
 
-  // Filtrar inmuebles si corresponde
-  const inmueblesFiltrados = useMemo(() => {
-    if (!inmuebleId) return inmuebles;
-    return inmuebles.filter(i => i.id === inmuebleId);
-  }, [inmuebles, inmuebleId]);
+  // Obtener lista de ciudades únicas
+  const ciudades = useMemo(() => {
+    const cities = new Set(inmuebles.map(i => i.ciudad).filter(Boolean));
+    return Array.from(cities).sort();
+  }, [inmuebles]);
 
-  // Handlers para alternar entre periodo fijo y rango manual
+  // Filtrar inmuebles
+  const inmueblesFiltrados = useMemo(() => {
+    let filtered = inmuebles;
+    if (inmuebleId) {
+      filtered = filtered.filter(i => i.id === inmuebleId);
+    }
+    if (ciudadFilter) {
+      filtered = filtered.filter(i => i.ciudad === ciudadFilter);
+    }
+    return filtered;
+  }, [inmuebles, inmuebleId, ciudadFilter]);
+
+  // Handlers
   const handlePeriodoFijoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     if (value === "") {
@@ -112,17 +184,98 @@ const Availability: React.FC = () => {
     }
   };
 
+  const handleCellClick = async (reserva: AvailabilityReserva | undefined) => {
+    if (reserva) {
+      try {
+        const detail = await getReservaDetalleApi(parseInt(reserva.id));
+        setSelectedReservaDetail(detail);
+        setIsDetailModalOpen(true);
+      } catch (error) {
+        console.error("Error al cargar detalle de reserva", error);
+        alert("Error al cargar los detalles de la reserva");
+      }
+    } else {
+      // TODO: Implement open create modal with pre-selected date/inmueble if desired
+    }
+  };
+
+  const handleCreateReserva = async (data: IReservaForm) => {
+    try {
+      if (isEditMode && selectedReservaDetail) {
+        // Transformar IReservaForm a lo que espera editReservaApi (incluyendo ID)
+        // Asegurar que huespedes tenga formato correcto si es necesario
+        const dataToUpdate = {
+          ...data,
+          id: selectedReservaDetail.id,
+        };
+        await editReservaApi(dataToUpdate);
+        alert("Reserva actualizada exitosamente");
+      } else {
+        await createReservaApi(data);
+        alert("Reserva creada exitosamente");
+      }
+      setIsCreateModalOpen(false);
+      setIsEditMode(false);
+      fetchDisponibilidad(); // Refrescar grid
+    } catch (error) {
+      console.error("Error al guardar reserva:", error);
+      alert("Error al guardar la reserva");
+    }
+  };
+
+  const handleEditFromDetail = () => {
+    if (selectedReservaDetail) {
+      setIsDetailModalOpen(false);
+      setIsEditMode(true);
+      // Mapear IReservaTableData a IReservaForm si es necesario o pasar directamente si son compatibles
+      // IReservaTableData extiende IReservaForm pero tiene campos extra? Revisar interfaces.
+      // CreateReservaModal acepta initialData: IReservaForm
+      // Necesitamos asegurar compatibilidad
+
+      // Transformamos lo que tenemos en detail a lo que espera el form
+      const initialForm: IReservaForm = {
+        id_inmueble: parseInt(selectedReservaDetail.id_inmueble as unknown as string) || 0, // Ajustar según tipo real
+        fecha_inicio: selectedReservaDetail.fecha_inicio,
+        fecha_fin: selectedReservaDetail.fecha_fin,
+        numero_huespedes: selectedReservaDetail.numero_huespedes,
+        huespedes: selectedReservaDetail.huespedes || [],
+        precio_total: selectedReservaDetail.precio_total,
+        total_reserva: selectedReservaDetail.total_reserva,
+        total_pagado: selectedReservaDetail.total_pagado,
+        estado: selectedReservaDetail.estado,
+        observaciones: selectedReservaDetail.observaciones,
+        id_empresa: selectedReservaDetail.id_empresa,
+        plataforma_origen: selectedReservaDetail.plataforma_origen,
+      };
+
+      // CreateReservaModal usa initialData
+      // Hack: CreateReservaModal mantiene estado interno, al pasar initialData se resetea en useEffect
+
+      setIsCreateModalOpen(true);
+    }
+  };
+
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Disponibilidad de Inmuebles</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Disponibilidad de Inmuebles</h2>
+        <Button
+          onClick={() => { setIsEditMode(false); setIsCreateModalOpen(true); }}
+          className="bg-tourism-teal text-white flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Crear Reserva
+        </Button>
+      </div>
+
       {/* Filtros */}
-      <div className="flex flex-wrap gap-4 mb-6">
+      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
         <div>
-          <label className="block text-sm font-medium">Periodo fijo</label>
+          <label className="block text-sm font-medium mb-1">Periodo fijo</label>
           <select
             value={periodoFijo ?? ""}
             onChange={handlePeriodoFijoChange}
-            className="border rounded px-2 py-1"
+            className="border rounded px-3 py-2 w-full focus:ring-2 focus:ring-tourism-teal focus:border-transparent outline-none"
           >
             <option value="">Personalizado</option>
             {periodosFijos.map(p => (
@@ -133,18 +286,37 @@ const Availability: React.FC = () => {
         {!periodoFijo && (
           <>
             <div>
-              <label className="block text-sm font-medium">Desde</label>
-              <input type="date" value={format(startDate, "yyyy-MM-dd")} onChange={e => setStartDate(parseISO(e.target.value))} className="border rounded px-2 py-1" />
+              <label className="block text-sm font-medium mb-1">Desde</label>
+              <input type="date" value={format(startDate, "yyyy-MM-dd")} onChange={e => setStartDate(parseDateNoTz(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
             </div>
             <div>
-              <label className="block text-sm font-medium">Hasta</label>
-              <input type="date" value={format(endDate, "yyyy-MM-dd")} onChange={e => setEndDate(parseISO(e.target.value))} className="border rounded px-2 py-1" />
+              <label className="block text-sm font-medium mb-1">Hasta</label>
+              <input type="date" value={format(endDate, "yyyy-MM-dd")} onChange={e => setEndDate(parseDateNoTz(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
             </div>
           </>
         )}
+
+        {/* Filtro de Ciudad */}
         <div>
-          <label className="block text-sm font-medium">Inmueble</label>
-          <select value={inmuebleId} onChange={e => setInmuebleId(e.target.value)} className="border rounded px-2 py-1">
+          <label className="block text-sm font-medium mb-1">Ciudad</label>
+          <div className="relative">
+            <select
+              value={ciudadFilter}
+              onChange={e => setCiudadFilter(e.target.value)}
+              className="border rounded px-3 py-2 w-full appearance-none pr-8 outline-none focus:ring-2 focus:ring-tourism-teal"
+            >
+              <option value="">Todas las ciudades</option>
+              {ciudades.map(c => (
+                <option key={c} value={c as string}>{c}</option>
+              ))}
+            </select>
+            <Filter className="absolute right-2 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Inmueble</label>
+          <select value={inmuebleId} onChange={e => setInmuebleId(e.target.value)} className="border rounded px-3 py-2 w-full outline-none focus:ring-2 focus:ring-tourism-teal">
             <option value="">Todos</option>
             {inmuebles.map(i => (
               <option key={i.id} value={i.id}>{i.nombre}</option>
@@ -152,110 +324,128 @@ const Availability: React.FC = () => {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium">Estado</label>
-          <select value={estado} onChange={e => setEstado(e.target.value as any)} className="border rounded px-2 py-1">
+          <label className="block text-sm font-medium mb-1">Estado</label>
+          <select value={estado} onChange={e => setEstado(e.target.value as any)} className="border rounded px-3 py-2 w-full outline-none focus:ring-2 focus:ring-tourism-teal">
             <option value="todos">Todos</option>
             <option value="ocupado">Ocupado</option>
             <option value="disponible">Disponible</option>
           </select>
         </div>
       </div>
+
       {/* Leyenda */}
-      <div className="flex items-center gap-4 mb-2">
-        <span className="w-4 h-4 bg-blue-500 rounded inline-block border border-blue-400"></span>
-        <span className="text-sm">Ocupado</span>
-        <span className="w-4 h-4 bg-gray-100 border border-gray-300 rounded inline-block ml-6"></span>
-        <span className="text-sm">Disponible</span>
+      <div className="flex items-center gap-4 mb-4 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-blue-500 rounded-sm"></span>
+          <span>Ocupado/Confirmado</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-yellow-400 rounded-sm"></span>
+          <span>Pendiente</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-gray-100 border border-gray-300 rounded-sm"></span>
+          <span>Disponible</span>
+        </div>
       </div>
+
       {/* Tabla tipo calendario */}
-      {/* ===================== DESKTOP ===================== */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-0">
+      <div className="overflow-x-auto border rounded-lg">
+        <table className="min-w-full border-collapse">
           <thead>
             <tr>
-              <th className="px-2 py-1 border-b border-r bg-gray-50 sticky left-0">
-                Inmueble
-              </th>
+              <th className="px-3 py-2 border-b border-r border-gray-200 text-left bg-gray-50 sticky left-0 z-10 min-w-[200px]">Inmueble</th>
               {fechas.map(date => (
-                <th
-                  key={date.toISOString()}
-                  className="px-2 py-1 border-b border-r bg-gray-50 text-xs"
-                >
-                  {format(date, "dd MMM", { locale: es })}
+                <th key={date.toISOString()} className="px-2 py-2 border-b border-r border-gray-200 text-xs bg-gray-50 text-center min-w-[60px]">
+                  <div className="font-semibold">{format(date, "dd", { locale: es })}</div>
+                  <div className="text-gray-500 font-normal">{format(date, "MMM", { locale: es })}</div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center py-8">Cargando disponibilidad...</td></tr>
+              <tr><td colSpan={fechas.length + 1} className="text-center py-12 text-gray-500">Cargando disponibilidad...</td></tr>
             ) : error ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center text-red-500 py-8">{error}</td></tr>
+              <tr><td colSpan={fechas.length + 1} className="text-center text-red-500 py-12">{error}</td></tr>
             ) : inmueblesFiltrados.length === 0 ? (
-              <tr><td colSpan={fechas.length + 1} className="text-center py-8">No hay inmuebles para mostrar.</td></tr>
-            ) :
-            inmueblesFiltrados.map(inmueble => (
-              <tr key={inmueble.id}>
-                <td className="px-2 py-2.5 border-b border-r border-gray-200 font-medium whitespace-nowrap bg-white sticky left-0 z-10">
-                  {inmueble.nombre}
-                </td>
-                {fechas.map(date => {
-                  const ocupado = isOcupado(reservas, inmueble.id, date);
-                  return (
-                    <td
-                      key={date.toISOString()}
-                      className={`border-b border-r text-center ${
-                        ocupado
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-400"
-                      }`}
-                    >
-                      {ocupado ? "●" : ""}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+              <tr><td colSpan={fechas.length + 1} className="text-center py-12 text-gray-500">No se encontraron inmuebles con los filtros seleccionados.</td></tr>
+            ) : (
+              inmueblesFiltrados.map(inmueble => (
+                <tr key={inmueble.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-3 border-b border-r border-gray-200 font-medium whitespace-nowrap bg-white sticky left-0 z-10 shadow-sm">
+                    {inmueble.nombre}
+                    {inmueble.ciudad && <div className="text-xs text-gray-400 font-normal">{inmueble.ciudad}</div>}
+                  </td>
+                  {fechas.map(date => {
+                    const reservaEnFecha = getReservaEnFecha(reservas, inmueble.id, date);
+                    const ocupado = !!reservaEnFecha;
+
+                    // Lógica visual básica según estado
+                    let cellColor = "bg-gray-100 text-gray-400 hover:bg-gray-200"; // Disponible
+                    if (ocupado) {
+                      if (reservaEnFecha.estado === 'pendiente') cellColor = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer";
+                      else cellColor = "bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer";
+                    }
+
+                    // Si estamos filtrando disponible y está ocupado, mostrar vacío (o ocultar, pero mejor mostramos vacío para mantener estructura)
+                    if (estado === "disponible" && ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
+                    // Si estamos filtrando ocupado y no está ocupado
+                    if ((estado === "ocupado") && !ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
+
+                    return (
+                      <td
+                        key={date.toISOString()}
+                        className={`border-b border-r border-gray-200 text-center transition-colors duration-200 h-12 p-1`}
+                      >
+                        <div
+                          className={`w-full h-full rounded flex items-center justify-center ${cellColor}`}
+                          title={ocupado ? `Reservado: ${reservaEnFecha.estado}` : "Disponible"}
+                          onClick={() => handleCellClick(reservaEnFecha)}
+                        >
+                          {ocupado && <span className="text-xs font-bold">●</span>}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* ===================== MOBILE ===================== */}
-      <div className="md:hidden space-y-5 mt-4">
-        {inmueblesFiltrados.map(inmueble => (
-          <div
-            key={inmueble.id}
-            className="border rounded-lg p-3 shadow-sm"
-          >
-            <h3 className="font-semibold mb-3">
-              {inmueble.nombre}
-            </h3>
+      {/* Modales */}
+      <CreateReservaModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateReserva}
+        initialData={isEditMode && selectedReservaDetail ? {
+          id_inmueble: parseInt((selectedReservaDetail as any).id_inmueble) || 0,
+          fecha_inicio: selectedReservaDetail.fecha_inicio,
+          fecha_fin: selectedReservaDetail.fecha_fin,
+          numero_huespedes: selectedReservaDetail.numero_huespedes,
+          huespedes: selectedReservaDetail.huespedes,
+          id_empresa: selectedReservaDetail.id_empresa,
+          observaciones: selectedReservaDetail.observaciones,
+          precio_total: selectedReservaDetail.precio_total,
+          total_reserva: selectedReservaDetail.total_reserva,
+          total_pagado: selectedReservaDetail.total_pagado,
+          estado: selectedReservaDetail.estado,
+          plataforma_origen: selectedReservaDetail.plataforma_origen,
+        } : undefined}
+        isEdit={isEditMode}
+      />
 
-            <div className="grid grid-cols-4 gap-2">
-              {fechas.map(date => {
-                const ocupado = isOcupado(reservas, inmueble.id, date);
-                return (
-                  <div
-                    key={date.toISOString()}
-                    className={`p-2 rounded text-center text-xs ${
-                      ocupado
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
-                    <div className="font-medium">
-                      {format(date, "dd", { locale: es })}
-                    </div>
-                    <div className="uppercase">
-                      {format(date, "MMM", { locale: es })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
+      {selectedReservaDetail && (
+        <ReservaDetailModal
+          open={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          reserva={selectedReservaDetail}
+          onEdit={handleEditFromDetail}
+        />
+      )}
+
     </div>
   );
 };

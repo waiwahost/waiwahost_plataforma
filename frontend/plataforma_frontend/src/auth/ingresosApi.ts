@@ -80,58 +80,55 @@ interface ExternalInmueblesResponse {
  */
 export const getIngresosByFiltros = async (filtros: IFiltrosIngresos): Promise<IIngresoApiResponse> => {
   try {
-    console.log('🔄 Obteniendo ingresos desde API externa:', filtros);
-    
+
     const empresaId = getEmpresaIdFromContext();
-    
+
     // Si hay filtro por inmueble, usar endpoint específico
     if (filtros.id_inmueble) {
       const queryParams = buildQueryParams({
         id_inmueble: filtros.id_inmueble,
         fecha: filtros.fecha
       });
-      
+
       const url = `${EXTERNAL_API_ENDPOINTS.MOVIMIENTOS.BY_INMUEBLE}${queryParams}`;
       const response: ExternalMovimientosInmuebleResponse = await externalApiFetch(url, {
         method: 'GET',
       });
-      
+
       // Filtrar solo ingresos y transformar al formato esperado
       const ingresos = response.data.movimientos
         .filter(mov => mov.tipo === 'ingreso')
         .map(transformMovimientoToIngreso)
         .sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime());
-      
-      console.log('✅ Ingresos por inmueble obtenidos exitosamente:', ingresos.length);
+
       return {
         success: true,
         data: ingresos,
         message: 'Ingresos obtenidos exitosamente desde API externa'
       };
-      
+
     } else {
       // Obtener todos los movimientos de la fecha y filtrar ingresos
       const queryParams = buildQueryParams({ empresa_id: empresaId });
       const url = `${EXTERNAL_API_ENDPOINTS.MOVIMIENTOS.BY_FECHA(filtros.fecha)}${queryParams}`;
-      
+
       const response: ExternalMovimientosResponse = await externalApiFetch(url, {
         method: 'GET',
       });
-      
+
       // Filtrar solo ingresos y transformar al formato esperado
       const ingresos = response.data
         .filter(mov => mov.tipo === 'ingreso')
         .map(transformMovimientoToIngreso)
         .sort((a, b) => new Date(b.fecha_creacion).getTime() - new Date(a.fecha_creacion).getTime());
-      
-      console.log('✅ Ingresos obtenidos exitosamente:', ingresos.length);
+
       return {
         success: true,
         data: ingresos,
         message: 'Ingresos obtenidos exitosamente desde API externa'
       };
     }
-    
+
   } catch (error) {
     console.error('❌ Error al obtener ingresos desde API externa:', error);
     return {
@@ -147,24 +144,22 @@ export const getIngresosByFiltros = async (filtros: IFiltrosIngresos): Promise<I
  */
 export const getResumenIngresos = async (filtros: IFiltrosIngresos): Promise<IResumenIngresosApiResponse> => {
   try {
-    console.log('🔄 Obteniendo resumen de ingresos desde API externa:', filtros);
-    
     const empresaId = getEmpresaIdFromContext();
-    
+
     if (filtros.id_inmueble) {
       // Para un inmueble específico, obtener los movimientos detallados
       const queryParams = buildQueryParams({
         id_inmueble: filtros.id_inmueble,
         fecha: filtros.fecha
       });
-      
+
       const url = `${EXTERNAL_API_ENDPOINTS.MOVIMIENTOS.BY_INMUEBLE}${queryParams}`;
       const response: ExternalMovimientosInmuebleResponse = await externalApiFetch(url, {
         method: 'GET',
       });
-      
+
       const movimientosIngreso = response.data.movimientos.filter(mov => mov.tipo === 'ingreso');
-      
+
       const resumen: IResumenIngresos = {
         fecha: filtros.fecha,
         total_ingresos: response.data.ingresos,
@@ -173,31 +168,30 @@ export const getResumenIngresos = async (filtros: IFiltrosIngresos): Promise<IRe
         inmueble_seleccionado: filtros.id_inmueble,
         ingresos_por_inmueble: []
       };
-      
-      console.log('✅ Resumen de ingresos por inmueble obtenido exitosamente');
+
       return {
         success: true,
         data: resumen,
         message: 'Resumen de ingresos obtenido exitosamente desde API externa'
       };
-      
+
     } else {
       // Para todos los inmuebles, obtener el resumen general
       const queryParams = buildQueryParams({ empresa_id: empresaId });
       const url = `${EXTERNAL_API_ENDPOINTS.MOVIMIENTOS.RESUMEN(filtros.fecha)}${queryParams}`;
-      
+
       const response: ExternalResumenResponse = await externalApiFetch(url, {
         method: 'GET',
       });
-      
+
       // También obtener movimientos detallados para calcular promedio
       const movimientosUrl = `${EXTERNAL_API_ENDPOINTS.MOVIMIENTOS.BY_FECHA(filtros.fecha)}${queryParams}`;
       const movimientosResponse: ExternalMovimientosResponse = await externalApiFetch(movimientosUrl, {
         method: 'GET',
       });
-      
+
       const movimientosIngreso = movimientosResponse.data.filter(mov => mov.tipo === 'ingreso');
-      
+
       const resumen: IResumenIngresos = {
         fecha: filtros.fecha,
         total_ingresos: response.data.total_ingresos,
@@ -206,15 +200,14 @@ export const getResumenIngresos = async (filtros: IFiltrosIngresos): Promise<IRe
         inmueble_seleccionado: null,
         ingresos_por_inmueble: calcularIngresosPorInmueble(movimientosIngreso)
       };
-      
-      console.log('✅ Resumen general de ingresos obtenido exitosamente');
+
       return {
         success: true,
         data: resumen,
         message: 'Resumen de ingresos obtenido exitosamente desde API externa'
       };
     }
-    
+
   } catch (error) {
     console.error('❌ Error al obtener resumen de ingresos desde API externa:', error);
     return {
@@ -230,30 +223,27 @@ export const getResumenIngresos = async (filtros: IFiltrosIngresos): Promise<IRe
  */
 export const getInmueblesParaFiltro = async (): Promise<IInmuebleFiltroApiResponse> => {
   try {
-    console.log('🔄 Obteniendo inmuebles para filtro desde API externa...');
-    
     const empresaId = getEmpresaIdFromContext();
     const queryParams = buildQueryParams({ empresa_id: empresaId });
     const url = `${EXTERNAL_API_ENDPOINTS.INMUEBLES.SELECTOR}${queryParams}`;
-    
+
     const response: ExternalInmueblesResponse = await externalApiFetch(url, {
       method: 'GET',
     });
-    
+
     // Transformar al formato esperado por el frontend
     const inmuebles: IInmuebleFiltro[] = response.data.map(inmueble => ({
       id: inmueble.id,
       nombre: inmueble.nombre,
       direccion: inmueble.direccion
     }));
-    
-    console.log('✅ Inmuebles para filtro obtenidos exitosamente:', inmuebles.length);
+
     return {
       success: true,
       data: inmuebles,
       message: 'Inmuebles obtenidos exitosamente desde API externa'
     };
-    
+
   } catch (error) {
     console.error('❌ Error al obtener inmuebles desde API externa:', error);
     return {
@@ -305,7 +295,7 @@ const calcularIngresosPorInmueble = (movimientos: ExternalMovimientosResponse['d
     acc[key].cantidad_ingresos += 1;
     return acc;
   }, {} as Record<string, IResumenIngresos['ingresos_por_inmueble'][0]>);
-  
+
   return Object.values(agrupados).sort((a, b) => b.total_ingresos - a.total_ingresos);
 };
 

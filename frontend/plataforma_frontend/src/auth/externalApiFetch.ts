@@ -36,7 +36,7 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeout: number): P
 /**
  * Función para delay entre reintentos
  */
-const delay = (ms: number): Promise<void> => 
+const delay = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
 
 /**
@@ -46,7 +46,7 @@ const delay = (ms: number): Promise<void> =>
  * @returns Promise con la respuesta parseada
  */
 export const apiExternalFetch = async <T = any>(
-  url: string, 
+  url: string,
   options: RequestOptions = {}
 ): Promise<T> => {
   const {
@@ -59,7 +59,7 @@ export const apiExternalFetch = async <T = any>(
 
   // Obtener token de autenticación
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
+
   // Configurar headers según el tipo de API
   const headers: Record<string, string> = {
     ...(isExternal ? DEFAULT_EXTERNAL_HEADERS : { 'Content-Type': 'application/json' }),
@@ -72,8 +72,6 @@ export const apiExternalFetch = async <T = any>(
   // Intentar la petición con reintentos
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      console.log(`🔄 ${isExternal ? 'API Externa' : 'API Interna'} - Intento ${attempt + 1}/${retries + 1}: ${url}`);
-      
       const response = await fetchWithTimeout(url, {
         ...fetchOptions,
         headers,
@@ -82,7 +80,7 @@ export const apiExternalFetch = async <T = any>(
       if (!response.ok) {
         const errorText = await response.text();
         let errorData;
-        
+
         try {
           errorData = JSON.parse(errorText);
         } catch {
@@ -93,29 +91,26 @@ export const apiExternalFetch = async <T = any>(
       }
 
       const data: T = await response.json();
-      
+
       if (isExternal) {
         // Para APIs externas, verificar formato de respuesta estándar
         const externalResponse = data as unknown as ExternalApiResponse<any>;
         if (externalResponse.isError === true) {
           throw new Error(externalResponse.error || externalResponse.message || 'Error en API externa');
         }
-        console.log(`✅ API Externa exitosa: ${url}`);
         return data;
       } else {
         // Para APIs internas, devolver directamente
-        console.log(`✅ API Interna exitosa: ${url}`);
         return data;
       }
 
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Error desconocido');
       console.error(`❌ Error en intento ${attempt + 1}:`, lastError.message);
-      
+
       // Si no es el último intento, esperar antes de reintentar
       if (attempt < retries) {
         const delayTime = API_CONFIG.RETRY_DELAY * (attempt + 1); // Backoff exponencial simple
-        console.log(`⏳ Esperando ${delayTime}ms antes del siguiente intento...`);
         await delay(delayTime);
       }
     }
@@ -168,6 +163,6 @@ export const buildQueryParams = (params: Record<string, string | number | undefi
     .filter(([_, value]) => value !== undefined && value !== null)
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
     .join('&');
-  
+
   return validParams ? `?${validParams}` : '';
 };

@@ -9,6 +9,7 @@ const registerPagoAsMovimiento = async (pago: IPago): Promise<void> => {
   try {
     const movimientoData = {
       id_reserva: pago.id_reserva,
+      fecha_pago: pago.fecha_pago,
       codigo_reserva: pago.codigo_reserva,
       monto: pago.monto,
       metodo_pago: pago.metodo_pago,
@@ -34,20 +35,16 @@ const registerPagoAsMovimiento = async (pago: IPago): Promise<void> => {
  */
 export const getPagosReservaApi = async (idReserva: number): Promise<IPago[]> => {
   try {
-    console.log('🔄 Obteniendo pagos para reserva ID:', idReserva);
-
     const response: any = await apiFetch(`/api/pagos/${idReserva}`, {
       method: 'GET',
     });
 
     // apiFetch puede devolver la data directamente si existe la propiedad 'data'
     if (Array.isArray(response)) {
-      console.log('✅ Pagos obtenidos exitosamente (direct):', response.length);
       return response;
     }
 
     if (response && response.success && Array.isArray(response.data)) {
-      console.log('✅ Pagos obtenidos exitosamente (wrapped):', response.data.length);
       return response.data;
     }
 
@@ -69,8 +66,6 @@ export const getPagosReservaApi = async (idReserva: number): Promise<IPago[]> =>
  */
 export const getPagosReservaDetalleApi = async (idReserva: number): Promise<IPago[]> => {
   try {
-    console.log('🔄 Obteniendo pagos detalle para reserva ID:', idReserva);
-
     const response: any = await apiFetch(`/api/reservas/pagos-detalle?id_reserva=${idReserva}`, {
       method: 'GET',
     });
@@ -84,7 +79,6 @@ export const getPagosReservaDetalleApi = async (idReserva: number): Promise<IPag
     }
 
     const pagos = Array.isArray(response.data) ? response.data : [];
-    console.log('✅ Pagos detalle obtenidos exitosamente:', pagos.length);
     return pagos;
 
   } catch (error) {
@@ -99,8 +93,6 @@ export const getPagosReservaDetalleApi = async (idReserva: number): Promise<IPag
  */
 export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Promise<IPago> => {
   try {
-    console.log('🔄 Creando pago para reserva ID:', idReserva, 'Datos:', pagoData);
-
     const response: any = await apiFetch(`/api/pagos/${idReserva}`, {
       method: 'POST',
       body: JSON.stringify(pagoData),
@@ -114,7 +106,6 @@ export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Pro
     // Si apiFetch devolvió el objeto pago directamente
     if (response && (response.id || response.monto)) {
       const pago = response;
-      console.log('✅ Pago creado exitosamente (direct):', pago);
 
       // Solo registrar movimiento en modo mock/interno
       const useExternalApi = process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3001';
@@ -132,14 +123,12 @@ export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Pro
     }
 
     const pago = Array.isArray(response.data) ? response.data[0] : response.data;
-    console.log('✅ Pago creado exitosamente:', pago);
 
     // Solo registrar movimiento en modo mock/interno (el backend externo lo hace automáticamente)
     const useExternalApi = process.env.NEXT_PUBLIC_API_URL === 'http://localhost:3001';
     if (!useExternalApi) {
       try {
         await registerPagoAsMovimiento(pago);
-        console.log('✅ Pago registrado como movimiento de ingreso');
       } catch (movimientoError) {
         console.error('⚠️ Error registrando movimiento (pago ya fue creado):', movimientoError);
         // No fallar el proceso completo si el movimiento falla
@@ -160,8 +149,6 @@ export const createPagoApi = async (idReserva: number, pagoData: IPagoForm): Pro
  */
 export const updatePagoApi = async (idPago: number, pagoData: Partial<IPagoForm>): Promise<IPago> => {
   try {
-    console.log('🔄 Actualizando pago ID:', idPago, 'Datos:', pagoData);
-
     const response: IPagoApiResponse = await apiFetch(`/api/pagos/editPago?id=${idPago}`, {
       method: 'PUT',
       body: JSON.stringify(pagoData),
@@ -171,7 +158,6 @@ export const updatePagoApi = async (idPago: number, pagoData: Partial<IPagoForm>
       throw new Error(response.message || 'Error al actualizar pago');
     }
 
-    console.log('✅ Pago actualizado exitosamente');
     return response.data as IPago;
 
   } catch (error) {
@@ -186,8 +172,6 @@ export const updatePagoApi = async (idPago: number, pagoData: Partial<IPagoForm>
  */
 export const deletePagoApi = async (idPago: number): Promise<void> => {
   try {
-    console.log('🔄 Eliminando pago ID:', idPago);
-
     const response: IPagoApiResponse = await apiFetch(`/api/pagos/deletePago?id=${idPago}`, {
       method: 'DELETE',
     });
@@ -195,8 +179,6 @@ export const deletePagoApi = async (idPago: number): Promise<void> => {
     if (!response.success) {
       throw new Error(response.message || 'Error al eliminar pago');
     }
-
-    console.log('✅ Pago eliminado exitosamente');
 
   } catch (error) {
     console.error('❌ Error en deletePagoApi:', error);

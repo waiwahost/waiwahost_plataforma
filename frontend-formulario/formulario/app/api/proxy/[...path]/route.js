@@ -30,8 +30,6 @@ export async function POST(request, { params }) {
     const path = pathArray?.join('/') || '';
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL;
 
-    console.log('Proxy request to:', apiUrl);
-
     if (!apiUrl) {
         console.error('API_URL is missing');
         return NextResponse.json({ isError: true, message: 'API_URL not configured' }, { status: 500 });
@@ -40,7 +38,6 @@ export async function POST(request, { params }) {
     try {
         const body = await request.json();
         const targetUrl = `${apiUrl}/${path}`;
-        console.log(`Proxying POST to: ${targetUrl}`);
 
         const res = await fetch(targetUrl, {
             method: 'POST',
@@ -50,9 +47,7 @@ export async function POST(request, { params }) {
             body: JSON.stringify(body),
         });
 
-        console.log(`Backend response status: ${res.status}`);
         const data = await res.json();
-        console.log('Backend response data:', JSON.stringify(data).substring(0, 200)); // Log summary
         return NextResponse.json(data, { status: res.status });
     } catch (error) {
         console.error('Proxy error:', error);

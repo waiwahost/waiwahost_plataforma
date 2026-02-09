@@ -11,8 +11,8 @@ const mapPropietarioFromAPI = (propietarioAPI: any): IPropietarioTableData => {
     telefono: propietarioAPI.telefono || 'Sin teléfono',
     direccion: propietarioAPI.direccion || 'Sin dirección',
     cedula: propietarioAPI.cedula || 'Sin cédula',
-    fecha_registro: propietarioAPI.fecha_registro ? 
-      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] : 
+    fecha_registro: propietarioAPI.fecha_registro ?
+      new Date(propietarioAPI.fecha_registro).toISOString().split('T')[0] :
       new Date().toISOString().split('T')[0],
     estado: propietarioAPI.estado === 'activo' ? 'activo' : 'inactivo',
     id_empresa: propietarioAPI.id_empresa || 1,
@@ -54,9 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = authHeader.replace('Bearer ', '');
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
 
-    console.log('Creating propietario with data:', propietarioData);
-    console.log('Calling external API:', `${apiUrl}/propietarios/createPropietario`);
-
     // Preparar el body para la API externa
     const bodyForExternalAPI = {
       nombre: propietarioData.nombre,
@@ -68,7 +65,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       estado: propietarioData.estado,
       id_empresa: propietarioData.id_empresa
     };
-    console.log('Token: ' + token);
 
     // Hacer la llamada a la API externa
     const response = await fetch(`${apiUrl}/propietarios/createPropietario`, {
@@ -87,7 +83,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const externalData = await response.json();
-    console.log('External API response:', externalData);
 
     // Verificar si la API externa retornó error
     if (externalData.isError) {
@@ -101,8 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Mapear la respuesta al formato esperado por el frontend
     const newPropietario = mapPropietarioFromAPI(externalData.data);
 
-    console.log('Mapped propietario:', newPropietario);
-
     res.status(201).json({
       isError: false,
       data: newPropietario,
@@ -111,7 +104,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   } catch (error) {
     console.error('Error in createPropietario API:', error);
-    
+
     res.status(500).json({
       isError: true,
       data: null,

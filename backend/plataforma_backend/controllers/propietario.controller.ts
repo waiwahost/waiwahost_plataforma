@@ -43,7 +43,6 @@ export const propietarioController = {
       }
       // Si es superadmin (rol 1), id_empresa se mantiene undefined para traer todos
 
-      console.log('Obteniendo propietarios con filtros:', { id_empresa });
       // Llamar al servicio
       const { data, error } = await getPropietariosService(id_empresa);
 
@@ -58,7 +57,6 @@ export const propietarioController = {
         );
       }
 
-      console.log('Propietarios obtenidos exitosamente:', data?.length || 0, 'registros');
       return reply.send(successResponse(data));
 
     } catch (err) {
@@ -103,11 +101,6 @@ export const propietarioController = {
 
       // Forzar id_empresa del usuario autenticado
       const propietarioData = { ...bodyValidation.data, id_empresa: Number(ctx.empresaId) };
-      console.log('Creando propietario:', {
-        email: propietarioData.email,
-        nombre: propietarioData.nombre,
-        id_empresa: propietarioData.id_empresa
-      });
       // Llamar al servicio
       const { data, error } = await createPropietarioService(Number(ctx.id), propietarioData);
 
@@ -122,7 +115,6 @@ export const propietarioController = {
         );
       }
 
-      console.log('Propietario creado exitosamente:', data?.id);
       return reply.status(201).send(
         successResponse(data, 201)
       );
@@ -187,13 +179,6 @@ export const propietarioController = {
       // Forzar id_empresa del usuario autenticado
       const propietarioData = { ...bodyValidation.data, id_empresa: Number(ctx.empresaId) };
 
-      console.log('Editando propietario:', {
-        propietarioId,
-        email: propietarioData.email,
-        nombre: propietarioData.nombre,
-        id_empresa: propietarioData.id_empresa
-      });
-
       // Llamar al servicio
       const { data, error } = await editPropietarioService(
         Number(ctx.id),
@@ -212,7 +197,6 @@ export const propietarioController = {
         );
       }
 
-      console.log('Propietario editado exitosamente:', data?.id);
       return reply.send(successResponse(data));
 
     } catch (err) {

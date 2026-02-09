@@ -55,7 +55,6 @@ export class PropietarioRepository {
 
     try {
       const { rows } = await pool.query(query, params);
-      console.log('Propietarios obtenidos:', rows);
       return { data: rows, error: null };
     } catch (error: any) {
       console.error('Error al obtener propietarios:', error);
@@ -79,7 +78,7 @@ export class PropietarioRepository {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
       RETURNING *
     `;
-    
+
     const values = [
       userData.nombre,
       userData.apellido,
@@ -111,7 +110,7 @@ export class PropietarioRepository {
       VALUES ($1, $2, $3) 
       RETURNING *
     `;
-    
+
     const values = [
       propietarioData.id_usuario,
       propietarioData.telefono,
@@ -185,7 +184,7 @@ export class PropietarioRepository {
   }) {
     // Construir query dinámico solo con los campos a actualizar
     const fields = Object.keys(userData).filter(key => userData[key as keyof typeof userData] !== undefined);
-    
+
     if (fields.length === 0) {
       return { data: null, error: new Error('No hay campos para actualizar') };
     }
@@ -216,7 +215,7 @@ export class PropietarioRepository {
   }) {
     // Construir query dinámico solo con los campos a actualizar
     const fields = Object.keys(propietarioData).filter(key => propietarioData[key as keyof typeof propietarioData] !== undefined);
-    
+
     if (fields.length === 0) {
       return { data: null, error: new Error('No hay campos para actualizar') };
     }
