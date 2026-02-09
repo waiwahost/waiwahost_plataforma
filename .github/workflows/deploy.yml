@@ -26,5 +26,5 @@ jobs:
             cd /var/www/waiwahost           # Ruta de tu proyecto en el servidor
             git reset --hard                 # Asegura que no haya cambios locales que bloqueen git pull
             git pull origin main
-            docker-compose build frontend backend formulario
-            docker-compose up -d
+            docker compose build frontend backend formulario
+            docker compose up -d
