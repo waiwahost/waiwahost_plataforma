@@ -23,7 +23,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({ selectedDate, onDateChange 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row md:flex-row space-y-3 md:space-y-0 items-center justify-between">
         <div className="flex items-center gap-3">
           <Calendar className="h-5 w-5 text-tourism-navy" />
           <h3 className="text-lg font-semibold text-tourism-navy">
