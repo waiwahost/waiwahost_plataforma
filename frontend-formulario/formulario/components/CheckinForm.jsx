@@ -541,7 +541,7 @@ const CheckinFormContent = () => {
                                                             placeholder="Número de documento"
                                                         />
                                                     </div>
-                                                    <div className="md:col-span-2">
+                                                    <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento *</label>
                                                         <input
                                                             type="date"
@@ -549,6 +549,24 @@ const CheckinFormContent = () => {
                                                             onChange={(e) => handleHuespedChange(index, 'fecha_nacimiento', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         />
+                                                    </div>
+                                                     <div>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de Viaje *</label>
+                                                        <select
+                                                            value={huesped.motivo_viaje}
+                                                            onChange={(e) => handleHuespedChange(index, 'motivo_viaje', e.target.value)}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                                                        >
+                                                            <option value="Negocios">Negocios</option>
+                                                            <option value="Vacaciones">Vacaciones</option>
+                                                            <option value="Visitas">Visitas</option>
+                                                            <option value="Educacion">Educacion</option>
+                                                            <option value="Salud">Salud</option>
+                                                            <option value="Religion">Religion</option>
+                                                            <option value="Compras">Compras</option>
+                                                            <option value="Transito">Transito</option>
+                                                            <option value="Otros">Otros</option>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </div>
