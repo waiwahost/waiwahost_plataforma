@@ -69,9 +69,15 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
   allowedKeys.add('main');
 
   const usuariosItem = { key: 'usuarios', title: 'Usuarios', icon: Users };
+  const companiesItem = { key: 'companies', title: 'Empresas', icon: Building2 };
 
   // Agregar la opción de Usuarios si el permiso existe
   const showUsuarios = permisos.includes('ver_usuarios');
+
+  // Agregar la opción de Empresas solo para SUPERADMIN
+  // Check typical superadmin indicators based on user object structure
+  const isSuperAdmin = user && (String(user.role) === '1' || String(user.role) === 'SUPERADMIN' || (user as any).id_roles === 1);
+  const showCompanies = isSuperAdmin;
 
   return (
     <nav className="flex flex-col gap-2 p-0">
@@ -79,6 +85,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
         <SidebarGroupLabel className="text-tourism-navy font-semibold">Gestión Principal</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenuList>
+
             {menuItems.filter(item => allowedKeys.has(item.key)).map((item) => (
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton
@@ -101,6 +108,18 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
                 >
                   <usuariosItem.icon className="h-4 w-4" />
                   <span>{usuariosItem.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {showCompanies && (
+              <SidebarMenuItem key={companiesItem.key}>
+                <SidebarMenuButton
+                  className={`flex items-center gap-2 hover:bg-tourism-sage/10 hover:text-tourism-navy ${activeKey === companiesItem.key ? 'bg-tourism-teal/10 text-tourism-navy border-r-2 border-tourism-teal' : ''}`}
+                  onClick={() => onSelect(companiesItem.key)}
+                  data-active={activeKey === companiesItem.key}
+                >
+                  <companiesItem.icon className="h-4 w-4" />
+                  <span>{companiesItem.title}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}

@@ -18,6 +18,7 @@ import Reports from '../dashboard/Reports';
 import Cashbox from '../dashboard/Cashbox';
 import Incomes from '../dashboard/Incomes';
 import Deductions from '../dashboard/Deductions';
+import Companies from '../dashboard/Companies';
 import Usuarios from '../dashboard/Usuarios';
 
 const COMPONENTS: Record<string, React.ReactNode> = {
@@ -32,6 +33,7 @@ const COMPONENTS: Record<string, React.ReactNode> = {
   incomes: <Incomes />,
   deductions: <Deductions />,
   usuarios: <Usuarios />,
+  companies: <Companies />,
 };
 
 const BaseLayout: React.FC = () => {
@@ -48,9 +50,9 @@ const BaseLayout: React.FC = () => {
   };
 
   useEffect(() => {
-  const isDesktop = window.innerWidth >= 768;
-  setOpen(isDesktop);
-}, []);
+    const isDesktop = window.innerWidth >= 768;
+    setOpen(isDesktop);
+  }, []);
 
 
 
@@ -70,7 +72,7 @@ const BaseLayout: React.FC = () => {
             <h1 className="font-bold text-lg text-tourism-navy">Waiwahost</h1>
             <p className="text-xs text-gray-500">Gestión Inmobiliaria</p>
           </div>
-          
+
         </div>
         <div className="flex-1 bg-white">
           <SidebarMenu activeKey={activeKey} onSelect={handleMenuSelect} />
