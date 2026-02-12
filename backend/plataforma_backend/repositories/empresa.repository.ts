@@ -51,4 +51,25 @@ export class EmpresaRepository {
       return { data: null, error };
     }
   }
+
+  async update(id: number, data: any) {
+    const allowedFields = ['nombre', 'nit', 'plan_actual', 'estado'];
+    const fields = Object.keys(data).filter(f => allowedFields.includes(f));
+
+    if (fields.length === 0) return { data: null, error: null }; // Nada que actualizar
+
+    const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(', ');
+    const values = fields.map(f => data[f]);
+    values.push(id);
+
+    const query = `UPDATE empresas SET ${setClause} WHERE id_empresa = $${values.length} RETURNING *`;
+
+    try {
+      const { rows } = await pool.query(query, values);
+      return { data: rows[0], error: null };
+    } catch (error: any) {
+      console.error('Error al actualizar empresa:', error);
+      return { data: null, error };
+    }
+  }
 }

@@ -8,4 +8,7 @@ export async function empresasRoutes(server: FastifyInstance, opts: FastifyPlugi
 
   // POST: Crear empresa (solo SUPERADMIN) - (empresas/)
   server.post('/', { preHandler: [authMiddleware] }, empresaController.create);
+
+  // PUT: Editar empresa (solo SUPERADMIN) - (empresas/:id)
+  server.put('/:id', { preHandler: [authMiddleware] }, empresaController.edit);
 }
