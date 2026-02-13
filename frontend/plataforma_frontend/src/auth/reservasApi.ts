@@ -17,6 +17,7 @@ interface ReservaApiResponse<T> {
 export interface ReservasFilters {
   estado?: 'pendiente' | 'confirmada' | 'en_proceso' | 'completada' | 'cancelada';
   id_empresa?: number;
+  id_inmueble?: number;
   fecha_inicio?: string;
   fecha_fin?: string;
 }
@@ -36,6 +37,9 @@ export const getReservasApi = async (filters?: ReservasFilters): Promise<IReserv
       }
       if (filters.id_empresa) {
         queryParams.append('id_empresa', filters.id_empresa.toString());
+      }
+      if (filters.id_inmueble) {
+        queryParams.append('id_inmueble', filters.id_inmueble.toString());
       }
       if (filters.fecha_inicio) {
         queryParams.append('fecha_inicio', filters.fecha_inicio);

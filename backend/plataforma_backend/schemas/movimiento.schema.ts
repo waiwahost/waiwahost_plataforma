@@ -68,7 +68,10 @@ const movimientoBaseSchema = z.object({
     }
   ).optional().nullable(),
   comprobante: z.string().optional().nullable(),
-  id_empresa: z.string().min(1, { message: "El ID de la empresa es requerido" }),
+
+  // id_empresa: z.string().min(1, { message: "El ID de la empresa es requerido" }),
+
+  
   plataforma_origen: plataformaOrigenSchema
 });
 

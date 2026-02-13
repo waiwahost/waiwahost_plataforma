@@ -52,3 +52,9 @@ export interface IInmuebleApiResponse {
   message: string;
   error?: string;
 }
+
+// Para Filtro de Reservas por Inmueble
+export interface Inmueble {
+  id: number;
+  nombre: string;
+}

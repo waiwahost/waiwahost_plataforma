@@ -146,4 +146,20 @@ export class UserRepository {
       return { data: null, error };
     }
   }
+
+  async deactivateByEmpresa(empresaId: number) {
+    // El usuario pidio poner estado_activo = false.
+    // Si la columna no existe, fallara. Añadimos fallback para logear warning.
+    const query = `UPDATE usuarios SET estado_activo = false WHERE id_empresa = $1`;
+    try {
+      const { rowCount } = await pool.query(query, [empresaId]);
+      return { success: true, count: rowCount, error: null };
+    } catch (error: any) {
+      console.error('Error desactivando usuarios de empresa:', error);
+      if (error.code === '42703') { // Undefined column
+        return { success: false, error: { message: 'Columna estado_activo no existe en usuarios', original: error } };
+      }
+      return { success: false, error };
+    }
+  }
 }

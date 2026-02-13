@@ -35,7 +35,7 @@ export class MovimientosRepository {
       FROM movimientos m
       LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
       LEFT JOIN reservas r ON m.id_reserva = r.id_reserva::text
-      WHERE m.fecha = $1
+      WHERE m.fecha = $1 AND i.estado = 'activo'
     `;
     const params: any[] = [fecha];
     if (empresaId) {
@@ -77,7 +77,7 @@ export class MovimientosRepository {
       FROM movimientos m
       LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
       LEFT JOIN reservas r ON m.id_reserva = r.id_reserva::text
-      WHERE m.id_inmueble = $1 AND m.fecha = $2
+      WHERE m.id_inmueble = $1 AND m.fecha = $2 AND i.estado = 'activo'
       ORDER BY m.fecha_creacion DESC
     `;
 
@@ -377,9 +377,11 @@ export class MovimientosRepository {
         SUM(CASE WHEN m.tipo = 'ingreso' THEN m.monto ELSE 0 END) as total_ingresos,
         COUNT(DISTINCT m.id_reserva) as cantidad_reservas
       FROM movimientos m
+      LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
       WHERE m.fecha >= $1 
         AND m.fecha <= $2 
         AND m.id_empresa = $3
+        AND i.estado = 'activo'
         AND m.tipo = 'ingreso'
         AND m.concepto = 'reserva'
         AND m.plataforma_origen IS NOT NULL

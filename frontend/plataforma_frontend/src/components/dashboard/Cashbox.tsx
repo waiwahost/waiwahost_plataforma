@@ -125,7 +125,7 @@ const Cashbox: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex-1 sm:flex lg:flex space-y-3 md:space-y-0 items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-tourism-navy">Caja Diaria</h1>
           <p className="text-gray-600">Gestión de movimientos de ingresos y egresos</p>

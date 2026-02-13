@@ -43,7 +43,7 @@ export async function createMovimientoService(
           }
         };
       }
-      
+
       // Solo permitir plataforma_origen en ingresos de reserva
       if (data.tipo !== 'ingreso' || data.concepto !== 'reserva') {
         return {
@@ -55,7 +55,7 @@ export async function createMovimientoService(
           }
         };
       }
-      
+
       // Si especifica plataforma_origen, debe tener id_reserva
       if (!data.id_reserva || data.id_reserva.trim() === '') {
         return {
@@ -84,7 +84,7 @@ export async function createMovimientoService(
 
     // Verificar que el inmueble existe y pertenece a la empresa
     const inmuebleExists = await MovimientosRepository.existsInmuebleInEmpresa(
-      data.id_inmueble, 
+      data.id_inmueble,
       data.id_empresa
     );
     if (!inmuebleExists) {
@@ -101,7 +101,7 @@ export async function createMovimientoService(
     // Si se especifica reserva, verificar que existe y pertenece a la empresa
     if (data.id_reserva) {
       const reservaExists = await MovimientosRepository.existsReservaInEmpresa(
-        data.id_reserva, 
+        data.id_reserva,
         data.id_empresa
       );
       if (!reservaExists) {

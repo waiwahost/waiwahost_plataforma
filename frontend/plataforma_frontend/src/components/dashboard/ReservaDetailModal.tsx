@@ -98,7 +98,8 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      timeZone: 'UTC'
     });
   };
 
@@ -227,8 +228,8 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                   <div
                     key={huesped.id}
                     className={`p-3 rounded-md border ${huesped.es_principal
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-white border-gray-200'
+                      ? 'bg-blue-50 border-blue-200'
+                      : 'bg-white border-gray-200'
                       }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -328,7 +329,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
               <div>
                 <label className="text-sm font-medium text-gray-600">Total Pendiente</label>
                 <p className={`font-medium ${(reserva.total_pendiente ?? 0) <= 0 ? 'text-green-600' :
-                    'text-orange-600'
+                  'text-orange-600'
                   }`}>
                   {formatCurrency(reserva.total_pendiente)}
                 </p>

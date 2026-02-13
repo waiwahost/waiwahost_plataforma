@@ -117,7 +117,7 @@ const Guests: React.FC = () => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex-1 sm:flex lg:flex space-y-3 md:space-y-0 justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Huéspedes</h2>
           <p className="text-gray-600 mt-1">Gestión de huéspedes y sus datos</p>

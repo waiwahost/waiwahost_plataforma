@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo } from 'react';
+"use client";
+import React, { useState, useMemo, useEffect } from 'react';
 import ReservasTable from './ReservasTable';
 import CreateReservaModal from './CreateReservaModal';
 import CreateReservaButton from './CreateReservaButton';
@@ -8,9 +9,13 @@ import HuespedesListModal from './HuespedesListModal';
 import PagosModal from './PagosModal';
 import SuccessModal from './SuccessModal';
 import ConfirmModal from './ConfirmModal';
-import MonthSelector from './MonthSelector';
+import MonthSelector from './MonthSelector'
+import InmuebleSelector from './InmuebleSelector';
+
+import { useInmuebleSelector } from '../../hooks/useInmuebleSelector';
 import { useAuth } from '../../auth/AuthContext';
 import { IReservaForm, IReservaTableData, IHuesped } from '../../interfaces/Reserva';
+import { Inmueble } from '../../interfaces/Inmueble';
 import { IPago } from '../../interfaces/Pago';
 import {
   createReservaApi,
@@ -18,6 +23,8 @@ import {
   deleteReservaApi
 } from '../../auth/reservasApi';
 import { useReservasConTotales } from '../../hooks/useReservasConTotales';
+
+
 
 const Bookings: React.FC = () => {
   // Hook personalizado para manejar reservas con totales automáticos
@@ -30,6 +37,7 @@ const Bookings: React.FC = () => {
     eliminarReservaDeLista,
     agregarReservaALista,
     refrescarReservas,
+    loadReservas
   } = useReservasConTotales();
 
   // Estados locales para modales
@@ -48,22 +56,32 @@ const Bookings: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
 
+  // Inmuebles
+  const { inmuebles } = useInmuebleSelector();
+  console.log(inmuebles);
+  const [selectedInmueble, setSelectedInmueble] = useState<number>(-1);  
+
+
+
   const { user } = useAuth();
   const canCreate = user?.permisos?.includes('crear_reservas') || true; // TEMPORAL: siempre true para debugging
   const canEdit = user?.permisos?.includes('editar_reservas') || true; // TEMPORAL: siempre true para debugging
   const canDelete = user?.permisos?.includes('eliminar_reservas') || true; // TEMPORAL: siempre true para debugging
 
 
-  const filteredReservas = useMemo(() => {
-    if (selectedMonth === -1) {
-      return reservas;
-    }
-    return reservas.filter(reserva => {
-      const fechaInicio = new Date(reserva.fecha_inicio);
-      const fechaFin = new Date(reserva.fecha_fin);
-      return fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth;
-    });
-  }, [reservas, selectedMonth]);
+  // const filteredReservas = useMemo(() => {
+  //   if (selectedMonth === -1 && selectedInmueble === -1) {
+  //     return reservas;
+  //   }
+  //   return reservas.filter(reserva => {
+  //     const inmueble = reserva.id_inmueble;
+  //     const fechaInicio = new Date(reserva.fecha_inicio);
+  //     const fechaFin = new Date(reserva.fecha_fin);
+  //     return (fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth) && (inmueble === selectedInmueble); 
+  //   });
+  // }, [reservas, selectedMonth, selectedInmueble]);
+
+
 
   const handleCreate = async (reservaData: IReservaForm) => {
     try {
@@ -168,12 +186,47 @@ const Bookings: React.FC = () => {
     setPagosModalOpen(true);
   };
 
+
+
+
+  useEffect(() => {
+  const filtros: any = {};
+
+  // Inmueble
+  if (selectedInmueble !== -1) {
+    filtros.id_inmueble = selectedInmueble;
+  }
+
+  // Mes → convertir a rango de fechas
+  if (selectedMonth !== -1) {
+    const year = new Date().getFullYear();
+    const month = selectedMonth; // 0-based
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    filtros.fecha_inicio = firstDay.toISOString().slice(0, 10);
+    filtros.fecha_fin = lastDay.toISOString().slice(0, 10);
+  }
+
+  loadReservas(filtros);
+}, [selectedMonth, selectedInmueble, loadReservas]);
+
+
+
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-0 md:p-4 space-y-6">
+      <div className="flex-1 md:flex space-y-4 md:space-y-0 justify-between items-center">
         <h2 className="text-xl font-bold">Gestión de Reservas</h2>
         <div className="flex items-center space-x-4">
           <MonthSelector selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
+          <InmuebleSelector
+            inmuebles={inmuebles}
+            selectedInmueble={selectedInmueble}
+            setSelectedInmueble={setSelectedInmueble}
+          />
+
+
           <CreateReservaButton
             onClick={() => canCreate && setModalOpen(true)}
             disabled={!canCreate}
@@ -196,7 +249,7 @@ const Bookings: React.FC = () => {
         </div>
       ) : (
         <ReservasTable
-          reservas={filteredReservas}
+          reservas={reservas}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onViewDetail={handleViewDetail}

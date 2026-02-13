@@ -5,6 +5,7 @@ import { IReservaForm, IHuespedForm } from '../../interfaces/Reserva';
 import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { IInmueble } from '../../interfaces/Inmueble';
 import { PLATAFORMAS_ORIGEN, PlataformaOrigen } from '../../constants/plataformas';
+import PhoneInput from '../atoms/PhoneInput';
 
 interface CreateReservaModalProps {
   open: boolean;
@@ -90,11 +91,9 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
         // Helper para transformar fecha ISO a YYYY-MM-DD
         const toDateInput = (iso?: string) => {
           if (!iso) return '';
-          const d = new Date(iso);
-          // Ajuste de zona horaria para evitar desfase
-          const off = d.getTimezoneOffset();
-          d.setMinutes(d.getMinutes() - off);
-          return d.toISOString().slice(0, 10);
+          // Asumiendo que la fecha viene en formato ISO (YYYY-MM-DDTHH:mm:ss.sssZ)
+          // y queremos conservar la fecha exacta sin conversión de zona horaria local.
+          return iso.split('T')[0];
         };
 
         setFormData({
@@ -471,15 +470,11 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Teléfono
-                            </label>
-                            <input
-                              type="tel"
-                              value={huesped.telefono}
-                              onChange={(e) => handleHuespedChange(index, 'telefono', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                              placeholder="+57 300 123 4567"
+                            <PhoneInput
+                              label="Teléfono"
+                              value={huesped.telefono || ''}
+                              onChange={(value) => handleHuespedChange(index, 'telefono', value)}
+                              placeholder="300 123 4567"
                             />
                           </div>
 

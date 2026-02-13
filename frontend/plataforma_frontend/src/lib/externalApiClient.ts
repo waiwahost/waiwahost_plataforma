@@ -86,6 +86,12 @@ export const extractTokenFromRequest = (req: any): string | undefined => {
  * Función para obtener empresa_id del token
  * Decodifica el JWT y extrae el empresaId del payload
  */
+import { jwtDecode } from 'jwt-decode';
+
+/**
+ * Función para obtener empresa_id del token
+ * Decodifica el JWT y busca el empresaId en el payload
+ */
 export const getEmpresaIdFromToken = (token?: string): string => {
   if (!token) {
     throw new Error('Token no proporcionado');

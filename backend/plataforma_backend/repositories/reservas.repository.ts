@@ -28,7 +28,7 @@ export class ReservasRepository {
           i.id_empresa
         FROM reservas r
         INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
-        WHERE 1=1
+        WHERE i.estado = 'activo'
       `;
 
       const params: any[] = [];
@@ -44,6 +44,12 @@ export class ReservasRepository {
       if (filters.id_empresa) {
         query += ` AND i.id_empresa = $${paramIndex}`;
         params.push(filters.id_empresa);
+        paramIndex++;
+      }
+
+      if (filters.id_inmueble) {
+        query += ` AND r.id_inmueble = $${paramIndex}`;
+        params.push(filters.id_inmueble);
         paramIndex++;
       }
 

@@ -23,6 +23,18 @@ interface AvailabilityReserva {
   estado?: string; // puede ser 'pendiente', 'confirmado', 'anulado', etc.
 }
 
+// Función auxiliar para parsear fechas YYYY-MM-DD sin ajuste de zona horaria
+// Crea la fecha como si fuera local a las 00:00:00
+function parseDateNoTz(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  // Asumimos formato YYYY-MM-DD
+  const parts = dateStr.split('T')[0].split('-');
+  if (parts.length === 3) {
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
+  return parseISO(dateStr);
+}
+
 // Genera un array de fechas entre dos fechas
 function getDatesInRange(start: Date, end: Date) {
   const dates = [];
@@ -36,14 +48,40 @@ function getDatesInRange(start: Date, end: Date) {
 
 // Determina si un inmueble está ocupado en una fecha
 function getReservaEnFecha(reservas: AvailabilityReserva[], inmuebleId: string, date: Date) {
-  return reservas.find(r =>
-    r.inmuebleId === inmuebleId &&
-    isWithinInterval(date, { start: parseISO(r.start), end: parseISO(r.end) }) &&
-    (r.estado === 'pendiente' || r.estado === 'confirmada' || r.estado === 'en_proceso' || r.estado === 'completada' || r.estado === undefined)
-  );
+  return reservas.find(r => {
+    // Usar parseDateNoTz para evitar saltos de día por timezone
+    const rStart = parseDateNoTz(r.start);
+    const rEnd = parseDateNoTz(r.end);
+
+    // Un día está ocupado si cae dentro del rango [start, end)
+    // Normalmente check-out (end) no cuenta como ocupado para pernoctar, 
+    // pero depende de la lógica exacta. Aquí usamos isWithinInterval inclusivo.
+    // Ajuste: si la fecha es igual al end, suele ser día de salida y estar libre para otra entrada.
+    // Pero isWithinInterval incluye el end. Revisemos lógica de negocio estándar hotelera.
+    // Si r.start <= date < r.end => Ocupado. (Noche del check-in ocupada, noche antes del check-out ocupada).
+    // isWithinInterval(date, { start, end }) incluye ambos extremos.
+    // Para visualización de "Noches", solemos querer ver ocupado hasta el día antes de salida.
+
+    // Opción A: isWithinInterval estricto (incluye start y end)
+    // return r.inmuebleId === inmuebleId && isWithinInterval(date, { start: rStart, end: rEnd }) ...
+
+    // Opción B: Excluir fecha fin (check-out)
+    // Un día se ve "ocupado" si es >= start Y < end.
+    // Si date es igual a start, está ocupado (noche de entrada).
+    // Si date es igual a end, es salida (usualmente liberado a mediodía).
+
+    if (r.inmuebleId !== inmuebleId) return false;
+
+    // Normalizar 'date' para comparar solo fechas (sin horas)
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    return d >= rStart && d < rEnd &&
+      (r.estado === 'pendiente' || r.estado === 'confirmada' || r.estado === 'en_proceso' || r.estado === 'completada' || r.estado === undefined);
+  });
 }
 
 const today = new Date();
+today.setHours(0, 0, 0, 0); // Normalizar hoy
 const defaultStart = today;
 const defaultEnd = addDays(today, 14);
 
@@ -52,6 +90,7 @@ const periodosFijos = [
   { label: "2 semanas", days: 14 },
   { label: "3 semanas", days: 21 },
   { label: "1 mes", days: 30 },
+  { label: "2 meses", days: 60 },
 ];
 
 const Availability: React.FC = () => {
@@ -248,11 +287,11 @@ const Availability: React.FC = () => {
           <>
             <div>
               <label className="block text-sm font-medium mb-1">Desde</label>
-              <input type="date" value={format(startDate, "yyyy-MM-dd")} onChange={e => setStartDate(parseISO(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
+              <input type="date" value={format(startDate, "yyyy-MM-dd")} onChange={e => setStartDate(parseDateNoTz(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Hasta</label>
-              <input type="date" value={format(endDate, "yyyy-MM-dd")} onChange={e => setEndDate(parseISO(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
+              <input type="date" value={format(endDate, "yyyy-MM-dd")} onChange={e => setEndDate(parseDateNoTz(e.target.value))} className="border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-tourism-teal" />
             </div>
           </>
         )}
