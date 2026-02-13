@@ -51,8 +51,12 @@ export async function getMovimientosFechaService(
     const empresaIdParam = (empresaId && empresaId !== '' && empresaId !== 'null') ? empresaId : undefined;
     const movimientos = await MovimientosRepository.getMovimientosByFecha(fecha, empresaIdParam, plataformaOrigen);
 
+
+    // Movimientos solo TIPO= ingreso&egreso
+    const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso');
+    
     return {
-      data: movimientos,
+      data: movimientosFiltrados,
       error: null
     };
 

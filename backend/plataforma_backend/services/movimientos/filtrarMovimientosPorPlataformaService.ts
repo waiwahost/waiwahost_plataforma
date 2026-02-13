@@ -48,8 +48,11 @@ export async function filtrarMovimientosPorPlataformaService(
     // Obtener movimientos filtrados por plataforma
     const movimientos = await MovimientosRepository.getMovimientosByFecha(fecha, empresaId, plataforma);
 
+    // Movimientos solo TIPO= ingreso&egreso
+    const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso');
+    
     return {
-      data: movimientos,
+      data: movimientosFiltrados,
       error: null
     };
 

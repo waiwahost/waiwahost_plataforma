@@ -21,8 +21,11 @@ export async function getMovimientosInmuebleService(
     // Obtener movimientos
     const movimientos = await MovimientosRepository.getMovimientosByInmuebleFecha(idInmueble, fecha);
 
+    // Movimientos solo TIPO= ingreso&egreso
+    const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso');
+    
     return {
-      data: movimientos,
+      data: movimientosFiltrados,
       error: null
     };
 

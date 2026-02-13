@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { IMovimiento, IMovimientoForm, ConceptoIngreso, ConceptoEgreso } from '../../interfaces/Movimiento';
+import { IMovimiento, IMovimientoForm, ConceptoIngreso, ConceptoEgreso, ConceptoDeducible } from '../../interfaces/Movimiento';
 import { createMovimiento, updateMovimiento } from '../../auth/movimientosApi';
 import { getInmueblesForMovimientos } from '../../auth/inmueblesMovimientosApi';
 import { IInmueble } from '../../interfaces/Inmueble';
@@ -58,6 +58,17 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
     { value: 'comision', label: 'Comisión' },
     { value: 'devolucion', label: 'Devolución' },
     { value: 'impuestos', label: 'Impuestos' },
+    { value: 'otro', label: 'Otro' }
+  ];
+
+  const conceptosDeducibles: { value: ConceptoDeducible; label: string }[] = [
+    { value: 'mantenimiento', label: 'Mantenimiento' },
+    { value: 'limpieza', label: 'Limpieza' },
+    { value: 'servicios_publicos', label: 'Servicios Públicos' },
+    { value: 'suministros', label: 'Suministros' },
+    { value: 'comision', label: 'Comisión' },
+    { value: 'impuestos', label: 'Impuestos' },
+    { value: 'multa', label: 'Multa' },
     { value: 'otro', label: 'Otro' }
   ];
 
@@ -148,11 +159,19 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
 
     setLoading(true);
     try {
+
+      let dataToSend = { ...formData };
+
+      if (dataToSend.tipo === 'deducible') {
+        dataToSend.metodo_pago = null;
+        dataToSend.plataforma_origen = null;
+      }
+
       let response;
       if (movimiento) {
-        response = await updateMovimiento(movimiento.id, formData);
+        response = await updateMovimiento(movimiento.id, dataToSend);
       } else {
-        response = await createMovimiento(formData);
+        response = await createMovimiento(dataToSend);
       }
 
       if (response.success) {
@@ -183,7 +202,7 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
 
   if (!isOpen) return null;
 
-  const conceptosDisponibles = formData.tipo === 'ingreso' ? conceptosIngreso : conceptosEgreso;
+  const conceptosDisponibles = formData.tipo === 'ingreso' ? conceptosIngreso : formData.tipo === 'egreso' ? conceptosEgreso : conceptosDeducibles;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -227,11 +246,12 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
               </label>
               <select
                 value={formData.tipo}
-                onChange={(e) => handleInputChange('tipo', e.target.value as 'ingreso' | 'egreso')}
+                onChange={(e) => handleInputChange('tipo', e.target.value as 'ingreso' | 'egreso' | 'deducible')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tourism-teal focus:border-transparent"
               >
                 <option value="ingreso">Ingreso</option>
                 <option value="egreso">Egreso</option>
+                <option value="deducible">Deducible</option>
               </select>
             </div>
           </div>
@@ -333,23 +353,31 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
               )}
             </div>
 
-            {/* Método de Pago */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Método de Pago *
-              </label>
-              <select
-                value={formData.metodo_pago}
-                onChange={(e) => handleInputChange('metodo_pago', e.target.value as 'efectivo' | 'transferencia' | 'tarjeta' | 'otro')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tourism-teal focus:border-transparent"
-              >
-                {metodosPago.map((metodo) => (
-                  <option key={metodo.value} value={metodo.value}>
-                    {metodo.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Método de Pago (No para deducibles) */}
+            {formData.tipo !== 'deducible' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Método de Pago *
+                </label>
+                <select
+                  value={formData.metodo_pago}
+                  onChange={(e) =>
+                    handleInputChange(
+                      'metodo_pago',
+                      e.target.value as 'efectivo' | 'transferencia' | 'tarjeta' | 'otro'
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tourism-teal focus:border-transparent"
+                >
+                  {metodosPago.map((metodo) => (
+                    <option key={metodo.value} value={metodo.value}>
+                      {metodo.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

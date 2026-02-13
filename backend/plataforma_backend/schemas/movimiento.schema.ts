@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CONCEPTOS_INGRESOS, CONCEPTOS_EGRESOS } from '../interfaces/movimiento.interface';
+import { CONCEPTOS_INGRESOS, CONCEPTOS_EGRESOS, CONCEPTOS_DEDUCIBLES } from '../interfaces/movimiento.interface';
 import { PLATAFORMAS_ORIGEN, isPlataformaValida } from '../constants/plataformas';
 
 // Schema para validar fecha en formato YYYY-MM-DD
@@ -51,17 +51,22 @@ const descripcionSchema = z.string().min(3, {
 // Schema base para movimientos
 const movimientoBaseSchema = z.object({
   fecha: fechaNoFuturaSchema,
-  tipo: z.enum(['ingreso', 'egreso'], {
-    errorMap: () => ({ message: "El tipo debe ser 'ingreso' o 'egreso'" })
+  tipo: z.enum(['ingreso', 'egreso', 'deducible'], {
+    errorMap: () => ({ message: "El tipo debe ser 'ingreso', 'egreso' o 'deducible'" })
   }),
   concepto: conceptoSchema,
   descripcion: descripcionSchema,
   monto: montoSchema,
   id_inmueble: z.string().min(1, { message: "El ID del inmueble es requerido" }),
   id_reserva: idReservaSchema,
-  metodo_pago: z.enum(['efectivo', 'transferencia', 'tarjeta', 'otro'], {
-    errorMap: () => ({ message: "El método de pago debe ser 'efectivo', 'transferencia', 'tarjeta' u 'otro'" })
-  }),
+  metodo_pago: z.enum(
+    ['efectivo', 'transferencia', 'tarjeta', 'otro'],
+    {
+      errorMap: () => ({
+        message: "El método de pago debe ser 'efectivo', 'transferencia', 'tarjeta' u 'otro'"
+      })
+    }
+  ).optional().nullable(),
   comprobante: z.string().optional().nullable(),
 
   // id_empresa: z.string().min(1, { message: "El ID de la empresa es requerido" }),
@@ -71,12 +76,15 @@ const movimientoBaseSchema = z.object({
 });
 
 // Schema para crear movimiento con validación de concepto y plataforma
-export const CreateMovimientoSchema = movimientoBaseSchema.refine((data) => {
+export const CreateMovimientoSchema = movimientoBaseSchema
+.refine((data) => {
   // Validar concepto según tipo
   if (data.tipo === 'ingreso') {
     return CONCEPTOS_INGRESOS.includes(data.concepto as any);
-  } else {
+  } else if (data.tipo === 'egreso') {
     return CONCEPTOS_EGRESOS.includes(data.concepto as any);
+  } else if (data.tipo === 'deducible') {
+    return CONCEPTOS_DEDUCIBLES.includes(data.concepto as any);
   }
 }, {
   message: "El concepto no es válido para el tipo de movimiento especificado",
@@ -90,12 +98,22 @@ export const CreateMovimientoSchema = movimientoBaseSchema.refine((data) => {
 }, {
   message: "La plataforma de origen solo es válida para movimientos de tipo 'ingreso' con concepto 'reserva'",
   path: ["plataforma_origen"]
+})
+.refine((data) => {
+  // Validar que metodo_pago solo se use en deducibles
+  if (data.tipo !== 'deducible' && !data.metodo_pago) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El método de pago es obligatorio para ingresos y egresos",
+  path: ["metodo_pago"]
 });
 
 // Schema para editar movimiento (todos los campos opcionales)
 export const EditMovimientoSchema = z.object({
   fecha: fechaNoFuturaSchema.optional(),
-  tipo: z.enum(['ingreso', 'egreso']).optional(),
+  tipo: z.enum(['ingreso', 'egreso', 'deducible']).optional(),
   concepto: conceptoSchema.optional(),
   descripcion: descripcionSchema.optional(),
   monto: montoSchema.optional(),
@@ -109,8 +127,10 @@ export const EditMovimientoSchema = z.object({
   if (data.tipo && data.concepto) {
     if (data.tipo === 'ingreso') {
       return CONCEPTOS_INGRESOS.includes(data.concepto as any);
-    } else {
+    } else if (data.tipo === 'egreso') {
       return CONCEPTOS_EGRESOS.includes(data.concepto as any);
+    } else if (data.tipo === 'deducible') {
+      return CONCEPTOS_DEDUCIBLES.includes(data.concepto as any);
     }
   }
   return true;

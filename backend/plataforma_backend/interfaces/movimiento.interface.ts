@@ -1,7 +1,7 @@
 export interface Movimiento {
   id?: string;
   fecha: string; // DATE - Solo fecha para filtros por día (YYYY-MM-DD)
-  tipo: 'ingreso' | 'egreso';
+  tipo: 'ingreso' | 'egreso' | 'deducible';
   concepto: string;
   descripcion: string;
   monto: number;
@@ -22,7 +22,7 @@ export interface Movimiento {
 
 export interface CreateMovimientoData {
   fecha: string;
-  tipo: 'ingreso' | 'egreso';
+  tipo: 'ingreso' | 'egreso' | 'deducible';
   concepto: string;
   descripcion: string;
   monto: number;
@@ -39,7 +39,7 @@ export interface CreateMovimientoData {
 
 export interface EditMovimientoData {
   fecha?: string;
-  tipo?: 'ingreso' | 'egreso';
+  tipo?: 'ingreso' | 'egreso' | 'deducible';
   concepto?: string;
   descripcion?: string;
   monto?: number;
@@ -65,6 +65,7 @@ export interface ResumenDiario {
   fecha: string;
   total_ingresos: number;
   total_egresos: number;
+  total_deducibles: number;
   balance: number;
   cantidad_movimientos: number;
 }
@@ -97,17 +98,32 @@ export const CONCEPTOS_EGRESOS = [
   'otro'
 ] as const;
 
+export const CONCEPTOS_DEDUCIBLES = [
+  'mantenimiento',
+  'limpieza',
+  'servicios_publicos',
+  'suministros',
+  'comision', 
+  'impuestos',
+  'multa',
+  'otro'
+] as const;
+
 export type ConceptoIngreso = typeof CONCEPTOS_INGRESOS[number];
 export type ConceptoEgreso = typeof CONCEPTOS_EGRESOS[number];
+export type ConceptoDeducible = typeof CONCEPTOS_DEDUCIBLES[number];
 
 // Unión de todos los conceptos válidos
 export type ConceptoMovimiento = ConceptoIngreso | ConceptoEgreso;
+export type ConceptoDeducibleMovimiento = ConceptoDeducible;
 
 // Función para validar concepto según tipo
-export function isConceptoValido(tipo: 'ingreso' | 'egreso', concepto: string): boolean {
+export function isConceptoValido(tipo: 'ingreso' | 'egreso' | 'deducible', concepto: string): boolean {
   if (tipo === 'ingreso') {
     return CONCEPTOS_INGRESOS.includes(concepto as ConceptoIngreso);
-  } else {
+  } else if (tipo === 'egreso') {
     return CONCEPTOS_EGRESOS.includes(concepto as ConceptoEgreso);
+  } else if (tipo === 'deducible') {
+    return CONCEPTOS_DEDUCIBLES.includes(concepto as ConceptoDeducible);
   }
 }
