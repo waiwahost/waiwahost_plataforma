@@ -79,7 +79,7 @@ export class ReportesService {
           i.nombre as nombre_inmueble
         FROM movimientos m
         INNER JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::varchar
-        WHERE m.tipo = 'egreso'
+        WHERE m.tipo IN ('egreso', 'deducible')
       `;
 
             const gastosParams: any[] = [];
