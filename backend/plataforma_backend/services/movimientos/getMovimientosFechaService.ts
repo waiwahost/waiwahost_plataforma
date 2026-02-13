@@ -53,7 +53,7 @@ export async function getMovimientosFechaService(
 
 
     // Movimientos solo TIPO= ingreso&egreso
-    const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso');
+    const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso' || movimiento.tipo === 'deducible');
     
     return {
       data: movimientosFiltrados,
