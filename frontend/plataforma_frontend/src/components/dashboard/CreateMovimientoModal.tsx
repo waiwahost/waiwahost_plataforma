@@ -159,11 +159,19 @@ const CreateMovimientoModal: React.FC<CreateMovimientoModalProps> = ({
 
     setLoading(true);
     try {
+
+      let dataToSend = { ...formData };
+
+      if (dataToSend.tipo === 'deducible') {
+        dataToSend.metodo_pago = null;
+        dataToSend.plataforma_origen = null;
+      }
+
       let response;
       if (movimiento) {
-        response = await updateMovimiento(movimiento.id, formData);
+        response = await updateMovimiento(movimiento.id, dataToSend);
       } else {
-        response = await createMovimiento(formData);
+        response = await createMovimiento(dataToSend);
       }
 
       if (response.success) {
