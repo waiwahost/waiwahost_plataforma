@@ -77,7 +77,7 @@ export async function createMovimientoService(
         error: {
           message: 'Empresa no encontrada',
           status: 404,
-          details: 'La empresa especificada no existe'
+          details: `La empresa especificada no existe (ID: ${data.id_empresa})`
         }
       };
     }

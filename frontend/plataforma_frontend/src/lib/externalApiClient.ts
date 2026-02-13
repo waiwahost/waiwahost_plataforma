@@ -7,6 +7,19 @@
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 
 /**
+ * Helper para decodificar base64 compatible con Node.js y navegador
+ */
+const base64Decode = (str: string): string => {
+  // En Node.js 18+ atob está disponible globalmente
+  // En versiones anteriores, usar Buffer
+  if (typeof atob !== 'undefined') {
+    return atob(str);
+  }
+  // Fallback para Node.js antiguo (aunque Next.js requiere Node 18+)
+  return Buffer.from(str, 'base64').toString('utf-8');
+};
+
+/**
  * Cliente HTTP para llamadas desde el servidor (APIs internas)
  * @param endpoint - Endpoint relativo (ej: '/movimientos/fecha/2025-10-12')
  * @param options - Opciones de fetch
@@ -70,12 +83,34 @@ export const extractTokenFromRequest = (req: any): string | undefined => {
 };
 
 /**
- * Función para obtener empresa_id del token (simplificada)
- * En una implementación real, decodificarías el JWT
+ * Función para obtener empresa_id del token
+ * Decodifica el JWT y extrae el empresaId del payload
  */
 export const getEmpresaIdFromToken = (token?: string): string => {
-  // Por ahora retornamos un valor por defecto
-  // En producción, decodificar el JWT y extraer empresa_id
-  const empresaId = '1';
-  return empresaId;
+  if (!token) {
+    throw new Error('Token no proporcionado');
+  }
+
+  try {
+    // Decodificar JWT (formato: header.payload.signature)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Token JWT inválido');
+    }
+
+    // Decodificar el payload (segunda parte del token)
+    // Normalizar base64 URL-safe a base64 estándar
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(base64Decode(base64));
+
+    // Extraer empresaId del payload
+    if (!payload.empresaId) {
+      throw new Error('empresaId no encontrado en el token');
+    }
+
+    return String(payload.empresaId);
+  } catch (error) {
+    console.error('Error decodificando token:', error);
+    throw new Error('Error al extraer empresaId del token');
+  }
 };
