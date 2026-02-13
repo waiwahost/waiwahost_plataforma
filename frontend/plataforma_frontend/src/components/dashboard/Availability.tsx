@@ -93,6 +93,48 @@ const periodosFijos = [
   { label: "2 meses", days: 60 },
 ];
 
+// Paleta de colores para diferenciar reservas
+// Cada reserva tendrá un borde de color único basado en su ID
+const reservaColorPalette = [
+  { border: 'border-l-4 border-rose-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-purple-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-indigo-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-cyan-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-teal-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-emerald-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-lime-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-amber-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-orange-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-red-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-pink-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+  { border: 'border-l-4 border-fuchsia-500', bg: 'bg-blue-100', hover: 'hover:bg-blue-200' },
+];
+
+// Paleta para reservas pendientes (tonos amarillos con bordes distintivos)
+const reservaPendienteColorPalette = [
+  { border: 'border-l-4 border-rose-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-purple-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-indigo-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-cyan-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-teal-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-emerald-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-lime-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-amber-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-orange-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-red-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-pink-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+  { border: 'border-l-4 border-fuchsia-600', bg: 'bg-yellow-100', hover: 'hover:bg-yellow-200' },
+];
+
+// Función para obtener color de reserva basado en su ID
+const getReservaColor = (reservaId: string, isPendiente: boolean) => {
+  // Convertir el ID a un número hash para asignar color consistente
+  const hash = reservaId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const palette = isPendiente ? reservaPendienteColorPalette : reservaColorPalette;
+  const colorIndex = hash % palette.length;
+  return palette[colorIndex];
+};
+
 const Availability: React.FC = () => {
 
   const [startDate, setStartDate] = useState(defaultStart);
@@ -381,26 +423,27 @@ const Availability: React.FC = () => {
                     const reservaEnFecha = getReservaEnFecha(reservas, inmueble.id, date);
                     const ocupado = !!reservaEnFecha;
 
-                    // Lógica visual básica según estado
-                    let cellColor = "bg-gray-100 text-gray-400 hover:bg-gray-200"; // Disponible
-                    if (ocupado) {
-                      if (reservaEnFecha.estado === 'pendiente') cellColor = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 cursor-pointer";
-                      else cellColor = "bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer";
-                    }
-
-                    // Si estamos filtrando disponible y está ocupado, mostrar vacío (o ocultar, pero mejor mostramos vacío para mantener estructura)
-                    if (estado === "disponible" && ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
+                    // Si estamos filtrando disponible y está ocupado, mostrar vacío
+                    if (estado === "disponible" && ocupado) return <td key={date.toISOString()} className="border border-gray-200 bg-white"></td>;
                     // Si estamos filtrando ocupado y no está ocupado
-                    if ((estado === "ocupado") && !ocupado) return <td key={date.toISOString()} className="border-b border-r border-gray-200 bg-white"></td>;
+                    if ((estado === "ocupado") && !ocupado) return <td key={date.toISOString()} className="border border-gray-200 bg-white"></td>;
+
+                    let cellClasses = "bg-gray-100 text-gray-400 hover:bg-gray-200";
+
+                    if (ocupado && reservaEnFecha) {
+                      const isPendiente = reservaEnFecha.estado === 'pendiente';
+                      const colors = getReservaColor(reservaEnFecha.id, isPendiente);
+                      cellClasses = `${colors.bg} ${colors.hover} ${colors.border} text-blue-800 cursor-pointer`;
+                    }
 
                     return (
                       <td
                         key={date.toISOString()}
-                        className={`border-b border-r border-gray-200 text-center transition-colors duration-200 h-12 p-1`}
+                        className={`border border-gray-200 text-center transition-colors duration-200 h-12 p-1`}
                       >
                         <div
-                          className={`w-full h-full rounded flex items-center justify-center ${cellColor}`}
-                          title={ocupado ? `Reservado: ${reservaEnFecha.estado}` : "Disponible"}
+                          className={`w-full h-full rounded flex items-center justify-center ${cellClasses}`}
+                          title={ocupado ? `Reserva ID: ${reservaEnFecha?.id} - ${reservaEnFecha?.estado}` : "Disponible"}
                           onClick={() => handleCellClick(reservaEnFecha)}
                         >
                           {ocupado && <span className="text-xs font-bold">●</span>}
