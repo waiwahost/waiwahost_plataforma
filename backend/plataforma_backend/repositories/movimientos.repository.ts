@@ -88,41 +88,73 @@ export class MovimientosRepository {
   /**
    * Obtiene resumen diario por fecha y empresa
    */
-  static async getResumenDiario(fecha: string, empresaId?: string): Promise<ResumenDiario | null> {
-    let query = `
-      SELECT 
-        fecha,
-        SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as total_ingresos,
-        SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) as total_egresos,
-        SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END) as balance,
-        COUNT(*) as cantidad_movimientos
-      FROM movimientos 
-      WHERE fecha = $1
-    `;
-    const params: any[] = [fecha];
-    if (empresaId) {
-      query += ' AND id_empresa = $2';
-      params.push(empresaId);
-    }
-    query += ' GROUP BY fecha';
-    const { rows } = await pool.query(query, params);
-    if (rows.length === 0) {
-      return {
-        fecha,
-        total_ingresos: 0,
-        total_egresos: 0,
-        balance: 0,
-        cantidad_movimientos: 0
-      };
-    }
+  static async getResumenDiario(
+  fecha: string,
+  empresaId?: string
+): Promise<ResumenDiario> {
+
+  let query = `
+    SELECT 
+      fecha,
+
+      -- Totales
+      SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) AS total_ingresos,
+      SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) AS total_egresos,
+      SUM(CASE WHEN tipo = 'deducible' THEN monto ELSE 0 END) AS total_deducibles,
+
+      -- Balance SOLO ingresos - egresos
+      SUM(
+        CASE 
+          WHEN tipo = 'ingreso' THEN monto
+          WHEN tipo = 'egreso' THEN -monto
+          ELSE 0
+        END
+      ) AS balance,
+
+      -- Contar SOLO ingresos y egresos
+      COUNT(
+        CASE 
+          WHEN tipo IN ('ingreso', 'egreso') THEN 1
+          ELSE NULL
+        END
+      ) AS cantidad_movimientos
+
+    FROM movimientos
+    WHERE fecha = $1
+  `;
+
+  const params: any[] = [fecha];
+
+  if (empresaId) {
+    query += ' AND id_empresa = $2';
+    params.push(empresaId);
+  }
+
+  query += ' GROUP BY fecha';
+
+  const { rows } = await pool.query(query, params);
+
+  if (rows.length === 0) {
     return {
-      fecha: rows[0].fecha,
-      total_ingresos: parseFloat(rows[0].total_ingresos) || 0,
-      total_egresos: parseFloat(rows[0].total_egresos) || 0,
-      balance: parseFloat(rows[0].balance) || 0,
-      cantidad_movimientos: parseInt(rows[0].cantidad_movimientos) || 0
+      fecha,
+      total_ingresos: 0,
+      total_egresos: 0,
+      total_deducibles: 0,
+      balance: 0,
+      cantidad_movimientos: 0
     };
   }
+
+  return {
+    fecha: rows[0].fecha,
+    total_ingresos: Number(rows[0].total_ingresos) || 0,
+    total_egresos: Number(rows[0].total_egresos) || 0,
+    total_deducibles: Number(rows[0].total_deducibles) || 0,
+    balance: Number(rows[0].balance) || 0,
+    cantidad_movimientos: Number(rows[0].cantidad_movimientos) || 0
+  };
+}
+
 
   /**
    * Crea un nuevo movimiento
