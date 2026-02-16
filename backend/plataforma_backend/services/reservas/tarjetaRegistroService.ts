@@ -21,78 +21,78 @@ export class TarjetaRegistroService {
    */
   async crearDesdeReserva(reservaId: number) {
     try {
-        const tarjetaExistente = await this.tarjetaRepo.findByReserva(reservaId)
-        if (tarjetaExistente) {
-            console.log(`La tarjeta para la reserva ${reservaId} ya existe. No se creará.`);
-            return;
+      const tarjetas = await this.tarjetaRepo.findByReserva(reservaId)
+      if (tarjetas && tarjetas.length > 0) {
+        console.log(`La tarjeta para la reserva ${reservaId} ya existe. No se creará.`);
+        return;
+      }
+
+
+      const reserva = await this.reservasRepo.getReservaById(reservaId);
+      if (!reserva) throw new Error('Reserva no encontrada');
+
+      const huespedes = await this.reservasRepo.getHuespedesByReservaId(reservaId);
+      const principal = huespedes.find((h: any) => h.es_principal);
+      if (!principal) throw new Error('No hay huésped principal');
+
+      const responseInmueble = await this.inmueblesRepo.getInmuebleById(reserva.id_inmueble);
+      const inmueble = responseInmueble.data;
+
+      if (!inmueble) throw new Error('Inmueble no encontrado o inactivo');
+
+
+
+      const formatDate = (date: any): string => {
+        if (!date) return '';
+        if (date instanceof Date) {
+          return date.toISOString().split('T')[0];
         }
+        return String(date).split('T')[0];
+      };
 
-        
-        const reserva = await this.reservasRepo.getReservaById(reservaId);
-        if (!reserva) throw new Error('Reserva no encontrada');
+      const payload = {
+        tipo_identificacion: principal.documento_tipo || '',
+        numero_identificacion: Number(principal.documento_numero) || 0,
+        nombres: principal.nombre || '',
+        apellidos: principal.apellido || '',
+        cuidad_residencia: principal.ciudad_residencia || '',
+        cuidad_procedencia: principal.ciudad_procedencia || '',
+        motivo: principal.motivo || 'Otros',
+        numero_acompanantes: Number(reserva.numero_huespedes - 1) || 0,
 
-        const huespedes = await this.reservasRepo.getHuespedesByReservaId(reservaId);
-        const principal = huespedes.find(h => h.es_principal);
-        if (!principal) throw new Error('No hay huésped principal');
+        numero_habitacion: inmueble.especificacion_acomodacion || '',
+        tipo_acomodacion: inmueble.tipo_acomodacion || 'Otro',
+        nombre_establecimiento: inmueble.nombre || '',
+        rnt_establecimiento: Number(inmueble.rnt) || 0,
 
-        const responseInmueble = await this.inmueblesRepo.getInmuebleById(reserva.id_inmueble);
-        const inmueble = responseInmueble.data; 
-            
-        if (!inmueble) throw new Error('Inmueble no encontrado o inactivo');
+        costo: String(reserva.total_reserva || 0),
 
+        check_in: formatDate(reserva.fecha_inicio),
 
-
-        const formatDate = (date: any): string => {
-          if (!date) return '';
-          if (date instanceof Date) {
-            return date.toISOString().split('T')[0];
-          }
-          return String(date).split('T')[0];
-        };
-
-        const payload = {
-          tipo_identificacion: principal.documento_tipo,
-          numero_identificacion: Number(principal.documento_numero),
-          nombres: principal.nombre,
-          apellidos: principal.apellido,
-          cuidad_residencia: principal.ciudad_residencia,
-          cuidad_procedencia: principal.ciudad_procedencia,
-          motivo: principal.motivo,
-          numero_acompanantes: Number(reserva.numero_huespedes - 1),
-        
-          numero_habitacion: inmueble.especificacion_acomodacion,
-          tipo_acomodacion: inmueble.tipo_acomodacion,
-          nombre_establecimiento: inmueble.nombre,
-          rnt_establecimiento: Number(inmueble.rnt),
-        
-          costo: reserva.total_reserva, 
-        
-          check_in: formatDate(reserva.fecha_inicio),
-
-          check_out: formatDate(reserva.fecha_fin),
-        };
+        check_out: formatDate(reserva.fecha_fin),
+      };
 
 
-        const validatedPayload = PayloadTarjetaAlojamientoSchema.parse(payload);
+      const validatedPayload = PayloadTarjetaAlojamientoSchema.parse(payload);
 
-        const createTarjetaInput = CreateTarjetaAlojamientoSchema.parse({
-          id_reserva: reservaId,
-          id_huesped: principal.id,
-          id_inmueble: reserva.id_inmueble,
-          payload: validatedPayload,
-          respuesta_tra: {},
-          ultimo_error: null,
-          intentos: 0,
-          estado: 'pendiente',
-          fecha: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      const createTarjetaInput = CreateTarjetaAlojamientoSchema.parse({
+        id_reserva: reservaId,
+        id_huesped: principal.id,
+        id_inmueble: reserva.id_inmueble,
+        payload: validatedPayload,
+        respuesta_tra: {},
+        ultimo_error: null,
+        intentos: 0,
+        estado: 'pendiente',
+        fecha: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-        await this.tarjetaRepo.createTarjetaRegistro(createTarjetaInput);
+      await this.tarjetaRepo.createTarjetaRegistro(createTarjetaInput);
     } catch (error) {
-        console.error("DETALLE ERROR ZOD:", error);
-        throw new Error('Error al validar datos para la tarjeta: ' + error.message);
+      console.error("DETALLE ERROR ZOD:", error);
+      throw new Error('Error al validar datos para la tarjeta: ' + error.message);
     }
   }
 
@@ -145,17 +145,17 @@ export class TarjetaRegistroService {
   private async enviarAMincit(tarjeta: TarjetaRegistro, inmueble: Inmueble) {
     if (!inmueble.tra_token) throw new Error('Token de tarjeta de alojamiento no encontrado');
 
-    if(tarjeta.estado === 'pendiente' || tarjeta.estado === 'reintento') {
+    if (tarjeta.estado === 'pendiente' || tarjeta.estado === 'reintento') {
       const principal = tarjeta.payload;
       const token = inmueble.tra_token;
 
       const res = await axios.post('https://pms.mincit.gov.co/one/', principal, {
-          headers: { 'Authorization': `token ${token}` }
+        headers: { 'Authorization': `token ${token}` }
       });
 
-      const parentCode = res.data.code; 
+      const parentCode = res.data.code;
 
-      return parentCode;        
+      return parentCode;
     }
 
     return null;
@@ -169,9 +169,10 @@ export class TarjetaRegistroService {
    * @returns La tarjeta de registro actualizada.
    */
   async updateEstadoTarjeta(idReserva: number) {
-    const tarjeta = await this.tarjetaRepo.findByReserva(idReserva);
-    if (!tarjeta) throw new Error('Tarjeta no encontrada');
+    const tarjetas = await this.tarjetaRepo.findByReserva(idReserva);
+    if (!tarjetas || tarjetas.length === 0) throw new Error('Tarjeta no encontrada');
 
+    const tarjeta = tarjetas[0];
     const responseInmueble = await this.inmueblesRepo.getInmuebleById(tarjeta.id_inmueble);
     const inmueble = responseInmueble.data;
 
@@ -181,7 +182,7 @@ export class TarjetaRegistroService {
 
     if (['pendiente', 'reintento', 'error'].includes(tarjeta.estado)) {
       try {
-        const parentCode = await this.enviarAMincit(tarjeta.payload, inmueble.tra_token);
+        const parentCode = await this.enviarAMincit(tarjeta, inmueble);
         const extra = {
           respuesta_tra: { parentCode },
           intentos: (tarjeta.intentos || 0) + 1,
@@ -190,16 +191,16 @@ export class TarjetaRegistroService {
         };
 
 
-        if(!parentCode) {
+        if (!parentCode) {
           return await this.tarjetaRepo.updateEstadoTarjeta(idReserva, 'error', extra);
         }
 
-      
+
         return await this.tarjetaRepo.updateEstadoTarjeta(idReserva, 'confirmado', extra);
 
       } catch (error: any) {
         const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-        
+
         const extraError = {
           intentos: (tarjeta.intentos || 0) + 1,
           ultimo_error: errorMsg,

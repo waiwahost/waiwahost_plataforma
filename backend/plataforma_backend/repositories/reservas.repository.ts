@@ -352,9 +352,6 @@ export class ReservasRepository {
     documento_tipo?: string | null;
     documento_numero?: string | null;
     fecha_nacimiento?: string | null;
-    ciudad_procedencia?: string | null;
-    ciudad_residencia?: string | null;
-    motivo?: string | null;
   }) {
     try {
       if (!id) return null;
@@ -376,12 +373,6 @@ export class ReservasRepository {
         setClauses.push(`documento_identidad = $${idx - 1}`); // Update legacy column too
       }
       if (huespedData.fecha_nacimiento !== undefined) { setClauses.push(`fecha_nacimiento = $${idx++}`); values.push(huespedData.fecha_nacimiento); }
-
-      if (huespedData.ciudad_procedencia !== undefined) { setClauses.push(`ciudad_procedencia = $${idx++}`); values.push(huespedData.ciudad_procedencia); }
-
-      if (huespedData.ciudad_residencia !== undefined) { setClauses.push(`ciudad_residencia = $${idx++}`); values.push(huespedData.ciudad_residencia); }
-
-      if (huespedData.motivo !== undefined) { setClauses.push(`motivo = $${idx++}`); values.push(huespedData.motivo); }
 
       if (setClauses.length === 0) return null;
 
@@ -433,6 +424,41 @@ export class ReservasRepository {
       await dbClient.query(query, params);
     } catch (error) {
       console.error('Error al relacionar múltiples huéspedes con reserva:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza la información de un huésped específica para una reserva (en la tabla intermedia)
+   */
+  async updateHuespedReservaInfo(idReserva: number, idHuesped: number, data: {
+    ciudad_residencia?: string | null;
+    ciudad_procedencia?: string | null;
+    motivo?: string | null;
+    es_principal?: boolean;
+  }) {
+    try {
+      const setClauses: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (data.ciudad_residencia !== undefined) { setClauses.push(`ciudad_residencia = $${idx++}`); values.push(data.ciudad_residencia); }
+      if (data.ciudad_procedencia !== undefined) { setClauses.push(`ciudad_procedencia = $${idx++}`); values.push(data.ciudad_procedencia); }
+      if (data.motivo !== undefined) { setClauses.push(`motivo = $${idx++}`); values.push(data.motivo); }
+      if (data.es_principal !== undefined) { setClauses.push(`es_principal = $${idx++}`); values.push(data.es_principal); }
+
+      if (setClauses.length === 0) return;
+
+      values.push(idReserva, idHuesped);
+      const query = `
+        UPDATE huespedes_reservas 
+        SET ${setClauses.join(', ')} 
+        WHERE id_reserva = $${idx++} AND id_huesped = $${idx}
+      `;
+
+      await dbClient.query(query, values);
+    } catch (error) {
+      console.error('Error al actualizar relación huésped-reserva:', error);
       throw error;
     }
   }
