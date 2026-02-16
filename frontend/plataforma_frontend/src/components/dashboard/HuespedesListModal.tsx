@@ -41,11 +41,11 @@ const HuespedesListModal: React.FC<HuespedesListModalProps> = ({
     const nacimiento = new Date(fechaNacimiento);
     let edad = hoy.getFullYear() - nacimiento.getFullYear();
     const diferenciaMes = hoy.getMonth() - nacimiento.getMonth();
-    
+
     if (diferenciaMes < 0 || (diferenciaMes === 0 && hoy.getDate() < nacimiento.getDate())) {
       edad--;
     }
-    
+
     return edad;
   };
 
@@ -110,8 +110,20 @@ const HuespedesListModal: React.FC<HuespedesListModalProps> = ({
                         <label className="text-sm font-medium text-gray-600">Fecha de Nacimiento</label>
                         <p className="text-gray-900 flex items-center gap-1">
                           <Calendar className="h-4 w-4 text-gray-500" />
-                          {formatDate(huesped.fecha_nacimiento)} ({calcularEdad(huesped.fecha_nacimiento)} años)
+                          {formatDate(huesped.fecha_nacimiento!)} ({calcularEdad(huesped.fecha_nacimiento!)} años)
                         </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Motivo</label>
+                        <p className="text-gray-900">{huesped.motivo || 'No especificado'}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Residencia</label>
+                        <p className="text-gray-900">{huesped.ciudad_residencia}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Procedencia</label>
+                        <p className="text-gray-900">{huesped.ciudad_procedencia}</p>
                       </div>
                     </div>
                   </div>

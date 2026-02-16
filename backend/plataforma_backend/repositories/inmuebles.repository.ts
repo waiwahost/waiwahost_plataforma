@@ -10,7 +10,8 @@ export class InmueblesRepository {
       SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
-             i.nro_habitaciones, i.nro_bahnos, i.cocina,
+             i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
+             i.tipo_acomodacion, i.especificacion_acomodacion,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -36,7 +37,8 @@ export class InmueblesRepository {
       SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
-             i.nro_habitaciones, i.nro_bahnos, i.cocina,
+             i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
+             i.tipo_acomodacion, i.especificacion_acomodacion,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -62,7 +64,8 @@ export class InmueblesRepository {
       SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
-             i.nro_habitaciones, i.nro_bahnos, i.cocina,
+             i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
+             i.tipo_acomodacion, i.especificacion_acomodacion,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -87,7 +90,8 @@ export class InmueblesRepository {
       SELECT i.id_inmueble, i.nombre, i.descripcion, i.direccion, i.ciudad, i.capacidad, 
              i.id_propietario, i.id_empresa, i.estado, i.edificio, i.apartamento,
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
-             i.nro_habitaciones, i.nro_bahnos, i.cocina,
+             i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
+             i.tipo_acomodacion, i.especificacion_acomodacion,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -113,8 +117,9 @@ export class InmueblesRepository {
       INSERT INTO inmuebles (
         nombre, descripcion, direccion, ciudad, capacidad, id_propietario, id_empresa,
         edificio, apartamento, id_prod_sigo, comision, precio_limpieza,
-        capacidad_maxima, nro_habitaciones, nro_bahnos, cocina, estado
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'activo')
+        capacidad_maxima, nro_habitaciones, nro_bahnos, cocina, estado, rnt, tra_token,
+        tipo_acomodacion, especificacion_acomodacion
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'activo', $17, $18, $19, $20)
       RETURNING *
     `;
 
@@ -134,7 +139,11 @@ export class InmueblesRepository {
       inmuebleData.capacidad_maxima || null,
       inmuebleData.nro_habitaciones || null,
       inmuebleData.nro_bahnos || null,
-      inmuebleData.cocina || null
+      inmuebleData.cocina || null,
+      inmuebleData.rnt || null,
+      inmuebleData.tra_token || null,
+      inmuebleData.tipo_acomodacion || null,
+      inmuebleData.especificacion_acomodacion || null
     ];
 
     try {

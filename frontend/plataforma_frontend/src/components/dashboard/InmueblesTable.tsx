@@ -26,6 +26,8 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
     }).format(amount);
   };
 
+  console.log(inmuebles);
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -35,16 +37,19 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
               ID Inmueble
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Edificio
+              Tipo de Acomodación
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Apartamento
+              Especificación de Acomodación
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Comisión
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               ID Propietario
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              RNT
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
@@ -67,16 +72,19 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{inmueble.edificio}</div>
+                  <div className="text-sm text-gray-900">{inmueble.tipo_acomodacion}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{inmueble.apartamento}</div>
+                  <div className="text-sm text-gray-900">{inmueble.especificacion_acomodacion}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{inmueble.comision ? `${parseFloat(inmueble.comision.toString())}%` : '0%'}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{inmueble.id_propietario}</div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">{inmueble.rnt}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">

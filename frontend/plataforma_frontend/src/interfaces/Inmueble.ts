@@ -5,8 +5,8 @@ export interface IInmueble {
   nombre: string;
   direccion: string;
   ciudad: string;
-  edificio: string;
-  apartamento: string;
+  edificio: string | null;
+  apartamento: string | null;
   comision: number;
   id_propietario?: string;
   tipo: 'apartamento' | 'casa' | 'studio' | 'penthouse' | 'oficina' | 'local';
@@ -24,6 +24,10 @@ export interface IInmueble {
   nombre_empresa: string;
   fecha_creacion: string;
   fecha_actualizacion: string;
+  rnt: string;
+  tra_token: string;
+  tipo_acomodacion: string;
+  especificacion_acomodacion: string;
 }
 
 // Para formularios de creación/edición
@@ -43,6 +47,10 @@ export interface IInmuebleForm {
   banos: number;
   tiene_cocina: boolean;
   id_empresa: string;
+  rnt: string;
+  tra_token: string;
+  tipo_acomodacion: string;
+  especificacion_acomodacion: string;
 }
 
 // Para respuestas de API

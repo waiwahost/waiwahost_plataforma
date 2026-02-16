@@ -31,7 +31,12 @@ export class GetReservasService {
       documento_numero: baseData.documento_numero || 'Sin documento',
       fecha_nacimiento: baseData.fecha_nacimiento || '1990-01-01',
       es_principal: isPrincipal,
-      id_reserva: baseData.id_reserva
+      id_reserva: baseData.id_reserva,
+      ...(isPrincipal && {
+       ciudad_residencia: baseData.ciudad_residencia,
+      ciudad_procedencia: baseData.ciudad_procedencia,
+      motivo: baseData.motivo
+    })
     };
   }
 

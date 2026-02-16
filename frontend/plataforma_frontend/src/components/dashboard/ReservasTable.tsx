@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Eye, Users, CreditCard, Share2 } from 'lucide-react';
+import { Edit2, Trash2, Eye, Users, CreditCard, Share2, Leaf } from 'lucide-react';
 import { IReservaTableData } from '../../interfaces/Reserva';
 import PlataformaBadge from '../atoms/PlataformaBadge';
 import ScrollableTable from '../ui/ScrollableTable';
@@ -12,19 +12,24 @@ interface ReservasTableProps {
   onViewDetail: (reserva: IReservaTableData) => void;
   onViewHuespedes: (reserva: IReservaTableData) => void;
   onViewPagos: (reserva: IReservaTableData) => void;
+  onViewTarjeta: (reserva: IReservaTableData) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  tarjetas: any[];
 }
 
 const ReservasTable: React.FC<ReservasTableProps> = ({
   reservas,
+  tarjetas = [],
   onEdit,
   onDelete,
   onViewDetail,
   onViewHuespedes,
   onViewPagos,
+  onViewTarjeta,
   canEdit = true,
-  canDelete = true
+  canDelete = true,
+  canSendTarjeta = true
 }) => {
 
   const formatDate = (dateString: string) => {
@@ -88,6 +93,7 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
+  
 
   return (
     <ScrollableTable className="shadow-sm">
@@ -123,6 +129,9 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Estado
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              TRA
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Acciones
@@ -228,8 +237,24 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     {reserva.estado.replace('_', ' ')}
                   </span>
                 </td>
+                
+
+                  <td className="px-4 py-4 whitespace-nowrap">
+                  {tarjetas
+                    .filter((t) => t.id_reserva === reserva.id) 
+                    .map((tarjeta) => (
+                      <span key={tarjeta.id} className={getEstadoBadge(tarjeta.estado)}>
+                        {tarjeta.estado.replace('_', ' ')}
+                      </span>
+                    ))}
+                  {/* Opcional: Mostrar algo si no hay tarjeta */}
+                  {tarjetas.filter(t => t.id_reserva === reserva.id).length === 0 && (
+                    <span className="text-gray-400 text-xs italic">No generado</span>
+                  )}
+                </td>
+
                 <td className="px-1 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-0.5">
                     <button
                       onClick={() => onViewDetail(reserva)}
                       className="inline-flex items-center p-1 rounded-md text-green-600 hover:bg-green-50 hover:text-green-800 transition-colors"
@@ -282,6 +307,18 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                       title="Compartir enlace formulario"
                     >
                       <Share2 className="h-4 w-4" />
+                    </button>
+
+                    <button
+                      onClick={() => onViewTarjeta(reserva)}
+                      disabled={!canSendTarjeta}
+                      className={`inline-flex items-center p-1 rounded-md transition-colors ${canSendTarjeta
+                        ? 'text-black-600 hover:bg-black-50 hover:text-black-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                      title={canSendTarjeta ? 'Enviar TRA' : 'No tienes permisos para eliminar'}
+                    >
+                      <Leaf className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

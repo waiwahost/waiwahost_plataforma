@@ -33,6 +33,12 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
   if (Object.keys(fieldsToUpdate).length === 0) {
     throw new Error('Debe enviar al menos un campo editable para actualizar la reserva.');
   }
+
+  // Validar la reserva
+  const reservaOriginal = await reservasRepository.getReservaById(id);
+  if (!reservaOriginal) throw new Error('Reserva no encontrada');
+
+
   // Actualizar la reserva principal
   const updated = await reservasRepository.updateReserva(id, fieldsToUpdate);
   if (!updated) {
@@ -45,6 +51,24 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
     const huespedesService = new HuespedesService();
     await huespedesService.updateHuespedesForReserva(id, data.huespedes);
   }
+
+
+  // Si el estado de la reserva es "confirmada", crear tarjeta de registro
+  try {
+  const pasoAConfirmado = 
+    reservaOriginal.estado !== 'confirmada' && 
+    fieldsToUpdate.estado === 'confirmada';
+
+  if (pasoAConfirmado) {
+    console.log("El estado cambió a confirmada. Se creará la tarjeta de registro.");
+    const { TarjetaRegistroService } = await import('./tarjetaRegistroService');
+    const tarjetaRegistroService = new TarjetaRegistroService();
+    
+    await tarjetaRegistroService.crearDesdeReserva(id);
+  }
+} catch (error) {
+  console.error('Error al crear tarjeta de registro:', error);
+}
 
   return updated;
 }

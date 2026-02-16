@@ -185,7 +185,11 @@ const Properties: React.FC = () => {
           habitaciones: inmuebleToEdit.habitaciones,
           banos: inmuebleToEdit.banos,
           tiene_cocina: inmuebleToEdit.tiene_cocina,
-          id_empresa: inmuebleToEdit.id_empresa
+          id_empresa: inmuebleToEdit.id_empresa,
+          tipo_acomodacion: inmuebleToEdit.tipo_acomodacion,
+          especificacion_acomodacion: inmuebleToEdit.especificacion_acomodacion,
+          rnt: inmuebleToEdit.rnt,
+          tra_token: inmuebleToEdit.tra_token,
         } : undefined}
         isEdit={true}
       />

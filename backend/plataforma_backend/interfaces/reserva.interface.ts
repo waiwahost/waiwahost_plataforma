@@ -9,6 +9,18 @@ export interface Huesped {
   fecha_nacimiento?: string;
   es_principal: boolean;
   id_reserva: number;
+  ciudad_residencia?: string;
+  ciudad_procedencia?: string;
+  motivo?: 
+  'Negocios'|
+  'Vacaciones'|
+  'Visitas'|
+  'Educacion'|
+  'Salud'|
+  'Religion'|
+  'Compras'|
+  'Transito'|
+  'Otros';
 }
 
 export interface HuespedPrincipal {
@@ -16,6 +28,9 @@ export interface HuespedPrincipal {
   apellido: string;
   email?: string;
   telefono?: string;
+  ciudadResidencia?: string,
+  ciudadProcedencia?: string,
+  motivo?: string
 }
 
 export interface Reserva {
@@ -66,6 +81,18 @@ export interface CreateHuespedData {
   documento_numero?: string;
   fecha_nacimiento?: string;
   es_principal: boolean;
+  ciudad_residencia?: string;
+  ciudad_procedencia?: string;
+  motivo?: 
+  'Negocios'|
+  'Vacaciones'|
+  'Visitas'|
+  'Educacion'|
+  'Salud'|
+  'Religion'|
+  'Compras'|
+  'Transito'|
+  'Otros';
 }
 
 export interface CreateReservaRequest {

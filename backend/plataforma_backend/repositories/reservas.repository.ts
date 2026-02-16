@@ -98,7 +98,10 @@ export class ReservasRepository {
           h.documento_numero,
           h.fecha_nacimiento,
           hr.es_principal,
-          hr.id_reserva
+          hr.id_reserva,
+          hr.ciudad_residencia,
+          hr.ciudad_procedencia,
+          hr.motivo
         FROM huespedes h
         INNER JOIN huespedes_reservas hr ON h.id_huesped = hr.id_huesped
         WHERE hr.id_reserva = $1
@@ -133,7 +136,10 @@ export class ReservasRepository {
           h.documento_numero,
           h.fecha_nacimiento,
           hr.es_principal,
-          hr.id_reserva
+          hr.id_reserva,
+          hr.ciudad_residencia,
+          hr.ciudad_procedencia,
+          hr.motivo
         FROM huespedes h
         INNER JOIN huespedes_reservas hr ON h.id_huesped = hr.id_huesped
         WHERE hr.id_reserva IN (${placeholders})
@@ -394,28 +400,71 @@ export class ReservasRepository {
     idReserva: number;
     idHuesped: number;
     esPrincipal: boolean;
+    ciudad_residencia?: string | null;
+    ciudad_procedencia?: string | null;
+    motivo?: string | null;
   }>) {
     try {
       if (relaciones.length === 0) return;
 
-      const values = relaciones.map((rel, index) =>
-        `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`
+      const values = relaciones.map((_, index) =>
+        `($${index * 6 + 1}, $${index * 6 + 2}, $${index * 6 + 3},
+          $${index * 6 + 4}, $${index * 6 + 5}, $${index * 6 + 6})`
       ).join(', ');
 
+
       const query = `
-        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal)
+        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal, ciudad_residencia, ciudad_procedencia, motivo)
         VALUES ${values}
       `;
 
       const params = relaciones.flatMap(rel => [
         rel.idReserva,
         rel.idHuesped,
-        rel.esPrincipal
+        rel.esPrincipal,
+        rel.ciudad_residencia ?? null,
+        rel.ciudad_procedencia ?? null,
+        rel.motivo ?? null
       ]);
 
       await dbClient.query(query, params);
     } catch (error) {
       console.error('Error al relacionar múltiples huéspedes con reserva:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza la información de un huésped específica para una reserva (en la tabla intermedia)
+   */
+  async updateHuespedReservaInfo(idReserva: number, idHuesped: number, data: {
+    ciudad_residencia?: string | null;
+    ciudad_procedencia?: string | null;
+    motivo?: string | null;
+    es_principal?: boolean;
+  }) {
+    try {
+      const setClauses: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (data.ciudad_residencia !== undefined) { setClauses.push(`ciudad_residencia = $${idx++}`); values.push(data.ciudad_residencia); }
+      if (data.ciudad_procedencia !== undefined) { setClauses.push(`ciudad_procedencia = $${idx++}`); values.push(data.ciudad_procedencia); }
+      if (data.motivo !== undefined) { setClauses.push(`motivo = $${idx++}`); values.push(data.motivo); }
+      if (data.es_principal !== undefined) { setClauses.push(`es_principal = $${idx++}`); values.push(data.es_principal); }
+
+      if (setClauses.length === 0) return;
+
+      values.push(idReserva, idHuesped);
+      const query = `
+        UPDATE huespedes_reservas 
+        SET ${setClauses.join(', ')} 
+        WHERE id_reserva = $${idx++} AND id_huesped = $${idx}
+      `;
+
+      await dbClient.query(query, values);
+    } catch (error) {
+      console.error('Error al actualizar relación huésped-reserva:', error);
       throw error;
     }
   }

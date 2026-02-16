@@ -1,5 +1,6 @@
 import { PlataformaOrigen } from '../constants/plataformas';
 
+
 export interface IHuesped {
   id: number;
   nombre: string;
@@ -11,6 +12,9 @@ export interface IHuesped {
   fecha_nacimiento?: string;
   es_principal: boolean;
   id_reserva: number;
+  motivo: string;
+  ciudad_residencia: string;
+  ciudad_procedencia: string;
 }
 
 export interface IReserva {
@@ -23,6 +27,9 @@ export interface IReserva {
     apellido: string;
     email?: string;
     telefono?: string;
+    motivo: string;
+    ciudad_residencia: string;
+    ciudad_procedencia: string;
   };
   fecha_inicio: string;
   fecha_fin: string;
@@ -49,6 +56,9 @@ export interface IHuespedForm {
   documento_numero?: string;
   fecha_nacimiento?: string;
   es_principal: boolean;
+  motivo: string;
+  ciudad_residencia: string;
+  ciudad_procedencia: string;
 }
 
 export interface IReservaForm {

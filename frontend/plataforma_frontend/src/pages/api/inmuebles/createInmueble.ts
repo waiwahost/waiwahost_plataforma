@@ -19,6 +19,10 @@ interface ExternalInmuebleCreateRequest {
   nro_habitaciones: number;
   nro_bahnos: number;
   cocina: boolean;
+  rnt: string;
+  tra_token: string;  
+  tipo_acomodacion: string;
+  especificacion_acomodacion: string;
 }
 
 // Interfaz para la respuesta de la API externa
@@ -44,6 +48,10 @@ interface ExternalInmuebleResponse {
   empresa_nombre: string | null;
   propietario_nombre: string | null;
   propietario_email: string | null;
+  rnt: string | null;
+  tra_token: string | null;
+  tipo_acomodacion: string | null;
+  especificacion_acomodacion: string | null;
 }
 
 interface ExternalApiResponse {
@@ -73,12 +81,26 @@ const validateInmuebleData = (inmuebleData: any): string[] => {
     errors.push('La ciudad del inmueble es obligatoria');
   }
 
-  if (!inmuebleData.edificio || inmuebleData.edificio.trim() === '') {
-    errors.push('El edificio es obligatorio');
+  
+  if (!inmuebleData.tipo_acomodacion || inmuebleData.tipo_acomodacion.trim() === '') {
+    errors.push('El tipo de acomodación es obligatorio');
+  }
+  if (!inmuebleData.especificacion_acomodacion || inmuebleData.especificacion_acomodacion.trim() === '') {
+    errors.push('La especificación del inmueble es obligatoria');
   }
 
-  if (!inmuebleData.apartamento || inmuebleData.apartamento.trim() === '') {
-    errors.push('El apartamento es obligatorio');
+  if (!inmuebleData.especificacion_acomodacion || inmuebleData.especificacion_acomodacion.trim() === '') {
+    if (inmuebleData.tipo_acomodacion !== 'Apartamento') {
+      errors.push('La especificación del inmueble es obligatoria');
+    }
+  }
+
+  if (!inmuebleData.rnt || inmuebleData.rnt.trim() === '') {
+    errors.push('El RNT es obligatorio');
+  }
+
+  if (!inmuebleData.tra_token || inmuebleData.tra_token.trim() === '') {
+    errors.push('El TRA Token es obligatorio');
   }
 
   if (!inmuebleData.id_producto_sigo || inmuebleData.id_producto_sigo.trim() === '') {
@@ -135,7 +157,11 @@ const mapToExternalFormat = (inmuebleData: any): ExternalInmuebleCreateRequest =
     capacidad_maxima: Number(inmuebleData.capacidad_maxima),
     nro_habitaciones: Number(inmuebleData.habitaciones),
     nro_bahnos: Number(inmuebleData.banos),
-    cocina: Boolean(inmuebleData.tiene_cocina)
+    cocina: Boolean(inmuebleData.tiene_cocina),
+    rnt: inmuebleData.rnt.trim(),
+    tra_token: inmuebleData.tra_token.trim(),
+    tipo_acomodacion: inmuebleData.tipo_acomodacion.trim(),
+    especificacion_acomodacion: inmuebleData.especificacion_acomodacion.trim()
   };
 };
 
@@ -165,7 +191,11 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
     fecha_creacion: new Date().toISOString(),
-    fecha_actualizacion: new Date().toISOString()
+    fecha_actualizacion: new Date().toISOString(),
+    rnt: inmuebleAPI.rnt || 'SIN_RNT',
+    tra_token: inmuebleAPI.tra_token || 'SIN_TRA_TOKEN',
+    tipo_acomodacion: inmuebleAPI.tipo_acomodacion || 'SIN_TIPO_ACOMODACION',
+    especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'SIN_ESPECIFICACION_ACOMODACION'
   };
 };
 

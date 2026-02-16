@@ -19,6 +19,18 @@ export interface Inmueble {
   cocina?: boolean;
   creado_en?: Date;
   actualizado_en?: Date;
+  rnt?: string,
+  tra_token?: string,
+  tipo_acomodacion?: 
+    'Apartamento' | 
+    'Casa' | 
+    'Habitación' | 
+    'Suite'|
+    'Cama'|
+    'Finca'|
+    'Camping'|
+    'Otro';
+  especificacion_acomodacion?: string;
 }
 
 export interface InmueblesQueryParams {
@@ -43,6 +55,18 @@ export interface CreateInmuebleData {
   nro_habitaciones?: number;
   nro_bahnos?: number;
   cocina?: boolean;
+  rnt?: string,
+  tra_token?: string,
+  tipo_acomodacion?: 
+    'Apartamento' | 
+    'Casa' | 
+    'Habitación' | 
+    'Suite'|
+    'Cama'|
+    'Finca'|
+    'Camping'|
+    'Otro';
+  especificacion_acomodacion?: string;
 }
 
 export interface EditInmuebleData {
@@ -63,4 +87,16 @@ export interface EditInmuebleData {
   nro_habitaciones?: number;
   nro_bahnos?: number;
   cocina?: boolean;
+  rnt?: string,
+  tra_token?: string,
+  tipo_acomodacion?: 
+    'Apartamento' | 
+    'Casa' | 
+    'Habitación' | 
+    'Suite'|
+    'Cama'|
+    'Finca'|
+    'Camping'|
+    'Otro';
+  especificacion_acomodacion?: string;
 }

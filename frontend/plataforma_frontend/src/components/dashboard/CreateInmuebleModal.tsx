@@ -52,9 +52,57 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       precio_limpieza: 0,
       tiene_cocina: false,
       id_propietario: '',
-      id_empresa: '1'
+      id_empresa: '1',
+      rnt: '',
+      tra_token: '',
+      tipo_acomodacion: '',
+      especificacion_acomodacion: ''
     }
   });
+
+  const enumInmueble = {
+    APARTAMENTO: 'Apartamento',
+    CASA: 'Casa',
+    HABITACION: 'Habitación',
+    SUITE: 'Suite',
+    CAMA: 'Cama',
+    FINCA: 'Finca',
+    CAMPING: 'Camping',
+    OTRO: 'Otro'
+  };
+
+  const tipoAcomodacion = watch('tipo_acomodacion');
+  const edificio = watch('edificio');
+  const apartamento = watch('apartamento');
+
+  useEffect(() => {
+  if (!isEdit && tipoAcomodacion === 'Apartamento') {
+    const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''}${apartamento || ''}`;
+    setValue('especificacion_acomodacion', spec.trim(), {
+      shouldValidate: true,
+      shouldDirty: true
+    });
+  }
+}, [tipoAcomodacion, edificio, apartamento, setValue, isEdit]);
+
+
+
+  useEffect(() => {
+  if (tipoAcomodacion === 'Apartamento') {
+    const spec = `${edificio || ''}${
+      edificio && apartamento ? ' Apto ' : ''
+    }${apartamento || ''}`;
+
+    setValue('especificacion_acomodacion', spec.trim(), {
+      shouldValidate: true,
+      shouldDirty: true
+    });
+  }
+}, [tipoAcomodacion, edificio, apartamento, setValue]);
+
+
+
+
 
   useEffect(() => {
     const fetchPropietarios = async () => {
@@ -100,37 +148,45 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
   // Efecto para pre-seleccionar empresa si solo hay una
   useEffect(() => {
-    if (empresas.length === 1) {
+    if (!isEdit && empresas.length === 1) {
       reset(currentValues => ({
         ...currentValues,
         id_empresa: empresas[0].id_empresa.toString()
       }));
     }
-  }, [empresas, reset]);
+  }, [empresas, reset, isEdit]);
+
 
   useEffect(() => {
-    if (open && initialData) {
-      reset(initialData);
-    } else if (open && !isEdit) {
-      reset({
-        nombre: '',
-        direccion: '',
-        ciudad: '',
-        edificio: '',
-        apartamento: '',
-        id_producto_sigo: '',
-        descripcion: '',
-        capacidad_maxima: 1,
-        habitaciones: 1,
-        banos: 1,
-        comision: 0,
-        precio_limpieza: 0,
-        tiene_cocina: false,
-        id_propietario: '',
-        id_empresa: '1'
-      });
+    if (open) {
+      if (isEdit && initialData) {
+        reset(initialData);
+      } else {
+        reset({
+          nombre: '',
+          direccion: '',
+          ciudad: '',
+          edificio: '',
+          apartamento: '',
+          id_producto_sigo: '',
+          descripcion: '',
+          capacidad_maxima: 1,
+          habitaciones: 1,
+          banos: 1,
+          comision: 0,
+          precio_limpieza: 0,
+          tiene_cocina: false,
+          id_propietario: '',
+          id_empresa: '1',
+          rnt: '',
+          tra_token: '',
+          tipo_acomodacion: '',
+          especificacion_acomodacion: ''
+        });
+      }
     }
-  }, [open, initialData, isEdit, reset]);
+  }, [open, isEdit, initialData, reset]);
+
 
   const onSubmit = async (data: IInmuebleForm) => {
     try {
@@ -210,6 +266,39 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  RNT *
+                </label>
+                <input
+                  type="text"
+                  {...register('rnt', { required: 'El RNT es requerido' })}
+                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Ej: 123456"
+                />
+                {errors.rnt && (
+                  <p className="text-red-500 text-xs mt-1">{errors.rnt.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Token RNT *
+                </label>
+                <input
+                  type="text"
+                  {...register('tra_token', { required: 'El Token RNT es requerido' })}
+                  disabled={false}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white`}
+                  placeholder="Ej: eyb2891...."
+                />
+                {errors.tra_token && (
+                  <p className="text-red-500 text-xs mt-1">{errors.tra_token.message}</p>
+                )}
+              </div>
+            </div>
+
             {/* Dirección y ubicación */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -248,37 +337,96 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
               </div>
             </div>
 
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Edificio *
+                  Tipo Inmueble *
                 </label>
-                <input
-                  type="text"
-                  {...register('edificio', { required: 'El edificio es requerido' })}
+                <select
+                  {...register('tipo_acomodacion', {
+                    required: 'El tipo de inmueble es requerido'
+                  })}
                   className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  placeholder="Ej: Torre Central"
-                />
-                {errors.edificio && (
-                  <p className="text-red-500 text-xs mt-1">{errors.edificio.message}</p>
+                >
+                  <option value="">Seleccione un tipo de inmueble</option>
+                  {Object.values(enumInmueble).map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+                {errors.tipo_acomodacion && (
+                  <p className="text-red-500 text-xs mt-1">{errors.tipo_acomodacion.message}</p>
                 )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Apartamento *
+                  Especificacion Inmueble *
                 </label>
                 <input
-                  type="text"
-                  {...register('apartamento', { required: 'El apartamento es requerido' })}
-                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  placeholder="Ej: 501"
-                />
-                {errors.apartamento && (
-                  <p className="text-red-500 text-xs mt-1">{errors.apartamento.message}</p>
+                    type="text"
+                    {...register('especificacion_acomodacion', {
+                      required: 'La especificación del inmueble es requerida'
+                    })}
+                    disabled={tipoAcomodacion === 'Apartamento'}
+                    className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
+                      tipoAcomodacion === 'Apartamento'
+                        ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75'
+                        : ''
+                    }`}
+                    placeholder={
+                      tipoAcomodacion === 'Apartamento'
+                        ? 'Se genera automáticamente'
+                        : 'Ej: Finca Vista Hermosa'
+                    }
+                  />
+
+                {errors.especificacion_acomodacion && tipoAcomodacion !== 'Apartamento' && (
+                  <p className="text-red-500 text-xs mt-1">{errors.especificacion_acomodacion.message}</p>
+                )}
+                {tipoAcomodacion === 'Apartamento' && (
+                  <p className="text-green-500 text-xs mt-1">{'Se genera automáticamente'}</p>
                 )}
               </div>
             </div>
+
+            {tipoAcomodacion === 'Apartamento' && (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Edificio *
+      </label>
+      <input
+        type="text"
+        {...register('edificio', { required: 'El edificio es requerido' })}
+        className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        placeholder="Ej: Torre Central"
+      />
+      {errors.edificio && (
+        <p className="text-red-500 text-xs mt-1">{errors.edificio.message}</p>
+      )}
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Apartamento *
+      </label>
+      <input
+        type="text"
+        {...register('apartamento', { required: 'El apartamento es requerido' })}
+        className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        placeholder="Ej: 504"
+      />
+      {errors.apartamento && (
+        <p className="text-red-500 text-xs mt-1">{errors.apartamento.message}</p>
+      )}
+    </div>
+  </div>
+)}
+
+
 
             {/* Descripción */}
             <div>

@@ -6,6 +6,10 @@ import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { IInmueble } from '../../interfaces/Inmueble';
 import { PLATAFORMAS_ORIGEN, PlataformaOrigen } from '../../constants/plataformas';
 import PhoneInput from '../atoms/PhoneInput';
+import { getPaises } from '../../auth/getPaises';
+import { getCiudadesByPais, getCiudades } from '../../auth/getCiudadPais';
+import { IPais } from '../../interfaces/Pais';
+import { ICiudad } from '../../interfaces/Ciudad';
 
 interface CreateReservaModalProps {
   open: boolean;
@@ -37,6 +41,9 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
         documento_numero: '',
         fecha_nacimiento: '',
         es_principal: true,
+        motivo: '',
+        ciudad_residencia: '',
+        ciudad_procedencia: '',
       }
     ],
     precio_total: 0, // Mantener por compatibilidad
@@ -51,7 +58,11 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
   const [errors, setErrors] = useState<Partial<Record<keyof IReservaForm, string>>>({});
   const [inmuebles, setInmuebles] = useState<IInmueble[]>([]);
   const [loadingInmuebles, setLoadingInmuebles] = useState(false);
-  const [expandedGuest, setExpandedGuest] = useState<number>(0); // Estado para controlar qué huésped está expandido
+  const [expandedGuest, setExpandedGuest] = useState<number>(0);
+
+  const [paises, setPaises] = useState<IPais[]>([]);
+  const [ciudadesByPais, setCiudadesByPais] = useState<Record<number, ICiudad[]>>({});
+  const [loadingPaises, setLoadingPaises] = useState(false);
 
   // Helper para verificar si un huésped tiene todos los datos completos
   const isGuestComplete = (huesped: IHuespedForm): boolean => {
@@ -82,10 +93,33 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
     }
   };
 
+  const loadPaises = async () => {
+    try {
+      setLoadingPaises(true);
+      const data = await getPaises();
+      setPaises(data);
+    } catch (error) {
+      console.error('❌ Error cargando países:', error);
+    } finally {
+      setLoadingPaises(false);
+    }
+  };
+
+  const fetchCiudades = async (paisId: number) => {
+    if (!paisId || ciudadesByPais[paisId]) return;
+    try {
+      const data = await getCiudadesByPais(paisId);
+      setCiudadesByPais(prev => ({ ...prev, [paisId]: data }));
+    } catch (error) {
+      console.error('❌ Error cargando ciudades:', error);
+    }
+  };
+
   useEffect(() => {
     if (open) {
-      // Cargar inmuebles cuando se abre el modal
+      // Cargar inmuebles y países cuando se abre el modal
       loadInmuebles();
+      loadPaises();
 
       if (initialData) {
         // Helper para transformar fecha ISO a YYYY-MM-DD
@@ -101,12 +135,58 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
           estado: initialData.estado, // Asegura que el estado sea exactamente el recibido
           fecha_inicio: toDateInput(initialData.fecha_inicio),
           fecha_fin: toDateInput(initialData.fecha_fin),
-          huespedes: initialData.huespedes.map(h => ({
+          huespedes: initialData.huespedes.map((h: any) => ({
             ...h,
             id: h.id, // Asegurar que el ID se conserve para la edición
-            fecha_nacimiento: toDateInput(h.fecha_nacimiento)
+            fecha_nacimiento: toDateInput(h.fecha_nacimiento),
+            motivo: h.motivo,
+            pais_residencia: '',
+            ciudad_residencia: h.ciudad_residencia,
+            pais_procedencia: '',
+            ciudad_procedencia: h.ciudad_procedencia,
           }))
         });
+
+        // Cargar ciudades para huéspedes existentes y resolver países si faltan
+        const resolveGuestLocations = async () => {
+          try {
+            const allCiudades = await getCiudades();
+
+            setFormData((prev: IReservaForm) => ({
+              ...prev,
+              huespedes: prev.huespedes.map((h: IHuespedForm) => {
+                const updatedH = { ...h };
+
+                // Si falta el país pero tenemos ciudad, intentamos resolverlo
+                if (!updatedH.pais_residencia && updatedH.ciudad_residencia) {
+                  const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_residencia);
+                  if (cityMatch) {
+                    updatedH.pais_residencia = cityMatch.id_pais.toString();
+                    fetchCiudades(cityMatch.id_pais);
+                  }
+                } else if (updatedH.pais_residencia) {
+                  fetchCiudades(parseInt(updatedH.pais_residencia));
+                }
+
+                if (!updatedH.pais_procedencia && updatedH.ciudad_procedencia) {
+                  const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_procedencia);
+                  if (cityMatch) {
+                    updatedH.pais_procedencia = cityMatch.id_pais.toString();
+                    fetchCiudades(cityMatch.id_pais);
+                  }
+                } else if (updatedH.pais_procedencia) {
+                  fetchCiudades(parseInt(updatedH.pais_procedencia));
+                }
+
+                return updatedH;
+              })
+            }));
+          } catch (error) {
+            console.error('❌ Error resolviendo ubicaciones de huéspedes:', error);
+          }
+        };
+
+        resolveGuestLocations();
       } else {
         setFormData({
           id_inmueble: 0,
@@ -123,6 +203,9 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
               documento_numero: '',
               fecha_nacimiento: '',
               es_principal: true,
+              motivo: '',
+              ciudad_residencia: '',
+              ciudad_procedencia: '',
             }
           ],
           precio_total: 0, // Mantener por compatibilidad
@@ -220,9 +303,9 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
   };
 
   const handleInputChange = (field: keyof IReservaForm, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: IReservaForm) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev: any) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -231,7 +314,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
    * Garantiza consistencia entre total_reserva, total_pagado y total_pendiente
    */
   const handleFinancialChange = (field: 'total_reserva' | 'total_pagado', value: number) => {
-    setFormData(prev => {
+    setFormData((prev: IReservaForm) => {
       const newData = { ...prev, [field]: value };
 
       // Mantener precio_total igual a total_reserva para compatibilidad
@@ -264,14 +347,30 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
   const handleHuespedChange = (index: number, field: keyof IHuespedForm, value: string) => {
     setFormData(prev => ({
       ...prev,
-      huespedes: prev.huespedes.map((huesped, i) =>
+      huespedes: prev.huespedes.map((huesped: IHuespedForm, i: number) =>
         i === index ? { ...huesped, [field]: value } : huesped
       )
     }));
 
+    if (field === 'pais_residencia' || field === 'pais_procedencia') {
+      const paisId = parseInt(value);
+      if (!isNaN(paisId)) {
+        fetchCiudades(paisId);
+      }
+
+      // Limpiar ciudad si cambia país
+      const cityField = field === 'pais_residencia' ? 'ciudad_residencia' : 'ciudad_procedencia';
+      setFormData((prev: IReservaForm) => ({
+        ...prev,
+        huespedes: prev.huespedes.map((huesped: IHuespedForm, i: number) =>
+          i === index ? { ...huesped, [cityField]: '' } : huesped
+        )
+      }));
+    }
+
     // Limpiar errores si los hay
     if (errors.huespedes) {
-      setErrors(prev => ({ ...prev, huespedes: undefined }));
+      setErrors((prev: any) => ({ ...prev, huespedes: undefined }));
     }
   };
 
@@ -290,7 +389,10 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
           documento_tipo: 'cedula' as const,
           documento_numero: '',
           fecha_nacimiento: '',
-          es_principal: i === 0, // Solo el primero es principal
+          es_principal: i === 0,
+          motivo: '',
+          ciudad_residencia: '',
+          ciudad_procedencia: '',
         });
       }
       currentHuespedes.push(...nuevosHuespedes);
@@ -437,7 +539,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             <input
                               type="text"
                               value={huesped.nombre}
-                              onChange={(e) => handleHuespedChange(index, 'nombre', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'nombre', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="Nombre"
                             />
@@ -450,7 +552,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             <input
                               type="text"
                               value={huesped.apellido}
-                              onChange={(e) => handleHuespedChange(index, 'apellido', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'apellido', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="Apellido"
                             />
@@ -463,7 +565,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             <input
                               type="email"
                               value={huesped.email}
-                              onChange={(e) => handleHuespedChange(index, 'email', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'email', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="correo@ejemplo.com"
                             />
@@ -484,7 +586,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             </label>
                             <select
                               value={huesped.documento_tipo}
-                              onChange={(e) => handleHuespedChange(index, 'documento_tipo', e.target.value as any)}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'documento_tipo', e.target.value as IHuespedForm['documento_tipo'])}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                             >
                               <option value="cedula">Cédula</option>
@@ -500,7 +602,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             <input
                               type="text"
                               value={huesped.documento_numero}
-                              onChange={(e) => handleHuespedChange(index, 'documento_numero', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'documento_numero', e.target.value)}
                               //disabled={isEdit && !!huesped.documento_numero} // Deshabilitar en edición si ya tiene valor
                               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal
                                 }`}
@@ -508,16 +610,99 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                             />
                           </div>
 
-                          <div className="col-span-2">
+                          <div className="">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Fecha de Nacimiento
                             </label>
                             <input
                               type="date"
                               value={huesped.fecha_nacimiento}
-                              onChange={(e) => handleHuespedChange(index, 'fecha_nacimiento', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'fecha_nacimiento', e.target.value)}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                             />
+                          </div>
+                          <div className="">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Motivo de viaje *
+                            </label>
+                            <select
+                              value={huesped.motivo}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'motivo', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                            >
+                              <option value="">Seleccione un motivo</option>
+                              <option value="Negocios">Negocios</option>
+                              <option value="Vacaciones">Vacaciones</option>
+                              <option value="Visitas">Visitas</option>
+                              <option value="Educacion">Educacion</option>
+                              <option value="Salud">Salud</option>
+                              <option value="Religion">Religion</option>
+                              <option value="Compras">Compras</option>
+                              <option value="Transito">Transito</option>
+                              <option value="Otros">Otros</option>
+                            </select>
+                          </div>
+                          <div className="">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              País de residencia *
+                            </label>
+                            <select
+                              value={huesped.pais_residencia || ''}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'pais_residencia', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                            >
+                              <option value="">Seleccione un país</option>
+                              {paises.map((p: IPais) => (
+                                <option key={p.id_pais} value={p.id_pais}>{p.nombre}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Ciudad de residencia *
+                            </label>
+                            <select
+                              value={huesped.ciudad_residencia}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'ciudad_residencia', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                              disabled={!huesped.pais_residencia}
+                            >
+                              <option value="">Seleccione una ciudad</option>
+                              {huesped.pais_residencia && ciudadesByPais[parseInt(huesped.pais_residencia)]?.map((c: ICiudad) => (
+                                <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              País de Procedencia *
+                            </label>
+                            <select
+                              value={huesped.pais_procedencia || ''}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'pais_procedencia', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                            >
+                              <option value="">Seleccione un país</option>
+                              {paises.map((p: IPais) => (
+                                <option key={p.id_pais} value={p.id_pais}>{p.nombre}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Ciudad de Procedencia *
+                            </label>
+                            <select
+                              value={huesped.ciudad_procedencia}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleHuespedChange(index, 'ciudad_procedencia', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
+                              disabled={!huesped.pais_procedencia}
+                            >
+                              <option value="">Seleccione una ciudad</option>
+                              {huesped.pais_procedencia && ciudadesByPais[parseInt(huesped.pais_procedencia)]?.map((c: ICiudad) => (
+                                <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -534,7 +719,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
               <input
                 type="date"
                 value={formData.fecha_inicio}
-                onChange={(e) => handleInputChange('fecha_inicio', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_inicio', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_inicio ? 'border-red-300' : 'border-gray-300'
                   }`}
               />
@@ -550,7 +735,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
               <input
                 type="date"
                 value={formData.fecha_fin}
-                onChange={(e) => handleInputChange('fecha_fin', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_fin', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_fin ? 'border-red-300' : 'border-gray-300'
                   }`}
               />
