@@ -23,6 +23,9 @@ export async function POST(request) {
         telefono: h.telefono,
         documento: h.numeroDocumento,
         fecha_nacimiento: h.fechaNacimiento,
+        ciudad_residencia: h.ciudad_residencia,
+        ciudad_procedencia: h.ciudad_procedencia,
+        motivo: h.motivo_viaje || h.motivo,
         es_principal: idx === 0 ? true : false
       })) : [],
     };

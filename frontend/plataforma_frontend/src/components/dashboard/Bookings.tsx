@@ -7,6 +7,7 @@ import CreateReservaButton from './CreateReservaButton';
 import ReservaDetailModal from './ReservaDetailModal';
 import HuespedesListModal from './HuespedesListModal';
 import PagosModal from './PagosModal';
+import TarjetaModal from './TarjetaModal';
 import SuccessModal from './SuccessModal';
 import ConfirmModal from './ConfirmModal';
 import MonthSelector from './MonthSelector'
@@ -22,7 +23,9 @@ import {
   editReservaApi,
   deleteReservaApi
 } from '../../auth/reservasApi';
+import { getEstadoTarjetaApi, sendTarjetaApi } from '../../auth/tarjetaRegistroApi';
 import { useReservasConTotales } from '../../hooks/useReservasConTotales';
+import { IEstadoTarjetaResponse, IPayloadTarjeta } from '@libs/interfaces/Tarjeta';
 
 
 
@@ -55,6 +58,9 @@ const Bookings: React.FC = () => {
   const [successOpen, setSuccessOpen] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(-1);
+  const [tarjetas, setTarjetas] = useState<IEstadoTarjetaResponse[]>([]);
+  const [reservaToViewTarjeta, setReservaToViewTarjeta] = useState<IReservaTableData | null>(null);
+  const [tarjetaModalOpen, setTarjetaModalOpen] = useState(false);
 
   // Inmuebles
   const { inmuebles } = useInmuebleSelector();
@@ -68,20 +74,16 @@ const Bookings: React.FC = () => {
   const canEdit = user?.permisos?.includes('editar_reservas') || true; // TEMPORAL: siempre true para debugging
   const canDelete = user?.permisos?.includes('eliminar_reservas') || true; // TEMPORAL: siempre true para debugging
 
-
-  // const filteredReservas = useMemo(() => {
-  //   if (selectedMonth === -1 && selectedInmueble === -1) {
-  //     return reservas;
-  //   }
-  //   return reservas.filter(reserva => {
-  //     const inmueble = reserva.id_inmueble;
-  //     const fechaInicio = new Date(reserva.fecha_inicio);
-  //     const fechaFin = new Date(reserva.fecha_fin);
-  //     return (fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth) && (inmueble === selectedInmueble); 
-  //   });
-  // }, [reservas, selectedMonth, selectedInmueble]);
-
-
+  const filteredReservas = useMemo(() => {
+    if (selectedMonth === -1) {
+      return reservas;
+    }
+    return reservas.filter(reserva => {
+      const fechaInicio = new Date(reserva.fecha_inicio);
+      const fechaFin = new Date(reserva.fecha_fin);
+      return fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth;
+    });
+  }, [reservas, selectedMonth]);
 
   const handleCreate = async (reservaData: IReservaForm) => {
     try {
@@ -186,31 +188,55 @@ const Bookings: React.FC = () => {
     setPagosModalOpen(true);
   };
 
+  const handleViewTarjeta = (reserva: IReservaTableData) => {
+    setReservaToViewTarjeta(reserva);
+    setTarjetaModalOpen(true);
+  };
 
 
 
   useEffect(() => {
-  const filtros: any = {};
+    const cargarEstados = async () => {
+      if (filteredReservas.length === 0) return;
 
-  // Inmueble
-  if (selectedInmueble !== -1) {
-    filtros.id_inmueble = selectedInmueble;
-  }
+      try {
+        // Obtenemos los estados de todas las reservas filtradas
+        const promesas = filteredReservas.map(res => getEstadoTarjetaApi(res.id));
+        const resultados = await Promise.all(promesas);
 
-  // Mes → convertir a rango de fechas
-  if (selectedMonth !== -1) {
-    const year = new Date().getFullYear();
-    const month = selectedMonth; // 0-based
+        // Aplanamos el array de arrays en uno solo
+        const todasLasTarjetas = resultados.flat();
+        setTarjetas(todasLasTarjetas);
+      } catch (err) {
+        console.error("Error cargando tarjetas", err);
+      }
+    };
 
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
+    cargarEstados();
+  }, [filteredReservas]);
 
-    filtros.fecha_inicio = firstDay.toISOString().slice(0, 10);
-    filtros.fecha_fin = lastDay.toISOString().slice(0, 10);
-  }
 
-  loadReservas(filtros);
-}, [selectedMonth, selectedInmueble, loadReservas]);
+
+  const handleTarjetaSubmit = async (idReserva: number) => {
+    if (!reservaToViewTarjeta) return;
+
+    try {
+      const updatedTarjeta = await sendTarjetaApi(idReserva);
+
+      setSuccessMsg('Tarjeta enviada a Mincit');
+      setSuccessOpen(true);
+      setTarjetaModalOpen(false);
+      setReservaToViewTarjeta(updatedTarjeta);
+    } catch (error) {
+      console.error('Error al enviar tarjeta:', error);
+      alert(error instanceof Error ? error.message : 'Error al enviar tarjeta');
+    }
+  };
+
+  const handleTarjetaClose = () => {
+    setTarjetaModalOpen(false);
+    setReservaToViewTarjeta(null);
+  };
 
 
 
@@ -249,10 +275,12 @@ const Bookings: React.FC = () => {
         </div>
       ) : (
         <ReservasTable
-          reservas={reservas}
+          tarjetas={tarjetas}
+          reservas={filteredReservas}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onViewDetail={handleViewDetail}
+          onViewTarjeta={handleViewTarjeta}
           onViewHuespedes={handleViewHuespedes}
           onViewPagos={handleViewPagos}
           canEdit={canEdit}
@@ -288,6 +316,9 @@ const Bookings: React.FC = () => {
             documento_numero: huesped.documento_numero,
             fecha_nacimiento: huesped.fecha_nacimiento,
             es_principal: huesped.es_principal,
+            motivo: huesped.motivo,
+            ciudad_residencia: huesped.ciudad_residencia,
+            ciudad_procedencia: huesped.ciudad_procedencia,
           })),
           precio_total: reservaToEdit.precio_total,
           total_reserva: reservaToEdit.total_reserva,
@@ -337,6 +368,13 @@ const Bookings: React.FC = () => {
             actualizarTotalesReserva(reservaToViewPagos.id);
           }
         }}
+      />
+
+      <TarjetaModal
+        open={tarjetaModalOpen}
+        onClose={handleTarjetaClose}
+        reserva={reservaToViewTarjeta}
+        onSubmit={handleTarjetaSubmit}
       />
 
       <ConfirmModal

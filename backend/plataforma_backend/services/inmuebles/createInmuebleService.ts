@@ -34,6 +34,39 @@ export async function createInmuebleService(
       };
     }
 
+
+    // Validacion especificacion_acomodacion  - Si es Apartamento
+    if (inmuebleData.tipo_acomodacion === 'Apartamento') {
+      if (!inmuebleData.edificio || !inmuebleData.apartamento) {
+        return {
+          data: null,
+          error: {
+            message: 'Edificio y apartamento son requeridos para tipo Apartamento',
+            status: 400,
+            details: 'EDIFICIO_APARTAMENTO_REQUIRED'
+          }
+        };
+      }
+    
+      inmuebleData.especificacion_acomodacion =
+        `${inmuebleData.edificio} Apto ${inmuebleData.apartamento}`;
+    }
+
+    if (inmuebleData.tipo_acomodacion !== 'Apartamento') {
+      if (!inmuebleData.especificacion_acomodacion) {
+        return {
+          data: null,
+          error: {
+            message: 'La especificación es requerida para este tipo de acomodación',
+            status: 400,
+            details: 'ESPECIFICACION_REQUIRED'
+          }
+        };
+      }
+    }
+
+      
+
     // Crear el inmueble
     const { data: inmueble, error } = await inmueblesRepository.createInmueble(inmuebleData);
 

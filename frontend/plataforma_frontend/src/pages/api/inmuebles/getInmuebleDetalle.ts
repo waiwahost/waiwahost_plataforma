@@ -24,6 +24,10 @@ interface ExternalInmuebleResponse {
   empresa_nombre: string | null;
   propietario_nombre: string | null;
   propietario_email: string | null;
+  tipo_acomodacion: string | null;
+  especificacion_acomodacion: string | null;
+  rnt: string | null;
+  tra_token: string | null;
 }
 
 interface ExternalApiResponse {
@@ -40,8 +44,8 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     nombre: inmuebleAPI.nombre || 'Sin nombre',
     direccion: inmuebleAPI.direccion || 'Sin dirección',
     ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
-    edificio: inmuebleAPI.edificio || 'Sin edificio',
-    apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
+    edificio: inmuebleAPI.edificio ?? null,
+    apartamento: inmuebleAPI.apartamento ?? null,
     comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
     id_propietario: (inmuebleAPI.id_propietario ?? 0).toString(),
     tipo: mapTipoInmueble(inmuebleAPI.nombre), // Mockeo basado en el nombre
@@ -58,7 +62,11 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
     fecha_creacion: new Date().toISOString(), // Mockeo - no viene en la API
-    fecha_actualizacion: new Date().toISOString() // Mockeo - no viene en la API
+    fecha_actualizacion: new Date().toISOString(), // Mockeo - no viene en la API
+    tipo_acomodacion: inmuebleAPI.tipo_acomodacion || 'Sin tipo',
+    especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'Sin especificación',
+    rnt: inmuebleAPI.rnt || 'SIN_RNT',
+    tra_token: inmuebleAPI.tra_token || 'SIN_TRA_TOKEN'
   };
 };
 

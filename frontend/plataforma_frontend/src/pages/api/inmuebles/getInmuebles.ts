@@ -24,6 +24,10 @@ interface ExternalInmuebleResponse {
   empresa_nombre: string | null;
   propietario_nombre: string | null;
   propietario_email: string | null;
+  tipo_acomodacion: string | null;
+  especificacion_acomodacion: string | null;
+  rnt: string | null;
+  tra_token: string | null;
 }
 
 interface ExternalApiResponse {
@@ -58,7 +62,11 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
     fecha_creacion: new Date().toISOString(), // Mockeo - no viene en la API
-    fecha_actualizacion: new Date().toISOString() // Mockeo - no viene en la API
+    fecha_actualizacion: new Date().toISOString(), // Mockeo - no viene en la API
+    tipo_acomodacion: inmuebleAPI.tipo_acomodacion || 'Sin tipo de acomodación',
+    especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'Sin especificación de acomodación',
+    rnt: inmuebleAPI.rnt || 'Sin RNT',
+    tra_token: inmuebleAPI.tra_token || 'Sin TRA Token'
   };
 };
 
@@ -177,7 +185,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id_empresa: '0',
           nombre_empresa: 'Error',
           fecha_creacion: new Date().toISOString(),
-          fecha_actualizacion: new Date().toISOString()
+          fecha_actualizacion: new Date().toISOString(),
+          tipo_acomodacion: 'Sin tipo de acomodación',
+          especificacion_acomodacion: 'Sin especificación de acomodación',
+          rnt: 'Sin RNT',
+          tra_token: 'Sin TRA Token'
         } as IInmueble;
       }
     });

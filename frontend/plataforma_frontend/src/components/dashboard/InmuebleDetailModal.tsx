@@ -154,8 +154,8 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                 {inmueble.nombre}
               </h3>
               <div className="flex space-x-2">
-                <span className={getTipoBadge(inmueble.tipo)}>
-                  {inmueble.tipo}
+                <span className={getTipoBadge(inmueble.tipo_acomodacion)}>
+                  {inmueble.tipo_acomodacion}
                 </span>
                 <span className={getEstadoBadge(inmueble.estado)}>
                   {inmueble.estado}
@@ -183,13 +183,32 @@ const InmuebleDetailModal: React.FC<InmuebleDetailModalProps> = ({
                   <span className="text-gray-600">ID Propietario:</span>
                   <span className="font-medium ml-2">{inmueble.id_propietario}</span>
                 </div>
-                <div className="text-sm">
-                  <span className="text-gray-600">Edificio:</span>
-                  <span className="font-medium ml-2">{inmueble.edificio}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-gray-600">Apartamento:</span>
-                  <span className="font-medium ml-2">{inmueble.apartamento}</span>
+                  {inmueble.edificio || inmueble.apartamento ? (
+                    <>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Edificio:</span>
+                        <span className="font-medium ml-2">{inmueble.edificio}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Apartamento:</span>
+                        <span className="font-medium ml-2">{inmueble.apartamento}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Tipo Acomodación:</span>
+                        <span className="font-medium ml-2">{inmueble.tipo_acomodacion}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-600">Especificación:</span>
+                        <span className="font-medium ml-2">{inmueble.especificacion_acomodacion}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="text-sm">
+                  <span className="text-gray-600">RNT:</span>
+                  <span className="font-medium ml-2">{inmueble.rnt}</span>
                 </div>
               </div>
             </div>

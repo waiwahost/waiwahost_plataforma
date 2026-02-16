@@ -255,6 +255,18 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                         <span className="text-gray-600">Documento:</span>
                         <span className="text-gray-900 ml-1">{huesped.documento_numero}</span>
                       </div>
+                      <div className="md:col-span-1">
+                        <span className="text-gray-600">Motivo:</span>
+                        <span className="text-gray-900 ml-1">{huesped.motivo || 'N/A'}</span>
+                      </div>
+                      <div className="md:col-span-1">
+                        <span className="text-gray-600">Residencia:</span>
+                        <span className="text-gray-900 ml-1">{huesped.ciudad_residencia}</span>
+                      </div>
+                      <div className="md:col-span-1">
+                        <span className="text-gray-600">Procedencia:</span>
+                        <span className="text-gray-900 ml-1">{huesped.ciudad_procedencia}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -316,7 +328,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Total Pagado/Abonadosssss</label>
+                <label className="text-sm font-medium text-gray-600">Total Pagado/Abonados</label>
                 <p className="text-gray-900 font-medium text-green-600">
                   {formatCurrency(reserva.total_pagado)}
                 </p>
