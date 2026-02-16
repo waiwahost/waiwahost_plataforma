@@ -7,15 +7,25 @@ const fechaSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
   message: "La fecha debe tener formato YYYY-MM-DD"
 });
 
-// Schema para validar que la fecha no sea futura
-const fechaNoFuturaSchema = fechaSchema.refine((fecha) => {
-  const fechaMovimiento = new Date(fecha);
-  const hoy = new Date();
-  hoy.setHours(23, 59, 59, 999); // Hasta el final del día de hoy
-  return fechaMovimiento <= hoy;
-}, {
-  message: "La fecha no puede ser futura"
-});
+  // Schema para validar que la fecha no sea futura
+  const fechaNoFuturaSchema = fechaSchema.refine((fecha) => {
+    const fechaMovimiento = new Date(fecha);
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const maximo = new Date();
+    maximo.setMonth(maximo.getMonth() + 5);
+    maximo.setHours(23, 59, 59, 999);
+
+    return (
+      fechaMovimiento >= hoy &&
+      fechaMovimiento <= maximo
+    );
+  }, {
+    message: "La fecha debe estar entre hoy y máximo 5 meses después"
+  });
+
 
 // Schema para validar monto
 const montoSchema = z.number().min(0.01, {
