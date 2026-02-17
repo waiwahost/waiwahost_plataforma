@@ -60,7 +60,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const errorData = await response.json().catch(() => ({}));
             return res.status(response.status).json({
                 success: false,
-                message: errorData.message || 'Error en el backend'
+                data: null,
+                message: errorData.message || 'Error en el backend',
+                errors: errorData.errors
             });
         }
 

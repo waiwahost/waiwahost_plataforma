@@ -23,6 +23,7 @@ import { huespedesRoutes } from './routes/huespedes.routes';
 import { tarjetaRegistroRoutes } from './routes/tarjetaRegistro.routes';
 import { paisesRoutes } from './routes/paises.routes';
 import { ciudadesRoutes } from './routes/ciudades.routes';
+import { bloqueosRoutes } from './routes/bloqueos.routes';
 
 import { errorHandler } from './middlewares/errorHandler';
 
@@ -80,6 +81,7 @@ server.register(huespedesRoutes, { prefix: '/huespedes' });
 server.register(tarjetaRegistroRoutes, { prefix: '/tarjeta-registro' });
 server.register(paisesRoutes, { prefix: '/paises' });
 server.register(ciudadesRoutes, { prefix: '/ciudades' });
+server.register(bloqueosRoutes, { prefix: '/bloqueos' });
 
 // Error handler
 server.setErrorHandler(errorHandler);

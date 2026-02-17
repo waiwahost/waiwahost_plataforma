@@ -3,11 +3,13 @@ import React, { useMemo, useState, useEffect } from "react";
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "../atoms/Button";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Lock } from "lucide-react";
 import CreateReservaModal from "./CreateReservaModal";
+import CreateBloqueoModal from "./CreateBloqueoModal";
 import ReservaDetailModal from "./ReservaDetailModal";
 import { IReservaForm, IReservaTableData } from "../../interfaces/Reserva";
 import { createReservaApi, getReservaDetalleApi, editReservaApi } from "../../auth/reservasApi";
+import { IBloqueo } from "../../interfaces/Bloqueo";
 
 interface AvailabilityInmueble {
   id: string;
@@ -20,7 +22,9 @@ interface AvailabilityReserva {
   inmuebleId: string;
   start: string;
   end: string;
-  estado?: string; // puede ser 'pendiente', 'confirmado', 'anulado', etc.
+  estado?: string; // puede ser 'pendiente', 'confirmado', 'anulado', 'bloqueado' etc.
+  tipo_bloqueo?: string;
+  descripcion?: string;
 }
 
 // Función auxiliar para parsear fechas YYYY-MM-DD sin ajuste de zona horaria
@@ -76,7 +80,7 @@ function getReservaEnFecha(reservas: AvailabilityReserva[], inmuebleId: string, 
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
     return d >= rStart && d < rEnd &&
-      (r.estado === 'pendiente' || r.estado === 'confirmada' || r.estado === 'en_proceso' || r.estado === 'completada' || r.estado === undefined);
+      (r.estado === 'pendiente' || r.estado === 'confirmada' || r.estado === 'en_proceso' || r.estado === 'completada' || r.estado === 'bloqueado' || r.estado === undefined);
   });
 }
 
@@ -152,9 +156,13 @@ const Availability: React.FC = () => {
 
   // Modales
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateBloqueoModalOpen, setIsCreateBloqueoModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedReservaDetail, setSelectedReservaDetail] = useState<IReservaTableData | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [reservaError, setReservaError] = useState<string | null>(null);
+  const [selectedBloqueo, setSelectedBloqueo] = useState<IBloqueo | undefined>(undefined);
+  const [isEditBloqueoMode, setIsEditBloqueoMode] = useState(false);
 
   // Calcular fechas a mostrar
   const fechas = useMemo(() => {
@@ -176,6 +184,7 @@ const Availability: React.FC = () => {
       params.append("end", end);
       if (inmuebleId) params.append("inmuebleId", inmuebleId);
       if (estado && estado !== "todos") params.append("estado", estado);
+
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/disponibilidad?${params.toString()}`, {
         headers: {
@@ -228,24 +237,44 @@ const Availability: React.FC = () => {
 
   const handleCellClick = async (reserva: AvailabilityReserva | undefined) => {
     if (reserva) {
-      try {
-        const detail = await getReservaDetalleApi(parseInt(reserva.id));
-        setSelectedReservaDetail(detail);
-        setIsDetailModalOpen(true);
-      } catch (error) {
-        console.error("Error al cargar detalle de reserva", error);
-        alert("Error al cargar los detalles de la reserva");
+      if (reserva.estado === 'bloqueado') {
+        const bloqueoData: IBloqueo = {
+          id: parseInt(reserva.id),
+          id_inmueble: parseInt(reserva.inmuebleId),
+          fecha_inicio: reserva.start,
+          fecha_fin: reserva.end,
+          tipo_bloqueo: (reserva.tipo_bloqueo as any) || 'mantenimiento',
+          descripcion: reserva.descripcion
+        };
+        setSelectedBloqueo(bloqueoData);
+        setIsEditBloqueoMode(true);
+        setIsCreateBloqueoModalOpen(true);
+      } else {
+        try {
+          const detail = await getReservaDetalleApi(parseInt(reserva.id));
+          setSelectedReservaDetail(detail);
+          setIsDetailModalOpen(true);
+        } catch (error) {
+          console.error("Error al cargar detalle de reserva", error);
+          alert("Error al cargar los detalles de la reserva");
+        }
       }
     } else {
-      // TODO: Implement open create modal with pre-selected date/inmueble if desired
+      // Si la celda está vacía se podría abrir modal de creación con fechas preseleccionadas
+      // Setear fechas y abrir modal... por ahora manual
     }
+  };
+
+  const handleCreateBloqueoSuccess = () => {
+    fetchDisponibilidad();
+    alert("Bloqueo creado exitosamente");
   };
 
   const handleCreateReserva = async (data: IReservaForm) => {
     try {
+      setReservaError(null);
       if (isEditMode && selectedReservaDetail) {
         // Transformar IReservaForm a lo que espera editReservaApi (incluyendo ID)
-        // Asegurar que huespedes tenga formato correcto si es necesario
         const dataToUpdate = {
           ...data,
           id: selectedReservaDetail.id,
@@ -261,7 +290,21 @@ const Availability: React.FC = () => {
       fetchDisponibilidad(); // Refrescar grid
     } catch (error) {
       console.error("Error al guardar reserva:", error);
-      alert("Error al guardar la reserva");
+      let msg = error instanceof Error ? error.message : 'Error al guardar reserva';
+
+      // Intentar farmatear si es JSON
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.message) msg = parsed.message;
+      } catch (e) {
+        // No es JSON
+      }
+
+      if (msg.includes('ocupadas') || msg.includes('traslap') || msg.includes('disponibilidad') || msg.includes('bloqueadas')) {
+        setReservaError(msg);
+      } else {
+        alert(msg);
+      }
     }
   };
 
@@ -301,13 +344,26 @@ const Availability: React.FC = () => {
     <div className="p-6 bg-white rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Disponibilidad de Inmuebles</h2>
-        <Button
-          onClick={() => { setIsEditMode(false); setIsCreateModalOpen(true); }}
-          className="bg-tourism-teal text-white flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Crear Reserva
-        </Button>
+        <div className="flex gap-6">
+          <Button
+            onClick={() => { setIsEditMode(false); setIsCreateModalOpen(true); }}
+            className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Crear Reserva
+          </Button>
+          <Button
+            onClick={() => {
+              setSelectedBloqueo(undefined);
+              setIsEditBloqueoMode(false);
+              setIsCreateBloqueoModalOpen(true);
+            }}
+            className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2 ml-3"
+          >
+            <Lock className="h-4 w-4" />
+            Crear Bloqueo
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -370,7 +426,9 @@ const Availability: React.FC = () => {
           <select value={estado} onChange={e => setEstado(e.target.value as any)} className="border rounded px-3 py-2 w-full outline-none focus:ring-2 focus:ring-tourism-teal">
             <option value="todos">Todos</option>
             <option value="ocupado">Ocupado</option>
+            <option value="ocupado">Ocupado</option>
             <option value="disponible">Disponible</option>
+            <option value="bloqueado">Bloqueado</option>
           </select>
         </div>
       </div>
@@ -388,6 +446,10 @@ const Availability: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 bg-gray-100 border border-gray-300 rounded-sm"></span>
           <span>Disponible</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 bg-gray-400 border border-gray-500 rounded-sm"></span>
+          <span>Bloqueado/Mantenimiento</span>
         </div>
       </div>
 
@@ -431,9 +493,13 @@ const Availability: React.FC = () => {
                     let cellClasses = "bg-gray-100 text-gray-400 hover:bg-gray-200";
 
                     if (ocupado && reservaEnFecha) {
-                      const isPendiente = reservaEnFecha.estado === 'pendiente';
-                      const colors = getReservaColor(reservaEnFecha.id, isPendiente);
-                      cellClasses = `${colors.bg} ${colors.hover} ${colors.border} text-blue-800 cursor-pointer`;
+                      if (reservaEnFecha.estado === 'bloqueado') {
+                        cellClasses = "bg-gray-400 border-l-4 border-gray-500 text-gray-600 cursor-not-allowed flex flex-col justify-center items-center text-[10px] leading-tight";
+                      } else {
+                        const isPendiente = reservaEnFecha.estado === 'pendiente';
+                        const colors = getReservaColor(reservaEnFecha.id, isPendiente);
+                        cellClasses = `${colors.bg} ${colors.hover} ${colors.border} text-blue-800 cursor-pointer`;
+                      }
                     }
 
                     return (
@@ -443,10 +509,14 @@ const Availability: React.FC = () => {
                       >
                         <div
                           className={`w-full h-full rounded flex items-center justify-center ${cellClasses}`}
-                          title={ocupado ? `Reserva ID: ${reservaEnFecha?.id} - ${reservaEnFecha?.estado}` : "Disponible"}
+                          title={ocupado ? (reservaEnFecha?.estado === 'bloqueado' ? `Bloqueo: ${reservaEnFecha.tipo_bloqueo} - ${reservaEnFecha.descripcion || ''}` : `Reserva ID: ${reservaEnFecha?.id} - ${reservaEnFecha?.estado}`) : "Disponible"}
                           onClick={() => handleCellClick(reservaEnFecha)}
                         >
-                          {ocupado && <span className="text-xs font-bold">●</span>}
+                          {ocupado && (
+                            reservaEnFecha?.estado === 'bloqueado' ?
+                              <Lock className="h-3 w-3" /> :
+                              <span className="text-xs font-bold">●</span>
+                          )}
                         </div>
                       </td>
                     );
@@ -461,8 +531,12 @@ const Availability: React.FC = () => {
       {/* Modales */}
       <CreateReservaModal
         open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setReservaError(null);
+        }}
         onCreate={handleCreateReserva}
+        externalError={reservaError}
         initialData={isEditMode && selectedReservaDetail ? {
           id_inmueble: parseInt((selectedReservaDetail as any).id_inmueble) || 0,
           fecha_inicio: selectedReservaDetail.fecha_inicio,
@@ -478,6 +552,18 @@ const Availability: React.FC = () => {
           plataforma_origen: selectedReservaDetail.plataforma_origen,
         } : undefined}
         isEdit={isEditMode}
+      />
+
+      <CreateBloqueoModal
+        open={isCreateBloqueoModalOpen}
+        onClose={() => {
+          setIsCreateBloqueoModalOpen(false);
+          setSelectedBloqueo(undefined);
+          setIsEditBloqueoMode(false);
+        }}
+        onSuccess={handleCreateBloqueoSuccess}
+        initialData={selectedBloqueo}
+        isEdit={isEditBloqueoMode}
       />
 
       {selectedReservaDetail && (

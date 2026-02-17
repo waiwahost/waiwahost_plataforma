@@ -11,15 +11,15 @@ export interface Huesped {
   id_reserva: number;
   ciudad_residencia?: string;
   ciudad_procedencia?: string;
-  motivo?: 
-  'Negocios'|
-  'Vacaciones'|
-  'Visitas'|
-  'Educacion'|
-  'Salud'|
-  'Religion'|
-  'Compras'|
-  'Transito'|
+  motivo?:
+  'Negocios' |
+  'Vacaciones' |
+  'Visitas' |
+  'Educacion' |
+  'Salud' |
+  'Religion' |
+  'Compras' |
+  'Transito' |
   'Otros';
 }
 
@@ -83,15 +83,15 @@ export interface CreateHuespedData {
   es_principal: boolean;
   ciudad_residencia?: string;
   ciudad_procedencia?: string;
-  motivo?: 
-  'Negocios'|
-  'Vacaciones'|
-  'Visitas'|
-  'Educacion'|
-  'Salud'|
-  'Religion'|
-  'Compras'|
-  'Transito'|
+  motivo?:
+  'Negocios' |
+  'Vacaciones' |
+  'Visitas' |
+  'Educacion' |
+  'Salud' |
+  'Religion' |
+  'Compras' |
+  'Transito' |
   'Otros';
 }
 
@@ -100,7 +100,7 @@ export interface CreateReservaRequest {
   fecha_inicio: string;
   fecha_fin: string;
   numero_huespedes: number;
-  huespedes: CreateHuespedData[];
+  huespedes?: CreateHuespedData[];
   precio_total: number;
   // Nuevos campos financieros
   total_reserva: number;

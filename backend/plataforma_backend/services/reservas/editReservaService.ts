@@ -1,8 +1,10 @@
 import { EditReservaRequest } from '../../interfaces/reserva.interface';
 import { ReservasRepository } from '../../repositories/reservas.repository';
 import { isPlataformaValida } from '../../constants/plataformas';
+import { BloqueosRepository } from '../../repositories/bloqueos.repository';
 
 const reservasRepository = new ReservasRepository();
+const bloqueosRepository = new BloqueosRepository();
 
 export async function editReservaService(id: number, data: EditReservaRequest) {
   // Validar que al menos un campo editable esté presente
@@ -38,6 +40,34 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
   const reservaOriginal = await reservasRepository.getReservaById(id);
   if (!reservaOriginal) throw new Error('Reserva no encontrada');
 
+  // Si se actualizan fechas, verificar disponibilidad
+  if (fieldsToUpdate.fecha_inicio || fieldsToUpdate.fecha_fin) {
+    const nuevaFechaInicio = fieldsToUpdate.fecha_inicio || reservaOriginal.fecha_inicio;
+    const nuevaFechaFin = fieldsToUpdate.fecha_fin || reservaOriginal.fecha_fin;
+
+    // 1. Verificar traslapes con otras reservas
+    const countReservas = await reservasRepository.countOverlappingReservations(
+      reservaOriginal.id_inmueble,
+      nuevaFechaInicio,
+      nuevaFechaFin,
+      id // Excluir esta misma reserva
+    );
+
+    if (countReservas > 0) {
+      throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+    }
+
+    // 2. Verificar traslapes con bloqueos
+    const countBloqueos = await bloqueosRepository.countOverlappingBlocks(
+      reservaOriginal.id_inmueble,
+      nuevaFechaInicio,
+      nuevaFechaFin
+    );
+
+    if (countBloqueos > 0) {
+      throw new Error('Las fechas seleccionadas están bloqueadas en el calendario');
+    }
+  }
 
   // Actualizar la reserva principal
   const updated = await reservasRepository.updateReserva(id, fieldsToUpdate);

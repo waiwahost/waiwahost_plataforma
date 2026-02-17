@@ -61,11 +61,11 @@ const Bookings: React.FC = () => {
   const [tarjetas, setTarjetas] = useState<IEstadoTarjetaResponse[]>([]);
   const [reservaToViewTarjeta, setReservaToViewTarjeta] = useState<IReservaTableData | null>(null);
   const [tarjetaModalOpen, setTarjetaModalOpen] = useState(false);
+  const [reservaError, setReservaError] = useState<string | null>(null);
 
   // Inmuebles
   const { inmuebles } = useInmuebleSelector();
-  console.log(inmuebles);
-  const [selectedInmueble, setSelectedInmueble] = useState<number>(-1);  
+  const [selectedInmueble, setSelectedInmueble] = useState<number>(-1);
 
 
 
@@ -87,6 +87,7 @@ const Bookings: React.FC = () => {
 
   const handleCreate = async (reservaData: IReservaForm) => {
     try {
+      setReservaError(null);
       const newReserva = await createReservaApi(reservaData);
       agregarReservaALista(newReserva);
       setSuccessMsg('Reserva creada exitosamente');
@@ -94,7 +95,21 @@ const Bookings: React.FC = () => {
       setModalOpen(false);
     } catch (error) {
       console.error('Error creando reserva:', error);
-      alert(error instanceof Error ? error.message : 'Error al crear reserva');
+      let msg = error instanceof Error ? error.message : 'Error al crear reserva';
+
+      // Intentar farmatear si es JSON
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.message) msg = parsed.message;
+      } catch (e) {
+        // No es JSON, usar mensaje original
+      }
+
+      if (msg.includes('ocupadas') || msg.includes('traslap') || msg.includes('disponibilidad')) {
+        setReservaError(msg);
+      } else {
+        alert(msg);
+      }
     }
   };
 
@@ -124,6 +139,7 @@ const Bookings: React.FC = () => {
     }));
 
     try {
+      setReservaError(null);
       // Usar los campos correctos para el backend
       const body: any = {
         ...reservaData,
@@ -145,7 +161,21 @@ const Bookings: React.FC = () => {
       setReservaToEdit(null);
     } catch (error) {
       console.error('Error editando reserva:', error);
-      alert(error instanceof Error ? error.message : 'Error al actualizar reserva');
+      let msg = error instanceof Error ? error.message : 'Error al actualizar reserva';
+
+      // Intentar farmatear si es JSON
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.message) msg = parsed.message;
+      } catch (e) {
+        // No es JSON, usar mensaje original
+      }
+
+      if (msg.includes('ocupadas') || msg.includes('traslap') || msg.includes('disponibilidad')) {
+        setReservaError(msg);
+      } else {
+        alert(msg);
+      }
     }
   };
 
@@ -254,7 +284,12 @@ const Bookings: React.FC = () => {
 
 
           <CreateReservaButton
-            onClick={() => canCreate && setModalOpen(true)}
+            onClick={() => {
+              if (canCreate) {
+                setReservaError(null);
+                setModalOpen(true);
+              }
+            }}
             disabled={!canCreate}
           />
         </div>
@@ -292,6 +327,7 @@ const Bookings: React.FC = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreate={handleCreate}
+        externalError={reservaError}
       />
 
       <CreateReservaModal
@@ -299,8 +335,10 @@ const Bookings: React.FC = () => {
         onClose={() => {
           setEditModalOpen(false);
           setReservaToEdit(null);
+          setReservaError(null);
         }}
         onCreate={handleEditSubmit}
+        externalError={reservaError}
         initialData={reservaToEdit ? {
           id_inmueble: reservaToEdit.id_inmueble,
           fecha_inicio: reservaToEdit.fecha_inicio,

@@ -1,7 +1,9 @@
 import { ReservasRepository } from '../../repositories/reservas.repository';
+import { BloqueosRepository } from '../../repositories/bloqueos.repository';
 
 export const createOrUpdateReservaPublicService = async (data: any) => {
     const repository = new ReservasRepository();
+    const blockingRepository = new BloqueosRepository();
 
     // Asegurar valores por defecto para campos financieros si no vienen
     const reservaData = {
@@ -13,6 +15,15 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
     };
 
     let resultReserva;
+
+    // Validar disponibilidad antes de continuar (para creación o actualización de fechas)
+    const checkAvailability = async (idInmueble: number, inicio: string, fin: string, excludeReservaId?: number) => {
+        const overlappingReservations = await repository.countOverlappingReservations(idInmueble, inicio, fin, excludeReservaId);
+        if (overlappingReservations > 0) throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+
+        const overlappingBlocks = await blockingRepository.countOverlappingBlocks(idInmueble, inicio, fin);
+        if (overlappingBlocks > 0) throw new Error('Las fechas seleccionadas están bloqueadas en el calendario');
+    };
 
     // Si viene id_reserva, intentamos actualizar
     if (reservaData.id_reserva) {
@@ -30,6 +41,16 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
                 observaciones: reservaData.observaciones,
                 plataforma_origen: reservaData.plataforma_origen,
             };
+
+            // Validar disponibilidad si las fechas cambiaron
+            if (reservaData.fecha_inicio !== existingReserva.fecha_inicio || reservaData.fecha_fin !== existingReserva.fecha_fin) {
+                await checkAvailability(
+                    reservaData.id_inmueble || existingReserva.id_inmueble,
+                    reservaData.fecha_inicio,
+                    reservaData.fecha_fin,
+                    reservaData.id_reserva
+                );
+            }
 
             resultReserva = await repository.updateReserva(reservaData.id_reserva, updateFields);
         }
@@ -53,6 +74,9 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
             numero_huespedes: reservaData.numero_huespedes,
             plataforma_origen: reservaData.plataforma_origen || 'directa'
         };
+
+        // Validar disponibilidad para creación
+        await checkAvailability(reservaData.id_inmueble, reservaData.fecha_inicio, reservaData.fecha_fin);
 
         resultReserva = await repository.createReserva(createPayload);
     }

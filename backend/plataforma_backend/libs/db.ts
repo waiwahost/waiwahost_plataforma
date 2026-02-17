@@ -63,3 +63,23 @@ export async function getReservasEnRango({ start, end, inmuebleId, estado }: { s
   const { rows } = await pool.query(query, params);
   return rows;
 }
+
+/**
+ * Obtiene los bloqueos de inmuebles en un rango de fechas
+ */
+export async function getBloqueosEnRango({ start, end, inmuebleId }: { start: string; end: string; inmuebleId?: string }) {
+  let query = `
+    SELECT id_bloqueo as id, id_inmueble as inmuebleId, fecha_inicio as start, fecha_fin as end, tipo_bloqueo as estado, descripcion
+    FROM bloqueos_inmuebles
+    WHERE (fecha_inicio <= $2 AND fecha_fin >= $1)
+  `;
+  const params: any[] = [start, end];
+
+  if (inmuebleId) {
+    query += ` AND id_inmueble = $3`;
+    params.push(inmuebleId);
+  }
+
+  const { rows } = await pool.query(query, params);
+  return rows;
+}

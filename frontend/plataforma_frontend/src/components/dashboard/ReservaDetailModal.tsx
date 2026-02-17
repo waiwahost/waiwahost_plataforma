@@ -243,7 +243,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                       </h5>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      <div>
+                      <div className="col-span-2">
                         <span className="text-gray-600">Email:</span>
                         <span className="text-gray-900 ml-1">{huesped.email || 'No especificado'}</span>
                       </div>

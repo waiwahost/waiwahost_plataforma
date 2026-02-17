@@ -5,7 +5,7 @@ export const getReservasSchema: FastifySchema = {
     type: 'object',
     properties: {
       id_empresa: { type: 'number' },
-      id_inmueble: { type:'number' },
+      id_inmueble: { type: 'number' },
       estado: { type: 'string' },
       fecha_inicio: { type: 'string', format: 'date' },
       fecha_fin: { type: 'string', format: 'date' }
@@ -88,7 +88,6 @@ export const createReservaSchema: FastifySchema = {
       'fecha_inicio',
       'fecha_fin',
       'numero_huespedes',
-      'huespedes',
       'precio_total',
       'total_reserva',
       'estado',

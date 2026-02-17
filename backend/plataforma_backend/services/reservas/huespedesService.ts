@@ -24,20 +24,11 @@ export class HuespedesService {
   }
 
   /**
-   * Valida que los campos de TRA para huesped Principal
+   * Valida los datos de TRA para huesped Principal (Opcionales ahora)
    */
   private validateDatosTRA(huespedes: CreateHuespedData[]): void {
-    const principal = huespedes.find(h => h.es_principal);
-
-    if (!principal) {
-      throw new Error('Debe existir un huésped principal');
-    }
-
-    if (!principal.ciudad_residencia || !principal.ciudad_procedencia || !principal.motivo) {
-      throw new Error(
-        'El huésped principal debe tener ciudad de residencia, ciudad de procedencia y motivo'
-      );
-    }
+    // Ya no bloqueamos si faltan estos campos, permitiendo flexibilidad total
+    return;
   }
 
 
@@ -83,6 +74,11 @@ export class HuespedesService {
    * Valida todos los datos de huéspedes
    */
   private validateHuespedes(numeroHuespedes: number, huespedes: CreateHuespedData[]): void {
+    // Si no vienen huéspedes, no validamos nada más (el número de huéspedes puede ser > 0 pero sin datos aún)
+    if (!huespedes || huespedes.length === 0) {
+      return;
+    }
+
     // Validaciones básicas
     this.validateNumeroHuespedes(numeroHuespedes, huespedes);
     this.validateHuespedPrincipal(huespedes);
@@ -106,16 +102,20 @@ export class HuespedesService {
   /**
    * Obtiene o crea huéspedes, retornando sus IDs
    */
-  async processHuespedes(numeroHuespedes: number, huespedesData: CreateHuespedData[]): Promise<Array<{
+  async processHuespedes(numeroHuespedes: number, huespedesData?: CreateHuespedData[]): Promise<Array<{
     id: number;
     esPrincipal: boolean;
-    ciudadResidencia: string;
-    ciudadProcedencia: string;
-    motivo: string;
+    ciudadResidencia: string | null;
+    ciudadProcedencia: string | null;
+    motivo: string | null;
     existia: boolean;
   }>> {
     try {
       // 1. Validar datos de entrada
+      if (!huespedesData || huespedesData.length === 0) {
+        return [];
+      }
+
       this.validateHuespedes(numeroHuespedes, huespedesData);
 
       // 2. Obtener documentos para buscar existentes (solo si tienen documento)
@@ -137,9 +137,9 @@ export class HuespedesService {
       const resultados: Array<{
         id: number;
         esPrincipal: boolean;
-        ciudadResidencia: string;
-        ciudadProcedencia: string;
-        motivo: string;
+        ciudadResidencia: string | null;
+        ciudadProcedencia: string | null;
+        motivo: string | null;
         existia: boolean;
       }> = [];
 
@@ -166,9 +166,9 @@ export class HuespedesService {
           resultados.push({
             id: existeHuesped.id,
             esPrincipal: huespedData.es_principal,
-            ciudadResidencia: principal.ciudad_residencia!,
-            ciudadProcedencia: principal.ciudad_procedencia!,
-            motivo: principal.motivo!,
+            ciudadResidencia: principal?.ciudad_residencia || null,
+            ciudadProcedencia: principal?.ciudad_procedencia || null,
+            motivo: principal?.motivo || null,
             existia: true
           });
         } else {
@@ -187,9 +187,9 @@ export class HuespedesService {
           resultados.push({
             id: nuevoHuesped.id,
             esPrincipal: huespedData.es_principal,
-            ciudadResidencia: principal.ciudad_residencia!,
-            ciudadProcedencia: principal.ciudad_procedencia!,
-            motivo: principal.motivo!,
+            ciudadResidencia: principal?.ciudad_residencia || null,
+            ciudadProcedencia: principal?.ciudad_procedencia || null,
+            motivo: principal?.motivo || null,
             existia: false
           });
 
@@ -275,22 +275,26 @@ export class HuespedesService {
   async linkHuespedesConReserva(idReserva: number, huespedesIds: Array<{
     id: number;
     esPrincipal: boolean;
-    ciudadResidencia: string;
-    ciudadProcedencia: string;
-    motivo: string;
+    ciudadResidencia: string | null;
+    ciudadProcedencia: string | null;
+    motivo: string | null;
 
   }>): Promise<void> {
     try {
-      const principal = huespedesIds.find(h => h.esPrincipal)!;
+      if (!huespedesIds || huespedesIds.length === 0) {
+        return;
+      }
+
+      const principal = huespedesIds.find(h => h.esPrincipal);
 
       const relaciones = huespedesIds.map(huesped => ({
         idReserva,
         idHuesped: huesped.id,
         esPrincipal: huesped.esPrincipal,
 
-        ciudad_residencia: principal.ciudadResidencia,
-        ciudad_procedencia: principal.ciudadProcedencia,
-        motivo: principal.motivo
+        ciudad_residencia: principal?.ciudadResidencia || null,
+        ciudad_procedencia: principal?.ciudadProcedencia || null,
+        motivo: principal?.motivo || null
 
       }));
 
