@@ -2,17 +2,20 @@ import { ReservasRepository } from '../../repositories/reservas.repository';
 import { CreateReservaRequest, Reserva } from '../../interfaces/reserva.interface';
 import { GetReservasService } from './getReservasService';
 import { HuespedesService } from './huespedesService';
+import { BloqueosRepository } from '../../repositories/bloqueos.repository';
 import { PLATAFORMA_DEFAULT, isPlataformaValida } from '../../constants/plataformas';
 
 export class CreateReservaService {
   private reservasRepository: ReservasRepository;
   private getReservasService: GetReservasService;
   private huespedesService: HuespedesService;
+  private bloqueosRepository: BloqueosRepository;
 
   constructor() {
     this.reservasRepository = new ReservasRepository();
     this.getReservasService = new GetReservasService();
     this.huespedesService = new HuespedesService();
+    this.bloqueosRepository = new BloqueosRepository();
   }
 
   /**
@@ -91,9 +94,16 @@ export class CreateReservaService {
    * Valida que las fechas seleccionadas estén disponibles
    */
   private async checkDisponibilidad(idInmueble: number, fechaInicio: string, fechaFin: string): Promise<void> {
-    const count = await this.reservasRepository.countOverlappingReservations(idInmueble, fechaInicio, fechaFin);
-    if (count > 0) {
+    // 1. Verificar traslapes con otras reservas
+    const countReservas = await this.reservasRepository.countOverlappingReservations(idInmueble, fechaInicio, fechaFin);
+    if (countReservas > 0) {
       throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+    }
+
+    // 2. Verificar traslapes con bloqueo de calendario
+    const countBloqueos = await this.bloqueosRepository.countOverlappingBlocks(idInmueble, fechaInicio, fechaFin);
+    if (countBloqueos > 0) {
+      throw new Error('Las fechas seleccionadas están bloqueadas en el calendario');
     }
   }
 
