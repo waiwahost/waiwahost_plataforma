@@ -29,7 +29,8 @@ const base64Decode = (str: string): string => {
 export const externalApiServerFetch = async (
   endpoint: string,
   options: RequestInit = {},
-  token?: string
+  token?: string,
+  asBuffer: boolean = false
 ): Promise<any> => {
   const url = `${API_URL}${endpoint}`;
 
@@ -51,15 +52,23 @@ export const externalApiServerFetch = async (
   }
 
   try {
+    console.log(`[externalApiServerFetch] Fetching: ${url}`);
     const response = await fetch(url, {
       ...options,
       headers,
     });
 
+    console.log(`[externalApiServerFetch] Response status: ${response.status}`);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Error API Externa: ${response.status} - ${errorText}`);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    if (asBuffer) {
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     }
 
     const data = await response.json();

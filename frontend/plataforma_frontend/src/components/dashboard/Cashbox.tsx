@@ -3,7 +3,9 @@ import DateSelector from './DateSelector';
 import DailySummary from './DailySummary';
 import MovimientosTable from './MovimientosTable';
 import CreateMovimientoButton from './CreateMovimientoButton';
+import ExportExcelButton from './ExportExcelButton';
 import CreateMovimientoModal from './CreateMovimientoModal';
+import ExportMovimientosModal from './ExportMovimientosModal';
 import MovimientoDetailModal from './MovimientoDetailModal';
 import ConfirmModal from './ConfirmModal';
 import SuccessModal from './SuccessModal';
@@ -30,6 +32,7 @@ const Cashbox: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Selected items
   const [selectedMovimiento, setSelectedMovimiento] = useState<IMovimiento | null>(null);
@@ -130,7 +133,10 @@ const Cashbox: React.FC = () => {
           <h1 className="text-2xl font-bold text-tourism-navy">Caja Diaria</h1>
           <p className="text-gray-600">Gestión de movimientos de ingresos y egresos</p>
         </div>
-        <CreateMovimientoButton onClick={handleCreateMovimiento} />
+        <div className="flex items-center gap-3">
+          <ExportExcelButton onClick={() => setShowExportModal(true)} />
+          <CreateMovimientoButton onClick={handleCreateMovimiento} />
+        </div>
       </div>
 
       {/* Date Selector */}
@@ -189,6 +195,12 @@ const Cashbox: React.FC = () => {
         }}
         onSuccess={handleModalSuccess}
         movimiento={selectedMovimiento}
+        selectedDate={selectedDate}
+      />
+
+      <ExportMovimientosModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
         selectedDate={selectedDate}
       />
 
