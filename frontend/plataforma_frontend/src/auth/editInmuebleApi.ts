@@ -12,7 +12,7 @@ export async function editInmuebleApi(inmueble: any): Promise<EditInmuebleRespon
   try {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const response = await fetch('/api/inmuebles/editInmueble', {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

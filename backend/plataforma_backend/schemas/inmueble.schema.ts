@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const InmueblesQuerySchema = z.object({
-  id_empresa: z.string().optional().transform((val) => (val ? Number(val) : undefined)),
-  id: z.string().optional().transform((val) => (val ? Number(val) : undefined)),
+  id_empresa: z.string().optional().transform((val: string | undefined) => (val ? Number(val) : undefined)),
+  id: z.string().optional().transform((val: string | undefined) => (val ? Number(val) : undefined)),
 }).strict();
 
 export const CreateInmuebleSchema = z.object({
@@ -37,7 +37,7 @@ export const CreateInmuebleSchema = z.object({
     required_error: 'La acomodación es requerida'
   }),
   especificacion_acomodacion: z.string().optional()
-}).strict().superRefine((data, ctx) => { 
+}).strict().superRefine((data: any, ctx: z.RefinementCtx) => {
   // Validar Especificacion de Inmueble, si no es un Apartamento
   const tieneEdificioYApto = data.edificio && data.apartamento;
   const tieneEspecificacion = data.especificacion_acomodacion;
@@ -59,8 +59,8 @@ export const EditInmuebleSchema = z.object({
   direccion: z.string().min(1, 'La dirección es requerida').optional(),
   ciudad: z.string().optional(),
   capacidad: z.number().min(1, 'La capacidad debe ser mayor a 0').optional(),
-  //id_propietario: z.number().min(1, 'El ID del propietario es requerido').optional(),
-  //id_empresa: z.number().optional(),
+  id_propietario: z.number().min(1, 'El ID del propietario es requerido').optional(),
+  id_empresa: z.number().optional(),
   estado: z.enum(['activo', 'inactivo']).optional(),
   edificio: z.string().optional(),
   apartamento: z.string().optional(),
@@ -84,7 +84,7 @@ export const EditInmuebleSchema = z.object({
     'Otro'
   ]).optional(),
   especificacion_acomodacion: z.string().optional()
-}).strict();
+});
 
 export const EditInmuebleQuerySchema = z.object({
   id: z.number().min(1, 'El ID del inmueble es requerido'),
