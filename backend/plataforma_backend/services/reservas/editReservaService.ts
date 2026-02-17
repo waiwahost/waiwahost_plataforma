@@ -38,6 +38,22 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
   const reservaOriginal = await reservasRepository.getReservaById(id);
   if (!reservaOriginal) throw new Error('Reserva no encontrada');
 
+  // Si se actualizan fechas, verificar disponibilidad
+  if (fieldsToUpdate.fecha_inicio || fieldsToUpdate.fecha_fin) {
+    const nuevaFechaInicio = fieldsToUpdate.fecha_inicio || reservaOriginal.fecha_inicio;
+    const nuevaFechaFin = fieldsToUpdate.fecha_fin || reservaOriginal.fecha_fin;
+
+    const count = await reservasRepository.countOverlappingReservations(
+      reservaOriginal.id_inmueble,
+      nuevaFechaInicio,
+      nuevaFechaFin,
+      id // Excluir esta misma reserva
+    );
+
+    if (count > 0) {
+      throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+    }
+  }
 
   // Actualizar la reserva principal
   const updated = await reservasRepository.updateReserva(id, fieldsToUpdate);

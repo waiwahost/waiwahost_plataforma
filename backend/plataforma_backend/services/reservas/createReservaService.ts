@@ -88,10 +88,23 @@ export class CreateReservaService {
   }
 
   /**
+   * Valida que las fechas seleccionadas estén disponibles
+   */
+  private async checkDisponibilidad(idInmueble: number, fechaInicio: string, fechaFin: string): Promise<void> {
+    const count = await this.reservasRepository.countOverlappingReservations(idInmueble, fechaInicio, fechaFin);
+    if (count > 0) {
+      throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+    }
+  }
+
+  /**
    * Servicio principal para crear una reserva con múltiples huéspedes
    */
   async execute(requestData: CreateReservaRequest): Promise<Reserva> {
     try {
+      // 0. Verificar disponibilidad
+      await this.checkDisponibilidad(requestData.id_inmueble, requestData.fecha_inicio, requestData.fecha_fin);
+
       // 1. Validaciones básicas de reserva
       this.validateDates(requestData.fecha_inicio, requestData.fecha_fin);
       this.validatePrecio(requestData.precio_total);
@@ -153,19 +166,19 @@ export class CreateReservaService {
       return reservaCreada;
     } catch (error) {
       console.error('Error en CreateReservaService:', error);
-      
+
       // Re-lanzar errores de validación con el mensaje original
       if (error instanceof Error && (
-          error.message.includes('fecha') || 
-          error.message.includes('email') ||
-          error.message.includes('precio') ||
-          error.message.includes('huéspedes') ||
-          error.message.includes('principal') ||
-          error.message.includes('documento') ||
-          error.message.includes('nacimiento'))) {
+        error.message.includes('fecha') ||
+        error.message.includes('email') ||
+        error.message.includes('precio') ||
+        error.message.includes('huéspedes') ||
+        error.message.includes('principal') ||
+        error.message.includes('documento') ||
+        error.message.includes('nacimiento'))) {
         throw error;
       }
-      
+
       // Para otros errores, usar mensaje genérico
       throw new Error('Error interno del servidor al crear la reserva');
     }

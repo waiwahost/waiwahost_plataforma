@@ -155,6 +155,40 @@ export class ReservasRepository {
   }
 
   /**
+   * Cuenta cuántas reservas activas existen que se traslapen con el rango dado para un inmueble
+   * Lógica de traslape: (fecha_inicio < nueva_fecha_fin AND fecha_fin > nueva_fecha_inicio)
+   */
+  async countOverlappingReservations(
+    idInmueble: number,
+    fechaInicio: string,
+    fechaFin: string,
+    excludeReservaId?: number
+  ): Promise<number> {
+    try {
+      let query = `
+        SELECT COUNT(*) as total 
+        FROM reservas 
+        WHERE id_inmueble = $1 
+        AND estado != 'cancelada'
+        AND (fecha_inicio < $3 AND fecha_fin > $2)
+      `;
+
+      const params: any[] = [idInmueble, fechaInicio, fechaFin];
+
+      if (excludeReservaId) {
+        query += ` AND id_reserva != $4`;
+        params.push(excludeReservaId);
+      }
+
+      const result = await dbClient.query(query, params);
+      return parseInt(result.rows[0].total);
+    } catch (error) {
+      console.error('Error al contar reservas traslapadas:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Genera el siguiente código de reserva
    */
   async generateNextCodigoReserva(): Promise<string> {
