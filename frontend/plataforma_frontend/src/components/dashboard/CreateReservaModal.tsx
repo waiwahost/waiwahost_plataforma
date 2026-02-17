@@ -17,6 +17,7 @@ interface CreateReservaModalProps {
   onCreate: (data: IReservaForm) => void;
   initialData?: IReservaForm;
   isEdit?: boolean;
+  externalError?: string | null;
 }
 
 const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
@@ -24,7 +25,8 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
   onClose,
   onCreate,
   initialData,
-  isEdit = true
+  isEdit = true,
+  externalError
 }) => {
   const [formData, setFormData] = useState<IReservaForm>({
     id_inmueble: 0,
@@ -712,35 +714,44 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
               })}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de Entrada *
-              </label>
-              <input
-                type="date"
-                value={formData.fecha_inicio}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_inicio', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_inicio ? 'border-red-300' : 'border-gray-300'
-                  }`}
-              />
-              {errors.fecha_inicio && (
-                <p className="text-red-500 text-xs mt-1">{errors.fecha_inicio}</p>
-              )}
-            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Entrada *
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_inicio}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_inicio', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_inicio || externalError ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                />
+                {errors.fecha_inicio && (
+                  <p className="text-red-500 text-xs mt-1">{errors.fecha_inicio}</p>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de Salida *
-              </label>
-              <input
-                type="date"
-                value={formData.fecha_fin}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_fin', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_fin ? 'border-red-300' : 'border-gray-300'
-                  }`}
-              />
-              {errors.fecha_fin && (
-                <p className="text-red-500 text-xs mt-1">{errors.fecha_fin}</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Salida *
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_fin}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('fecha_fin', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${errors.fecha_fin || externalError ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                />
+                {errors.fecha_fin && (
+                  <p className="text-red-500 text-xs mt-1">{errors.fecha_fin}</p>
+                )}
+              </div>
+
+              {externalError && (
+                <div className="col-span-2 bg-red-50 border border-red-200 rounded-md p-3 flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-red-700 text-sm font-medium">{externalError}</p>
+                </div>
               )}
             </div>
 

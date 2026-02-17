@@ -155,6 +155,7 @@ const Availability: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedReservaDetail, setSelectedReservaDetail] = useState<IReservaTableData | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [reservaError, setReservaError] = useState<string | null>(null);
 
   // Calcular fechas a mostrar
   const fechas = useMemo(() => {
@@ -243,9 +244,9 @@ const Availability: React.FC = () => {
 
   const handleCreateReserva = async (data: IReservaForm) => {
     try {
+      setReservaError(null);
       if (isEditMode && selectedReservaDetail) {
         // Transformar IReservaForm a lo que espera editReservaApi (incluyendo ID)
-        // Asegurar que huespedes tenga formato correcto si es necesario
         const dataToUpdate = {
           ...data,
           id: selectedReservaDetail.id,
@@ -261,7 +262,21 @@ const Availability: React.FC = () => {
       fetchDisponibilidad(); // Refrescar grid
     } catch (error) {
       console.error("Error al guardar reserva:", error);
-      alert("Error al guardar la reserva");
+      let msg = error instanceof Error ? error.message : 'Error al guardar reserva';
+
+      // Intentar farmatear si es JSON
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.message) msg = parsed.message;
+      } catch (e) {
+        // No es JSON
+      }
+
+      if (msg.includes('ocupadas') || msg.includes('traslap') || msg.includes('disponibilidad')) {
+        setReservaError(msg);
+      } else {
+        alert(msg);
+      }
     }
   };
 
@@ -461,8 +476,12 @@ const Availability: React.FC = () => {
       {/* Modales */}
       <CreateReservaModal
         open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setReservaError(null);
+        }}
         onCreate={handleCreateReserva}
+        externalError={reservaError}
         initialData={isEditMode && selectedReservaDetail ? {
           id_inmueble: parseInt((selectedReservaDetail as any).id_inmueble) || 0,
           fecha_inicio: selectedReservaDetail.fecha_inicio,

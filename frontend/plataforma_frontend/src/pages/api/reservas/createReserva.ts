@@ -204,7 +204,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      return res.status(response.status).json({
+        success: false,
+        data: null,
+        message: errorData.message || `HTTP error! status: ${response.status}`,
+        errors: errorData.errors
+      });
     }
 
     const externalData: ExternalApiResponse = await response.json();
