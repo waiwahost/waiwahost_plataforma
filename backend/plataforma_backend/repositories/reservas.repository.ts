@@ -506,14 +506,21 @@ export class ReservasRepository {
   /**
    * Relaciona un huésped con una reserva
    */
-  async linkHuespedToReserva(idReserva: number, idHuesped: number, esPrincipal: boolean = true) {
+  async linkHuespedToReserva(
+    idReserva: number,
+    idHuesped: number,
+    esPrincipal: boolean = true,
+    ciudadResidencia: string | null = null,
+    ciudadProcedencia: string | null = null,
+    motivo: string | null = null
+  ) {
     try {
       const query = `
-        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal)
-        VALUES ($1, $2, $3)
+        INSERT INTO huespedes_reservas (id_reserva, id_huesped, es_principal, ciudad_residencia, ciudad_procedencia, motivo)
+        VALUES ($1, $2, $3, $4, $5, $6)
       `;
 
-      await dbClient.query(query, [idReserva, idHuesped, esPrincipal]);
+      await dbClient.query(query, [idReserva, idHuesped, esPrincipal, ciudadResidencia, ciudadProcedencia, motivo]);
     } catch (error) {
       console.error('Error al relacionar huésped con reserva:', error);
       throw error;

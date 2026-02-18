@@ -253,13 +253,25 @@ export class HuespedesService {
             es_principal: huespedData.es_principal
           });
         } else {
-          // Crear nuevo y linkear
-          const [nuevoHuesped] = await this.processHuespedes(1, [huespedData]);
+          // Crear nuevo huésped directamente sin pasar por processHuespedes
+          // (processHuespedes valida que haya un principal en el array, lo que falla para acompañantes)
+          const nuevoHuesped = await this.reservasRepository.createHuespedCompleto({
+            nombre: huespedData.nombre,
+            apellido: huespedData.apellido,
+            email: huespedData.email || null,
+            telefono: huespedData.telefono || null,
+            documento_tipo: huespedData.documento_tipo || null,
+            documento_numero: huespedData.documento_numero || null,
+            fecha_nacimiento: huespedData.fecha_nacimiento || null
+          });
 
           await this.reservasRepository.linkHuespedToReserva(
             idReserva,
             nuevoHuesped.id,
-            nuevoHuesped.esPrincipal
+            huespedData.es_principal,
+            huespedData.ciudad_residencia || null,
+            huespedData.ciudad_procedencia || null,
+            huespedData.motivo || null
           );
         }
       }
