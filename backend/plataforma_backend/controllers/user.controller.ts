@@ -61,9 +61,9 @@ export const userController = {
     return reply.send(successResponse(data));
   },
   login: async (req: FastifyRequest, reply: FastifyReply) => {
-    const { email, password } = req.body as { email: string; password: string };
-    if (!email || !password) return reply.status(400).send(errorResponse({ message: 'Email y password requeridos', code: 400 }));
-    const { user, error } = await userService.login(email, password);
+    const { identifier, password } = req.body as { identifier: string; password: string };
+    if (!identifier || !password) return reply.status(400).send(errorResponse({ message: 'Usuario/email y contraseña requeridos', code: 400 }));
+    const { user, error } = await userService.login(identifier, password);
     if (error) return reply.status(error.status || 401).send(errorResponse({ message: error.message, code: error.status || 401, error }));
     try {
       const permisosQuery = `SELECT p.key FROM roles_permissions rp JOIN permissions p ON rp.id_permission = p.id_permission WHERE rp.id_rol = $1`;

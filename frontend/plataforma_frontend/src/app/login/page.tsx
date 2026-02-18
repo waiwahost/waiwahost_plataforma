@@ -13,7 +13,7 @@ import { loginUser } from '../../auth/loginApi';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { token, user } = await loginUser(email, password);
+      const { token, user } = await loginUser(identifier, password);
       login(token, user);
       // No llamar setLoading(false) aquí, el spinner se mantiene hasta que AuthProvider navegue
     } catch (e: unknown) {
@@ -97,18 +97,18 @@ export default function LoginPage() {
               </div>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-tourism-navy font-medium">
-                    Correo Electrónico
+                  <Label htmlFor="identifier" className="text-tourism-navy font-medium">
+                    Correo o Usuario
                   </Label>
                   <div className="relative">
                     <svg className="absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4zm0 0l8 8 8-8" /></svg>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="tu@empresa.com"
+                      id="identifier"
+                      type="text"
+                      placeholder="tu@empresa.com o tu_usuario"
                       className="pl-10 h-12 border-gray-200 focus:border-tourism-teal focus:ring-tourism-teal"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      value={identifier}
+                      onChange={e => setIdentifier(e.target.value)}
                       required
                     />
                   </div>

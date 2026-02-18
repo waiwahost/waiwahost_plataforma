@@ -23,8 +23,8 @@ export class UserService {
   async getById(id: string) {
     return this.repo.getById(id);
   }
-  async login(email: string, password: string) {
-    const { data: user, error } = await this.repo.findByEmail(email);
+  async login(identifier: string, password: string) {
+    const { data: user, error } = await this.repo.findByEmailOrUsername(identifier);
     if (error || !user) return { error: { status: 401, message: 'Credenciales inválidas' } };
     // Compara el password hasheado
     const match = await bcrypt.compare(password, user.password_hash);
