@@ -82,6 +82,22 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
     );
   };
 
+  // Valores placeholder que el backend inserta cuando no hay datos reales
+  const PLACEHOLDER_VALUES = [
+    'sin nombre', 'sin apellido', 'sin-email@ejemplo.com',
+    'sin teléfono', 'sin telefono', 'sin documento', 'sin documento_numero'
+  ];
+
+  // Al hacer focus en un campo, si tiene un valor placeholder lo borra automáticamente
+  const clearIfPlaceholder = (index: number, field: keyof IHuespedForm) => {
+    if (!isEdit) return;
+    const huesped = formData.huespedes[index];
+    const val = huesped[field] as string | undefined;
+    if (val && PLACEHOLDER_VALUES.includes(val.trim().toLowerCase())) {
+      handleHuespedChange(index, field, '');
+    }
+  };
+
   const clearHuespedFields = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -174,57 +190,103 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
           return iso.split('T')[0];
         };
 
-        setFormData({
-          ...initialData,
-          estado: initialData.estado, // Asegura que el estado sea exactamente el recibido
-          fecha_inicio: toDateInput(initialData.fecha_inicio),
-          fecha_fin: toDateInput(initialData.fecha_fin),
-          huespedes: initialData.huespedes.map((h: any) => ({
-            ...h,
-            id: h.id, // Asegurar que el ID se conserve para la edición
-            fecha_nacimiento: toDateInput(h.fecha_nacimiento),
-            motivo: h.motivo,
-            pais_residencia: '',
-            ciudad_residencia: h.ciudad_residencia,
-            pais_procedencia: '',
-            ciudad_procedencia: h.ciudad_procedencia,
-          }))
+        const targetCount = initialData.numero_huespedes || 1;
+
+        // Mapear los huéspedes existentes
+        const existingMapped = (initialData.huespedes || []).map((h: any) => ({
+          ...h,
+          id: h.id,
+          fecha_nacimiento: toDateInput(h.fecha_nacimiento),
+          motivo: h.motivo || '',
+          pais_residencia: '',
+          ciudad_residencia: h.ciudad_residencia || '',
+          pais_procedencia: '',
+          ciudad_procedencia: h.ciudad_procedencia || '',
+        }));
+
+        // Completar con campos vacíos hasta llegar a targetCount
+        const emptyGuest = (esPrincipal: boolean) => ({
+          nombre: '',
+          apellido: '',
+          email: '',
+          telefono: '',
+          documento_tipo: 'cedula' as const,
+          documento_numero: '',
+          fecha_nacimiento: '',
+          es_principal: esPrincipal,
+          motivo: '',
+          ciudad_residencia: '',
+          ciudad_procedencia: '',
         });
 
-        // Cargar ciudades para huéspedes existentes y resolver países si faltan
+        const mappedHuespedes = [...existingMapped];
+        while (mappedHuespedes.length < targetCount) {
+          mappedHuespedes.push(emptyGuest(mappedHuespedes.length === 0));
+        }
+
+        setFormData({
+          ...initialData,
+          estado: initialData.estado,
+          fecha_inicio: toDateInput(initialData.fecha_inicio),
+          fecha_fin: toDateInput(initialData.fecha_fin),
+          huespedes: mappedHuespedes,
+          numero_huespedes: mappedHuespedes.length,
+        });
+
+        // Cargar ciudades para TODOS los huéspedes (principal y acompañantes)
         const resolveGuestLocations = async () => {
           try {
             const allCiudades = await getCiudades();
 
+            // 1. Calcular los países de todos los huéspedes (para cargar sus ciudades)
+            const updatedHuespedes = (mappedHuespedes as IHuespedForm[]).map((h) => {
+              const updatedH = { ...h };
+
+              // Resolver pais_residencia desde ciudad_residencia si falta
+              if (!updatedH.pais_residencia && updatedH.ciudad_residencia) {
+                const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_residencia);
+                if (cityMatch) {
+                  updatedH.pais_residencia = cityMatch.id_pais.toString();
+                }
+              }
+
+              // Resolver pais_procedencia desde ciudad_procedencia si falta
+              if (!updatedH.pais_procedencia && updatedH.ciudad_procedencia) {
+                const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_procedencia);
+                if (cityMatch) {
+                  updatedH.pais_procedencia = cityMatch.id_pais.toString();
+                }
+              }
+
+              return updatedH;
+            });
+
+            // 2. Recopilar todos los IDs de países únicos de todos los huéspedes
+            const paisIds = new Set<number>();
+            updatedHuespedes.forEach((h) => {
+              if (h.pais_residencia) paisIds.add(parseInt(h.pais_residencia));
+              if (h.pais_procedencia) paisIds.add(parseInt(h.pais_procedencia));
+            });
+
+            // 3. Cargar ciudades de todos los países en paralelo (con await)
+            await Promise.all(
+              Array.from(paisIds).map(async (paisId) => {
+                if (!paisId || ciudadesByPais[paisId]) return;
+                try {
+                  const data = await getCiudadesByPais(paisId);
+                  setCiudadesByPais(prev => ({ ...prev, [paisId]: data }));
+                } catch (err) {
+                  console.error(`❌ Error cargando ciudades para país ${paisId}:`, err);
+                }
+              })
+            );
+
+            // 4. Actualizar el estado con los países resueltos
             setFormData((prev: IReservaForm) => ({
               ...prev,
-              huespedes: prev.huespedes.map((h: IHuespedForm) => {
-                const updatedH = { ...h };
-
-                // Si falta el país pero tenemos ciudad, intentamos resolverlo
-                if (!updatedH.pais_residencia && updatedH.ciudad_residencia) {
-                  const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_residencia);
-                  if (cityMatch) {
-                    updatedH.pais_residencia = cityMatch.id_pais.toString();
-                    fetchCiudades(cityMatch.id_pais);
-                  }
-                } else if (updatedH.pais_residencia) {
-                  fetchCiudades(parseInt(updatedH.pais_residencia));
-                }
-
-                if (!updatedH.pais_procedencia && updatedH.ciudad_procedencia) {
-                  const cityMatch = allCiudades.find((c: ICiudad) => c.nombre === updatedH.ciudad_procedencia);
-                  if (cityMatch) {
-                    updatedH.pais_procedencia = cityMatch.id_pais.toString();
-                    fetchCiudades(cityMatch.id_pais);
-                  }
-                } else if (updatedH.pais_procedencia) {
-                  fetchCiudades(parseInt(updatedH.pais_procedencia));
-                }
-
-                return updatedH;
-              })
+              huespedes: updatedHuespedes,
             }));
+
           } catch (error) {
             console.error('❌ Error resolviendo ubicaciones de huéspedes:', error);
           }
@@ -345,10 +407,9 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
     e.preventDefault();
     if (validateForm()) {
       if (isEdit) {
-        // En edición: filtrar huéspedes sin datos reales y limpiar campos opcionales vacíos
-        // para que el backend no los valide (ej: motivo: '' falla el enum del schema)
+        // En edición: enviar TODOS los huéspedes (con sus IDs y es_principal intactos)
+        // Solo limpiar campos opcionales vacíos para que el backend no falle por enums vacíos
         const huespedesToSend = formData.huespedes
-          .filter(hasHuespedData)
           .map(h => ({
             ...h,
             motivo: h.motivo && h.motivo.trim() ? h.motivo : undefined,
@@ -359,9 +420,30 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
             ciudad_residencia: h.ciudad_residencia && h.ciudad_residencia.trim() ? h.ciudad_residencia : undefined,
             ciudad_procedencia: h.ciudad_procedencia && h.ciudad_procedencia.trim() ? h.ciudad_procedencia : undefined,
           }));
-        onCreate({ ...formData, huespedes: huespedesToSend });
+
+        // Si ningún huésped tiene datos reales, omitir el campo para evitar error del backend
+        const algunoTieneDatos = formData.huespedes.some(hasHuespedData);
+        const { huespedes: _omit, ...formDataSinHuespedes } = formData;
+        const payload = algunoTieneDatos
+          ? { ...formData, huespedes: huespedesToSend }
+          : formDataSinHuespedes;
+
+        onCreate(payload as any);
       } else {
-        onCreate(formData);
+        // En creación: también filtrar huéspedes vacíos y limpiar campos opcionales vacíos
+        const huespedesToSend = formData.huespedes
+          .filter(hasHuespedData)
+          .map((h: IHuespedForm) => ({
+            ...h,
+            motivo: h.motivo && h.motivo.trim() ? h.motivo : undefined,
+            email: h.email && h.email.trim() ? h.email : undefined,
+            telefono: h.telefono && h.telefono.trim() ? h.telefono : undefined,
+            fecha_nacimiento: h.fecha_nacimiento && h.fecha_nacimiento.trim() ? h.fecha_nacimiento : undefined,
+            documento_numero: h.documento_numero && h.documento_numero.trim() ? h.documento_numero : undefined,
+            ciudad_residencia: h.ciudad_residencia && h.ciudad_residencia.trim() ? h.ciudad_residencia : undefined,
+            ciudad_procedencia: h.ciudad_procedencia && h.ciudad_procedencia.trim() ? h.ciudad_procedencia : undefined,
+          }));
+        onCreate({ ...formData, huespedes: huespedesToSend });
       }
     }
   };
@@ -472,6 +554,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
     }));
   };
 
+  console.log(formData);
 
 
   if (!open) return null;
@@ -606,6 +689,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="text"
                               value={huesped.nombre}
                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'nombre', e.target.value)}
+                              onFocus={() => clearIfPlaceholder(index, 'nombre')}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="Nombre"
                             />
@@ -619,6 +703,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="text"
                               value={huesped.apellido}
                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'apellido', e.target.value)}
+                              onFocus={() => clearIfPlaceholder(index, 'apellido')}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="Apellido"
                             />
@@ -632,6 +717,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="email"
                               value={huesped.email}
                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'email', e.target.value)}
+                              onFocus={() => clearIfPlaceholder(index, 'email')}
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                               placeholder="correo@ejemplo.com"
                             />
@@ -642,6 +728,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               label="Teléfono"
                               value={huesped.telefono || ''}
                               onChange={(value) => handleHuespedChange(index, 'telefono', value)}
+                              onFocus={() => clearIfPlaceholder(index, 'telefono')}
                               placeholder="300 123 4567"
                             />
                           </div>
@@ -669,7 +756,7 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
                               type="text"
                               value={huesped.documento_numero}
                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleHuespedChange(index, 'documento_numero', e.target.value)}
-                              //disabled={isEdit && !!huesped.documento_numero} // Deshabilitar en edición si ya tiene valor
+                              onFocus={() => clearIfPlaceholder(index, 'documento_numero')}
                               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal
                                 }`}
                               placeholder="Número de documento"

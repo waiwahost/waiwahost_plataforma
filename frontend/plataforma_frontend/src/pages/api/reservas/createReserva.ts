@@ -55,46 +55,13 @@ const validateReservaData = (data: any): { isValid: boolean; errors: string[] } 
     errors.push('El ID del inmueble es requerido y debe ser un número');
   }
 
-  // Validar huéspedes
-  if (!data.huespedes || !Array.isArray(data.huespedes) || data.huespedes.length === 0) {
-    errors.push('Debe incluir al menos un huésped');
-  } else {
+  // Validar huéspedes solo si se proporcionaron
+  if (data.huespedes && Array.isArray(data.huespedes) && data.huespedes.length > 0) {
     // Validar que exista un huésped principal
     const huespedesPrincipales = data.huespedes.filter((h: any) => h.es_principal);
     if (huespedesPrincipales.length !== 1) {
       errors.push('Debe haber exactamente un huésped principal');
     }
-
-    // Validar cada huésped
-    //data.huespedes.forEach((huesped: any, index: number) => {
-    //if (!huesped.nombre || typeof huesped.nombre !== 'string' || huesped.nombre.trim().length < 2) {
-    //  errors.push(`El nombre del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
-    //}
-
-    //if (!huesped.apellido || typeof huesped.apellido !== 'string' || huesped.apellido.trim().length < 2) {
-    //  errors.push(`El apellido del huésped ${index + 1} es requerido y debe tener al menos 2 caracteres`);
-    //}
-
-    //if (!huesped.email || typeof huesped.email !== 'string' || !/\S+@\S+\.\S+/.test(huesped.email)) {
-    //  errors.push(`El email del huésped ${index + 1} es requerido y debe ser válido`);
-    //}
-
-    //if (!huesped.telefono || typeof huesped.telefono !== 'string' || huesped.telefono.trim().length < 10) {
-    //  errors.push(`El teléfono del huésped ${index + 1} es requerido y debe tener al menos 10 caracteres`);
-    //}
-
-    //if (!huesped.documento_numero || typeof huesped.documento_numero !== 'string' || huesped.documento_numero.trim().length < 5) {
-    //  errors.push(`El documento del huésped ${index + 1} es requerido y debe tener al menos 5 caracteres`);
-    //}
-
-    //if (!huesped.documento_tipo || !['cedula', 'pasaporte', 'tarjeta_identidad'].includes(huesped.documento_tipo)) {
-    //  errors.push(`El tipo de documento del huésped ${index + 1} es requerido y debe ser válido`);
-    //}
-
-    //if (!huesped.fecha_nacimiento || typeof huesped.fecha_nacimiento !== 'string') {
-    //  errors.push(`La fecha de nacimiento del huésped ${index + 1} es requerida`);
-    //}
-    //});
   }
 
   if (!data.fecha_inicio || typeof data.fecha_inicio !== 'string') {
@@ -113,8 +80,8 @@ const validateReservaData = (data: any): { isValid: boolean; errors: string[] } 
     errors.push('El número de huéspedes es requerido y debe ser mayor a 0');
   }
 
-  // Validar que el número de huéspedes coincida con el array
-  if (data.huespedes && data.numero_huespedes !== data.huespedes.length) {
+  // Validar que el número de huéspedes coincida con el array (solo si hay huéspedes)
+  if (data.huespedes && data.huespedes.length > 0 && data.numero_huespedes !== data.huespedes.length) {
     errors.push('El número de huéspedes no coincide con la cantidad de huéspedes proporcionados');
   }
 
