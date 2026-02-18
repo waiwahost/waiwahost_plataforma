@@ -32,11 +32,9 @@ export class GetReservasService {
       fecha_nacimiento: baseData.fecha_nacimiento || '1990-01-01',
       es_principal: isPrincipal,
       id_reserva: baseData.id_reserva,
-      ...(isPrincipal && {
-       ciudad_residencia: baseData.ciudad_residencia,
+      ciudad_residencia: baseData.ciudad_residencia,
       ciudad_procedencia: baseData.ciudad_procedencia,
-      motivo: baseData.motivo
-    })
+      motivo: baseData.motivo,
     };
   }
 
@@ -45,7 +43,7 @@ export class GetReservasService {
    */
   private getHuespedPrincipal(huespedes: Huesped[]): HuespedPrincipal {
     const principal = huespedes.find(h => h.es_principal) || huespedes[0];
-    
+
     if (!principal) {
       // Retorna datos mockeados si no hay huéspedes
       return {
@@ -82,17 +80,17 @@ export class GetReservasService {
     try {
       // Obtener reservas básicas
       const reservasBasicas = await this.reservasRepository.getReservas(filters);
-      
+
       if (reservasBasicas.length === 0) {
         return [];
       }
 
       // Obtener IDs de reservas para buscar huéspedes
       const reservaIds = reservasBasicas.map(r => r.id);
-      
+
       // Obtener todos los huéspedes de las reservas
       const huespedes = await this.reservasRepository.getHuespedesByReservaIds(reservaIds);
-      
+
       // Agrupar huéspedes por reserva
       const huespedesPorReserva = huespedes.reduce((acc, huesped) => {
         if (!acc[huesped.id_reserva]) {
@@ -105,7 +103,7 @@ export class GetReservasService {
       // Construir la respuesta final
       const reservasCompletas: Reserva[] = reservasBasicas.map(reserva => {
         const huespedesReserva = huespedesPorReserva[reserva.id] || [];
-        
+
         return {
           id: reserva.id,
           codigo_reserva: reserva.codigo_reserva || this.generateCodigoReserva(reserva.id, reserva.fecha_creacion),

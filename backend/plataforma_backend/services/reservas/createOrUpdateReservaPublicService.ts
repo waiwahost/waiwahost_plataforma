@@ -88,16 +88,30 @@ export const createOrUpdateReservaPublicService = async (data: any) => {
         const { HuespedesService } = await import('./huespedesService');
         const huespedesService = new HuespedesService();
 
+        // Valores placeholder que el backend pone cuando no hay dato real — no guardarlos
+        const PLACEHOLDER_VALUES = new Set([
+            'Sin nombre', 'Sin apellido', 'sin-email@ejemplo.com',
+            'Sin teléfono', 'Sin documento', '1990-01-01'
+        ]);
+        const cleanField = (val: any) => {
+            const str = val ? String(val).trim() : undefined;
+            return str && !PLACEHOLDER_VALUES.has(str) ? str : undefined;
+        };
+
         // Mapear y limpiar los datos
         const huespedesSanitized = data.huespedes.map((h: any) => ({
             ...h,
-            nombre: h.nombre ? String(h.nombre).trim() : undefined,
-            apellido: h.apellido ? String(h.apellido).trim() : undefined,
-            email: h.email ? String(h.email).trim() : undefined,
-            telefono: h.telefono ? String(h.telefono).trim() : undefined,
-            documento_numero: h.documento_numero ? String(h.documento_numero).trim() : undefined,
+            nombre: cleanField(h.nombre),
+            apellido: cleanField(h.apellido),
+            email: cleanField(h.email),
+            telefono: cleanField(h.telefono),
+            documento_numero: cleanField(h.documento_numero),
             documento_tipo: h.documento_tipo ? String(h.documento_tipo).trim() : undefined,
-            fecha_nacimiento: h.fecha_nacimiento ? String(h.fecha_nacimiento).trim() : undefined,
+            fecha_nacimiento: cleanField(h.fecha_nacimiento),
+            ciudad_residencia: h.ciudad_residencia ? String(h.ciudad_residencia).trim() : undefined,
+            ciudad_procedencia: h.ciudad_procedencia ? String(h.ciudad_procedencia).trim() : undefined,
+            // El formulario checkin usa motivo_viaje; el backend espera motivo
+            motivo: h.motivo || h.motivo_viaje || undefined,
         }));
 
         await huespedesService.updateHuespedesForReserva(reservaId, huespedesSanitized);

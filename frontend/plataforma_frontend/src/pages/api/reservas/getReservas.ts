@@ -13,6 +13,9 @@ interface ExternalReservaResponse {
     apellido: string;
     email: string;
     telefono: string;
+    motivo: string;
+    ciudad_residencia: string;
+    ciudad_procedencia: string;
   };
   fecha_inicio: string;
   fecha_fin: string;
@@ -28,6 +31,9 @@ interface ExternalReservaResponse {
     fecha_nacimiento: string;
     es_principal: boolean;
     id_reserva: number;
+    motivo: string;
+    ciudad_residencia: string;
+    ciudad_procedencia: string;
   }>;
   precio_total: number; // Mantener por compatibilidad hacia atrás
   total_reserva: number; // Monto total de la reserva
@@ -112,7 +118,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Extraer parámetros de query de la request
     const { estado, id_empresa, id_inmueble, fecha_inicio, fecha_fin } = req.query;
-    
+
     // Construir parámetros de query para la API externa
     const queryParams: Record<string, string> = {};
 
@@ -127,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (id_inmueble && typeof id_inmueble === 'string') {
       queryParams.id_inmueble = id_inmueble;
     }
-    
+
     if (fecha_inicio && typeof fecha_inicio === 'string') {
       queryParams.fecha_inicio = fecha_inicio;
     }

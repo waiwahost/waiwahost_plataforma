@@ -23,12 +23,9 @@ export class GetReservaPublicService {
             fecha_nacimiento: baseData.fecha_nacimiento ? new Date(baseData.fecha_nacimiento).toISOString().split('T')[0] : '',
             es_principal: isPrincipal,
             id_reserva: baseData.id_reserva,
-            ...(isPrincipal &&{
-                ciudad_procedencia: baseData.ciudad_procedencia,
-                ciudad_residencia: baseData.ciudad_residencia,
-                motivo: baseData.motivo
-            }
-            )
+            ciudad_procedencia: baseData.ciudad_procedencia,
+            ciudad_residencia: baseData.ciudad_residencia,
+            motivo: baseData.motivo
         };
     }
 

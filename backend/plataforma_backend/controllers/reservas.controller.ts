@@ -149,6 +149,12 @@ export class ReservasController {
    */
   async editReserva(request: FastifyRequest, reply: FastifyReply) {
     try {
+      const ctx = (request as any).userContext || (request as any).user?.userContext;
+      const id_empresa = ctx?.empresaId;
+      const id_roles = ctx?.id_roles;
+      if (!id_empresa && id_roles !== 1) {
+        return reply.code(401).send(errorResponse({ message: 'No autenticado o token inválido', code: 401 }));
+      }
       const id = Number((request.params as any).id);
       const data = request.body as EditReservaRequest;
       if (!id || isNaN(id)) {
