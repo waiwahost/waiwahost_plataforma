@@ -4,15 +4,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+  const { identifier, password } = req.body;
+  if (!identifier || !password) {
+    return res.status(400).json({ message: 'Email or Username and password are required' });
   }
   try {
     const apiRes = await fetch(`${process.env.API_URL}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     });
     const apiData = await apiRes.json();
     if (apiData.isError) {

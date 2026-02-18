@@ -16,6 +16,22 @@ export class UserRepository {
       return { data: null, error };
     }
   }
+
+  async findByEmailOrUsername(identifier: string) {
+    const query = `SELECT u.*, r.name as rol_name, p.id_propietario, i.id_inmueble
+      FROM usuarios u
+      LEFT JOIN roles r ON u.id_roles = r.id_rol
+      LEFT JOIN propietarios p ON u.id_usuario = p.id_usuario
+      LEFT JOIN inmuebles i ON p.id_propietario = i.id_propietario
+      WHERE u.email = $1 OR u.username = $1
+      LIMIT 1`;
+    try {
+      const { rows } = await pool.query(query, [identifier]);
+      return { data: rows[0] ?? null, error: null };
+    } catch (error: any) {
+      return { data: null, error };
+    }
+  }
   async insert(user: any) {
     const query = `INSERT INTO usuarios (cedula, nombre, apellido, email, password_hash, id_roles, id_empresa, username)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
