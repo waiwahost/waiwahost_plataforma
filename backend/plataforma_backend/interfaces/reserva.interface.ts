@@ -119,6 +119,7 @@ export interface CreateReservaResponse {
 }
 
 export interface EditReservaRequest {
+  id_inmueble?: number;
   fecha_inicio?: string;
   fecha_fin?: string;
   numero_huespedes?: number;

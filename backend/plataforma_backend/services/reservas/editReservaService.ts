@@ -9,6 +9,7 @@ const bloqueosRepository = new BloqueosRepository();
 export async function editReservaService(id: number, data: EditReservaRequest) {
   // Validar que al menos un campo editable esté presente
   const editableFields = [
+    'id_inmueble',
     'fecha_inicio',
     'fecha_fin',
     'numero_huespedes',
@@ -40,32 +41,37 @@ export async function editReservaService(id: number, data: EditReservaRequest) {
   const reservaOriginal = await reservasRepository.getReservaById(id);
   if (!reservaOriginal) throw new Error('Reserva no encontrada');
 
-  // Si se actualizan fechas, verificar disponibilidad
-  if (fieldsToUpdate.fecha_inicio || fieldsToUpdate.fecha_fin) {
+  // Si se actualizan fechas o el inmueble, verificar disponibilidad
+  const inmuebleCambia = fieldsToUpdate.id_inmueble !== undefined && fieldsToUpdate.id_inmueble !== reservaOriginal.id_inmueble;
+  if (fieldsToUpdate.fecha_inicio || fieldsToUpdate.fecha_fin || inmuebleCambia) {
     const nuevaFechaInicio = fieldsToUpdate.fecha_inicio || reservaOriginal.fecha_inicio;
     const nuevaFechaFin = fieldsToUpdate.fecha_fin || reservaOriginal.fecha_fin;
+    // Si el inmueble cambia, verificar en el nuevo; si no, en el original
+    const idInmuebleAVerificar = inmuebleCambia ? fieldsToUpdate.id_inmueble : reservaOriginal.id_inmueble;
+    // Solo excluir la reserva actual si el inmueble NO cambia (si cambia, la reserva no existe en el nuevo inmueble)
+    const excludeId = inmuebleCambia ? undefined : id;
 
-    // 1. Verificar traslapes con otras reservas
+    // 1. Verificar traslapes con otras reservas en el inmueble destino
     const countReservas = await reservasRepository.countOverlappingReservations(
-      reservaOriginal.id_inmueble,
+      idInmuebleAVerificar,
       nuevaFechaInicio,
       nuevaFechaFin,
-      id // Excluir esta misma reserva
+      excludeId
     );
 
     if (countReservas > 0) {
-      throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva');
+      throw new Error('Las fechas seleccionadas ya están ocupadas por otra reserva en ese inmueble');
     }
 
-    // 2. Verificar traslapes con bloqueos
+    // 2. Verificar traslapes con bloqueos en el inmueble destino
     const countBloqueos = await bloqueosRepository.countOverlappingBlocks(
-      reservaOriginal.id_inmueble,
+      idInmuebleAVerificar,
       nuevaFechaInicio,
       nuevaFechaFin
     );
 
     if (countBloqueos > 0) {
-      throw new Error('Las fechas seleccionadas están bloqueadas en el calendario');
+      throw new Error('Las fechas seleccionadas están bloqueadas en el calendario de ese inmueble');
     }
   }
 

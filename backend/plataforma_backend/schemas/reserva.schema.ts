@@ -218,7 +218,8 @@ export const editReservaSchema: FastifySchema = {
       plataforma_origen: {
         type: 'string',
         enum: ['airbnb', 'booking', 'pagina_web', 'directa']
-      }
+      },
+      id_inmueble: { type: 'number' }
     },
     additionalProperties: false
   },

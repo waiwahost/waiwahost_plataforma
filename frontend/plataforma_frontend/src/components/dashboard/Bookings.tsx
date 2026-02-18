@@ -132,15 +132,19 @@ const Bookings: React.FC = () => {
     };
 
     // Preparar huéspedes con fecha_nacimiento en formato correcto
-    const huespedes = reservaData.huespedes.map(h => ({
-      ...h,
-      id: h.id, // Asegurar que el ID se envíe
-      fecha_nacimiento: toDateApi(h.fecha_nacimiento)
-    }));
+    // Solo si vienen huéspedes (el modal los omite cuando están todos vacíos)
+    const huespedes = reservaData.huespedes
+      ? reservaData.huespedes.map(h => ({
+        ...h,
+        id: h.id, // Asegurar que el ID se envíe
+        fecha_nacimiento: toDateApi(h.fecha_nacimiento)
+      }))
+      : undefined;
 
     try {
       setReservaError(null);
       // Usar los campos correctos para el backend
+      // Si no hay huéspedes con datos, omitir el campo para evitar error de validación
       const body: any = {
         ...reservaData,
         fecha_inicio: reservaData.fecha_inicio,
@@ -148,8 +152,8 @@ const Bookings: React.FC = () => {
         id: reservaToEdit.id,
         codigo_reserva: reservaToEdit.codigo_reserva,
         fecha_creacion: reservaToEdit.fecha_creacion,
-        huespedes,
-        estado: reservaData.estado
+        estado: reservaData.estado,
+        ...(huespedes !== undefined ? { huespedes } : {}),
       };
       const updatedReserva = await editReservaApi(body);
 
@@ -346,17 +350,17 @@ const Bookings: React.FC = () => {
           numero_huespedes: reservaToEdit.numero_huespedes,
           huespedes: reservaToEdit.huespedes.map(huesped => ({
             id: huesped.id, // IMPORTANTE: Pasar el ID para edición
-            nombre: huesped.nombre,
-            apellido: huesped.apellido,
-            email: huesped.email,
-            telefono: huesped.telefono,
-            documento_tipo: huesped.documento_tipo,
-            documento_numero: huesped.documento_numero,
-            fecha_nacimiento: huesped.fecha_nacimiento,
+            nombre: huesped.nombre || '',
+            apellido: huesped.apellido || '',
+            email: huesped.email || '',
+            telefono: huesped.telefono || '',
+            documento_tipo: huesped.documento_tipo || 'cedula',
+            documento_numero: huesped.documento_numero || '',
+            fecha_nacimiento: huesped.fecha_nacimiento || '',
             es_principal: huesped.es_principal,
-            motivo: huesped.motivo,
-            ciudad_residencia: huesped.ciudad_residencia,
-            ciudad_procedencia: huesped.ciudad_procedencia,
+            motivo: huesped.motivo || '',        // ← antes faltaba este campo
+            ciudad_residencia: huesped.ciudad_residencia || '',
+            ciudad_procedencia: huesped.ciudad_procedencia || '',
           })),
           precio_total: reservaToEdit.precio_total,
           total_reserva: reservaToEdit.total_reserva,

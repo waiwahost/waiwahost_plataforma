@@ -214,10 +214,24 @@ const CheckinFormContent = () => {
         setExpandedGuest(prev => (prev === index ? -1 : index));
     };
 
+    // Valores que el backend pone como placeholder cuando no hay dato real
+    const PLACEHOLDER_VALUES = new Set([
+        'Sin nombre', 'Sin apellido', 'sin-email@ejemplo.com',
+        'Sin teléfono', 'Sin documento', '1990-01-01'
+    ]);
+
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (errors[field]) {
             setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+    };
+
+    // Al hacer focus en un campo de huésped, limpiar si tiene valor placeholder
+    const handleHuespedFocus = (index, field) => {
+        const currentValue = formData.huespedes[index]?.[field];
+        if (currentValue && PLACEHOLDER_VALUES.has(currentValue)) {
+            handleHuespedChange(index, field, '');
         }
     };
 
@@ -540,6 +554,7 @@ const CheckinFormContent = () => {
                                                             type="text"
                                                             value={huesped.nombre}
                                                             onChange={(e) => handleHuespedChange(index, 'nombre', e.target.value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'nombre')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                             placeholder="Nombre"
                                                         />
@@ -550,6 +565,7 @@ const CheckinFormContent = () => {
                                                             type="text"
                                                             value={huesped.apellido}
                                                             onChange={(e) => handleHuespedChange(index, 'apellido', e.target.value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'apellido')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                             placeholder="Apellido"
                                                         />
@@ -560,6 +576,7 @@ const CheckinFormContent = () => {
                                                             type="email"
                                                             value={huesped.email}
                                                             onChange={(e) => handleHuespedChange(index, 'email', e.target.value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'email')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                             placeholder="correo@ejemplo.com"
                                                         />
@@ -592,6 +609,7 @@ const CheckinFormContent = () => {
                                                             type="text"
                                                             value={huesped.documento_numero}
                                                             onChange={(e) => handleHuespedChange(index, 'documento_numero', e.target.value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'documento_numero')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                             placeholder="Número de documento"
                                                         />
@@ -602,6 +620,7 @@ const CheckinFormContent = () => {
                                                             type="date"
                                                             value={huesped.fecha_nacimiento}
                                                             onChange={(e) => handleHuespedChange(index, 'fecha_nacimiento', e.target.value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'fecha_nacimiento')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         />
                                                     </div>

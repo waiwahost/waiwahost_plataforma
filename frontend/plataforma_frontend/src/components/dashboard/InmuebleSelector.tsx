@@ -14,7 +14,6 @@ const InmuebleSelector: React.FC<InmuebleSelectorProps> = ({
   setSelectedInmueble,
 }) => {
 
-    console.log(inmuebles);
     
   return (
     <div className="flex items-center space-x-2">
