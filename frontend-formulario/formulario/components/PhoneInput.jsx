@@ -4,6 +4,7 @@ import { COUNTRIES } from '../constants/countries';
 const PhoneInput = ({
     value,
     onChange,
+    onFocus,
     error,
     label,
     placeholder = "300 123 4567",
@@ -81,6 +82,7 @@ const PhoneInput = ({
                         type="tel"
                         value={phoneNumber}
                         onChange={handlePhoneChange}
+                        onFocus={onFocus}
                         disabled={disabled}
                         required={required}
                         className={`block p-2.5 w-full z-20 text-sm text-gray-900 bg-white rounded-e-lg border-s-0 border border-gray-300 focus:ring-blue-500 focus:border-blue-500 ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''

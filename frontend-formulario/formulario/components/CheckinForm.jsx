@@ -29,6 +29,8 @@ const CheckinFormContent = () => {
                 fecha_nacimiento: '',
                 ciudad_residencia: '',
                 ciudad_procedencia: '',
+                pais_residencia: '',
+                pais_procedencia: '',
                 motivo_viaje: 'Vacaciones',
                 es_principal: true,
             }
@@ -106,6 +108,68 @@ const CheckinFormContent = () => {
         }
     };
 
+    /**
+     * Resuelve el pais_id de cada huésped a partir del nombre de su ciudad guardada.
+     * Carga las ciudades necesarias para cada país.
+     * Usa la misma lógica que CreateReservaModal.
+     */
+    const resolveGuestLocations = async (huespedes) => {
+        try {
+            // 1. Traer todas las ciudades para poder cruzar nombre → id_pais
+            const res = await fetch('/checkin/api/ciudades');
+            if (!res.ok) return huespedes;
+            const cidData = await res.json();
+            const allCiudades = cidData.data || [];
+
+            // 2. Para cada huésped, resolver pais_residencia y pais_procedencia
+            const updatedHuespedes = huespedes.map((h) => {
+                const updatedH = { ...h };
+
+                if (!updatedH.pais_residencia && updatedH.ciudad_residencia) {
+                    const match = allCiudades.find(c => c.nombre === updatedH.ciudad_residencia);
+                    if (match) updatedH.pais_residencia = match.id_pais.toString();
+                }
+
+                if (!updatedH.pais_procedencia && updatedH.ciudad_procedencia) {
+                    const match = allCiudades.find(c => c.nombre === updatedH.ciudad_procedencia);
+                    if (match) updatedH.pais_procedencia = match.id_pais.toString();
+                }
+
+                return updatedH;
+            });
+
+            // 3. Recopilar todos los ids de países únicos
+            const paisIds = new Set();
+            updatedHuespedes.forEach(h => {
+                if (h.pais_residencia) paisIds.add(parseInt(h.pais_residencia));
+                if (h.pais_procedencia) paisIds.add(parseInt(h.pais_procedencia));
+            });
+
+            // 4. Cargar ciudades de cada país en paralelo
+            await Promise.all(
+                Array.from(paisIds).map(async (paisId) => {
+                    if (!paisId || ciudadesByPais[paisId]) return;
+                    try {
+                        const r = await fetch(`/checkin/api/ciudades/pais/${paisId}`);
+                        if (r.ok) {
+                            const d = await r.json();
+                            if (!d.isError) {
+                                setCiudadesByPais(prev => ({ ...prev, [paisId]: d.data }));
+                            }
+                        }
+                    } catch (err) {
+                        console.error(`Error cargando ciudades para país ${paisId}:`, err);
+                    }
+                })
+            );
+
+            return updatedHuespedes;
+        } catch (error) {
+            console.error("Error resolviendo ubicaciones de huéspedes:", error);
+            return huespedes;
+        }
+    };
+
     const fetchInmueblesList = async () => {
         try {
             setLoadingList(true);
@@ -153,19 +217,51 @@ const CheckinFormContent = () => {
                 if (!data.isError && data.data) {
                     const reserva = data.data.data;
 
-                    // Cargar info del inmueble asociado
                     if (reserva.id_inmueble) {
                         fetchInmuebleInfo(reserva.id_inmueble);
+                    }
+
+                    const targetCount = reserva.numero_huespedes || 1;
+
+                    // Mapear los huéspedes existentes, añadir campos de país vacíos
+                    const existingMapped = (reserva.huespedes || []).map(h => ({
+                        ...h,
+                        fecha_nacimiento: h.fecha_nacimiento ? h.fecha_nacimiento.split('T')[0] : '',
+                        motivo_viaje: h.motivo_viaje || h.motivo || 'Vacaciones',
+                        pais_residencia: '',
+                        ciudad_residencia: h.ciudad_residencia || '',
+                        pais_procedencia: '',
+                        ciudad_procedencia: h.ciudad_procedencia || '',
+                    }));
+
+                    // Completar con huéspedes vacíos hasta llegar a targetCount
+                    const mappedHuespedes = [...existingMapped];
+                    while (mappedHuespedes.length < targetCount) {
+                        mappedHuespedes.push({
+                            nombre: '',
+                            apellido: '',
+                            email: '',
+                            telefono: '',
+                            documento_tipo: 'cedula',
+                            documento_numero: '',
+                            fecha_nacimiento: '',
+                            es_principal: mappedHuespedes.length === 0,
+                            ciudad_residencia: '',
+                            ciudad_procedencia: '',
+                            pais_residencia: '',
+                            pais_procedencia: '',
+                            motivo_viaje: 'Vacaciones',
+                        });
                     }
 
                     setFormData(prev => ({
                         ...prev,
                         id_inmueble: reserva.id_inmueble,
-                        id_reserva: reserva.id, // Asegurar que se envía el ID para actualizar
+                        id_reserva: reserva.id,
                         fecha_inicio: reserva.fecha_inicio.split('T')[0],
                         fecha_fin: reserva.fecha_fin.split('T')[0],
-                        numero_huespedes: reserva.numero_huespedes,
-                        huespedes: reserva.huespedes.length > 0 ? reserva.huespedes : prev.huespedes,
+                        numero_huespedes: mappedHuespedes.length,
+                        huespedes: mappedHuespedes,
                         precio_total: reserva.precio_total,
                         total_reserva: reserva.total_reserva,
                         total_pagado: reserva.total_pagado,
@@ -174,6 +270,11 @@ const CheckinFormContent = () => {
                         id_empresa: reserva.id_empresa,
                         plataforma_origen: reserva.plataforma_origen
                     }));
+
+                    // Resolver países y cargar ciudades en background
+                    resolveGuestLocations(mappedHuespedes).then(resolved => {
+                        setFormData(prev => ({ ...prev, huespedes: resolved }));
+                    });
                 }
             }
         } catch (error) {
@@ -199,15 +300,33 @@ const CheckinFormContent = () => {
         }
     };
 
-    const isGuestComplete = (huesped) => {
+    // Un huésped "tiene datos reales" si al menos un campo clave no está vacío
+    const hasHuespedData = (huesped) => {
+        return !!(
+            (huesped.nombre && huesped.nombre.trim()) ||
+            (huesped.apellido && huesped.apellido.trim()) ||
+            (huesped.documento_numero && huesped.documento_numero.trim()) ||
+            (huesped.email && huesped.email.trim()) ||
+            (huesped.telefono && huesped.telefono.trim())
+        );
+    };
+
+    // El huésped principal se considera completo si tiene todos sus datos obligatorios
+    const isPrincipalComplete = (huesped) => {
         return Boolean(
-            huesped.nombre.trim() &&
-            huesped.apellido.trim() &&
-            huesped.email.trim() &&
-            huesped.telefono.trim() &&
-            huesped.documento_numero.trim() &&
+            huesped.nombre && huesped.nombre.trim() &&
+            huesped.apellido && huesped.apellido.trim() &&
+            huesped.email && huesped.email.trim() &&
+            huesped.telefono && huesped.telefono.trim() &&
+            huesped.documento_numero && huesped.documento_numero.trim() &&
             huesped.fecha_nacimiento
         );
+    };
+
+    // Para los acompañantes: checkmark verde si tienen algún dato, gris si están vacíos
+    const isGuestComplete = (huesped, index) => {
+        if (index === 0) return isPrincipalComplete(huesped);
+        return hasHuespedData(huesped);
     };
 
     const toggleGuest = (index) => {
@@ -217,7 +336,8 @@ const CheckinFormContent = () => {
     // Valores que el backend pone como placeholder cuando no hay dato real
     const PLACEHOLDER_VALUES = new Set([
         'Sin nombre', 'Sin apellido', 'sin-email@ejemplo.com',
-        'Sin teléfono', 'Sin documento', '1990-01-01'
+        'Sin teléfono', 'Sin documento', '1990-01-01',
+        'sin nombre', 'sin apellido', 'sin telefono', 'sin documento'
     ]);
 
     const handleInputChange = (field, value) => {
@@ -230,6 +350,10 @@ const CheckinFormContent = () => {
     // Al hacer focus en un campo de huésped, limpiar si tiene valor placeholder
     const handleHuespedFocus = (index, field) => {
         const currentValue = formData.huespedes[index]?.[field];
+        if (currentValue && PLACEHOLDER_VALUES.has(currentValue.trim().toLowerCase())) {
+            handleHuespedChange(index, field, '');
+        }
+        // También limpiar si tiene el value exacto (case-sensitive)
         if (currentValue && PLACEHOLDER_VALUES.has(currentValue)) {
             handleHuespedChange(index, field, '');
         }
@@ -243,16 +367,18 @@ const CheckinFormContent = () => {
             )
         }));
 
-        // Si el campo es un país, cargar sus ciudades
+        // Si el campo es un país, cargar sus ciudades y limpiar ciudad
         if (field === 'pais_residencia' || field === 'pais_procedencia') {
-            fetchCiudades(value);
+            const paisId = parseInt(value);
+            if (!isNaN(paisId)) {
+                fetchCiudades(paisId);
+            }
 
-            // Limpiar ciudad si cambia el país
             const cityField = field === 'pais_residencia' ? 'ciudad_residencia' : 'ciudad_procedencia';
             setFormData(prev => ({
                 ...prev,
                 huespedes: prev.huespedes.map((huesped, i) =>
-                    i === index ? { ...huesped, [cityField]: '' } : huesped
+                    i === index ? { ...huesped, [field]: value, [cityField]: '' } : huesped
                 )
             }));
         }
@@ -266,9 +392,8 @@ const CheckinFormContent = () => {
         const currentHuespedes = [...formData.huespedes];
 
         if (newNumero > currentHuespedes.length) {
-            const nuevosHuespedes = [];
             for (let i = currentHuespedes.length; i < newNumero; i++) {
-                nuevosHuespedes.push({
+                currentHuespedes.push({
                     nombre: '',
                     apellido: '',
                     email: '',
@@ -278,10 +403,12 @@ const CheckinFormContent = () => {
                     fecha_nacimiento: '',
                     es_principal: false,
                     ciudad_residencia: '',
-                    ciudad_procedencia: ''
+                    ciudad_procedencia: '',
+                    pais_residencia: '',
+                    pais_procedencia: '',
+                    motivo_viaje: 'Vacaciones',
                 });
             }
-            currentHuespedes.push(...nuevosHuespedes);
         } else if (newNumero < currentHuespedes.length) {
             currentHuespedes.splice(newNumero);
         }
@@ -303,14 +430,33 @@ const CheckinFormContent = () => {
         if (formData.huespedes.length === 0) {
             newErrors.huespedes = 'Debe haber al menos un huésped';
         } else {
-            for (let i = 0; i < formData.huespedes.length; i++) {
-                const huesped = formData.huespedes[i];
-                if (!huesped.nombre.trim()) { newErrors.huespedes = `El nombre del huésped ${i + 1} es requerido`; break; }
-                if (!huesped.apellido.trim()) { newErrors.huespedes = `El apellido del huésped ${i + 1} es requerido`; break; }
-                if (!huesped.email.trim()) { newErrors.huespedes = `El email del huésped ${i + 1} es requerido`; break; }
-                if (!huesped.telefono.trim()) { newErrors.huespedes = `El teléfono del huésped ${i + 1} es requerido`; break; }
-                if (!huesped.documento_numero.trim()) { newErrors.huespedes = `El documento del huésped ${i + 1} es requerido`; break; }
-                if (!huesped.fecha_nacimiento) { newErrors.huespedes = `La fecha de nacimiento del huésped ${i + 1} es requerida`; break; }
+            // Solo validar el huésped principal (index 0)
+            const principal = formData.huespedes[0];
+            if (!principal.nombre || !principal.nombre.trim()) {
+                newErrors.huespedes = 'El nombre del huésped principal es requerido';
+            } else if (!principal.apellido || !principal.apellido.trim()) {
+                newErrors.huespedes = 'El apellido del huésped principal es requerido';
+            } else if (!principal.email || !principal.email.trim()) {
+                newErrors.huespedes = 'El email del huésped principal es requerido';
+            } else if (!principal.telefono || !principal.telefono.trim()) {
+                newErrors.huespedes = 'El teléfono del huésped principal es requerido';
+            } else if (!principal.documento_numero || !principal.documento_numero.trim()) {
+                newErrors.huespedes = 'El documento del huésped principal es requerido';
+            } else if (!principal.fecha_nacimiento) {
+                newErrors.huespedes = 'La fecha de nacimiento del huésped principal es requerida';
+            }
+
+            // Para acompañantes: si tienen algún dato, validar mínimo nombre+apellido
+            if (!newErrors.huespedes) {
+                for (let i = 1; i < formData.huespedes.length; i++) {
+                    const h = formData.huespedes[i];
+                    if (hasHuespedData(h)) {
+                        if (h.email && h.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(h.email)) {
+                            newErrors.huespedes = `El email del huésped ${i + 1} no es válido`;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -338,12 +484,36 @@ const CheckinFormContent = () => {
         setSubmitError('');
 
         try {
+            // Filtrar huéspedes: el principal siempre va, los acompañantes solo si tienen datos
+            // Limpiar campos opcionales vacíos para no romper enums en el backend
+            const huespedesToSend = formData.huespedes
+                .filter((h, i) => i === 0 || hasHuespedData(h))
+                .map(h => ({
+                    ...h,
+                    motivo_viaje: h.motivo_viaje && h.motivo_viaje.trim() ? h.motivo_viaje : undefined,
+                    email: h.email && h.email.trim() ? h.email : undefined,
+                    telefono: h.telefono && h.telefono.trim() ? h.telefono : undefined,
+                    fecha_nacimiento: h.fecha_nacimiento && h.fecha_nacimiento.trim() ? h.fecha_nacimiento : undefined,
+                    documento_numero: h.documento_numero && h.documento_numero.trim() ? h.documento_numero : undefined,
+                    ciudad_residencia: h.ciudad_residencia && h.ciudad_residencia.trim() ? h.ciudad_residencia : undefined,
+                    ciudad_procedencia: h.ciudad_procedencia && h.ciudad_procedencia.trim() ? h.ciudad_procedencia : undefined,
+                    // No enviar campos de UI al backend
+                    pais_residencia: undefined,
+                    pais_procedencia: undefined,
+                }));
+
+            const payload = {
+                ...formData,
+                huespedes: huespedesToSend,
+                terms: undefined, // no enviar al backend
+            };
+
             const res = await fetch(`/checkin/api/proxy/reservas/public`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
@@ -384,15 +554,13 @@ const CheckinFormContent = () => {
 
     return (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
-            {/* Div que abarca el 60% del espacio dentro del div inicial centrado */}
             <div className="w-full md:w-[60%] mx-auto">
-                {/* Componente tipo popup/modal */}
                 <div className="bg-white rounded-lg shadow-xl overflow-hidden">
                     {/* Encabezado */}
                     <div className="flex items-center justify-between p-6 border-b bg-white">
                         <div>
                             <h2 className="text-xl font-semibold text-gray-900">
-                                CkeckIn
+                                CheckIn
                             </h2>
                         </div>
                     </div>
@@ -508,9 +676,12 @@ const CheckinFormContent = () => {
 
                         {/* Sección Huéspedes */}
                         <div>
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                            <h3 className="text-lg font-medium text-gray-900 mb-1">
                                 Información de Huéspedes
                             </h3>
+                            <p className="text-sm text-gray-500 mb-4">
+                                Solo el <span className="font-medium text-gray-700">Huésped Principal</span> es obligatorio. Los acompañantes son opcionales.
+                            </p>
                             {errors.huespedes && (
                                 <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm flex items-center">
                                     <AlertCircle className="w-4 h-4 mr-2" />
@@ -519,7 +690,8 @@ const CheckinFormContent = () => {
                             )}
 
                             {formData.huespedes.map((huesped, index) => {
-                                const isComplete = isGuestComplete(huesped);
+                                const isComplete = isGuestComplete(huesped, index);
+                                const isEmpty = index > 0 && !hasHuespedData(huesped);
                                 const isExpanded = expandedGuest === index;
 
                                 return (
@@ -532,11 +704,22 @@ const CheckinFormContent = () => {
                                                 {isComplete ? (
                                                     <CheckCircle className="h-5 w-5 text-green-500" />
                                                 ) : (
-                                                    <AlertCircle className="h-5 w-5 text-gray-400" />
+                                                    <AlertCircle className={`h-5 w-5 ${index === 0 ? 'text-orange-400' : 'text-gray-300'}`} />
                                                 )}
-                                                <h4 className="text-md font-medium text-gray-800">
-                                                    {index === 0 ? 'Huésped Principal' : `Huésped Acompañante ${index}`}
-                                                </h4>
+                                                <div>
+                                                    <h4 className="text-md font-medium text-gray-800">
+                                                        {index === 0 ? 'Huésped Principal' : `Huésped Acompañante ${index}`}
+                                                    </h4>
+                                                    {index === 0 && (
+                                                        <span className="text-xs text-red-500 font-medium">Obligatorio</span>
+                                                    )}
+                                                    {index > 0 && isEmpty && (
+                                                        <span className="text-xs text-gray-400">Opcional — sin datos</span>
+                                                    )}
+                                                    {index > 0 && !isEmpty && (
+                                                        <span className="text-xs text-green-600">Con datos</span>
+                                                    )}
+                                                </div>
                                             </div>
                                             {isExpanded ? (
                                                 <ChevronUp className="h-5 w-5 text-gray-500" />
@@ -549,7 +732,9 @@ const CheckinFormContent = () => {
                                             <div className="p-4 border-t border-gray-200 bg-white">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Nombre {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <input
                                                             type="text"
                                                             value={huesped.nombre}
@@ -560,7 +745,9 @@ const CheckinFormContent = () => {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Apellido *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Apellido {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <input
                                                             type="text"
                                                             value={huesped.apellido}
@@ -571,7 +758,9 @@ const CheckinFormContent = () => {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Email {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <input
                                                             type="email"
                                                             value={huesped.email}
@@ -583,16 +772,19 @@ const CheckinFormContent = () => {
                                                     </div>
                                                     <div>
                                                         <PhoneInput
-                                                            label="Teléfono *"
+                                                            label={`Teléfono${index === 0 ? ' *' : ''}`}
                                                             value={huesped.telefono}
                                                             onChange={(value) => handleHuespedChange(index, 'telefono', value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'telefono')}
                                                             placeholder="300 123 4567"
-                                                            error={errors.huespedes && !huesped.telefono.trim() ? "Requerido" : ""}
-                                                            required
+                                                            error={index === 0 && errors.huespedes && !huesped.telefono?.trim() ? "Requerido" : ""}
+                                                            required={index === 0}
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Tipo de Documento {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <select
                                                             value={huesped.documento_tipo}
                                                             onChange={(e) => handleHuespedChange(index, 'documento_tipo', e.target.value)}
@@ -604,7 +796,9 @@ const CheckinFormContent = () => {
                                                         </select>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Número de Documento *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Número de Documento {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <input
                                                             type="text"
                                                             value={huesped.documento_numero}
@@ -615,7 +809,9 @@ const CheckinFormContent = () => {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Fecha de Nacimiento {index === 0 ? '*' : ''}
+                                                        </label>
                                                         <input
                                                             type="date"
                                                             value={huesped.fecha_nacimiento}
@@ -625,12 +821,15 @@ const CheckinFormContent = () => {
                                                         />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de Viaje *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Motivo de Viaje
+                                                        </label>
                                                         <select
-                                                            value={huesped.motivo_viaje}
+                                                            value={huesped.motivo_viaje || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'motivo_viaje', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
+                                                            <option value="">Seleccione un motivo</option>
                                                             <option value="Negocios">Negocios</option>
                                                             <option value="Vacaciones">Vacaciones</option>
                                                             <option value="Visitas">Visitas</option>
@@ -642,12 +841,15 @@ const CheckinFormContent = () => {
                                                             <option value="Otros">Otros</option>
                                                         </select>
                                                     </div>
+                                                    {/* País de Residencia */}
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">País de Residencia *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            País de Residencia
+                                                        </label>
                                                         <select
-                                                            value={huesped.pais_residencia}
+                                                            value={huesped.pais_residencia || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'pais_residencia', e.target.value)}
-                                                            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal'
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
                                                             <option value="">Selecciona un país</option>
                                                             {paises.map(p => (
@@ -655,26 +857,32 @@ const CheckinFormContent = () => {
                                                             ))}
                                                         </select>
                                                     </div>
+                                                    {/* Ciudad de Residencia */}
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad de Residencia *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Ciudad de Residencia
+                                                        </label>
                                                         <select
                                                             value={huesped.ciudad_residencia}
                                                             onChange={(e) => handleHuespedChange(index, 'ciudad_residencia', e.target.value)}
                                                             disabled={!huesped.pais_residencia}
-                                                            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal'
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal disabled:bg-gray-50 disabled:text-gray-400"
                                                         >
                                                             <option value="">Selecciona una ciudad</option>
-                                                            {(ciudadesByPais[huesped.pais_residencia] || []).map(c => (
+                                                            {huesped.pais_residencia && (ciudadesByPais[parseInt(huesped.pais_residencia)] || []).map(c => (
                                                                 <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
                                                             ))}
                                                         </select>
                                                     </div>
+                                                    {/* País de Procedencia */}
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">País de Procedencia *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            País de Procedencia
+                                                        </label>
                                                         <select
-                                                            value={huesped.pais_procedencia}
+                                                            value={huesped.pais_procedencia || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'pais_procedencia', e.target.value)}
-                                                            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal'
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
                                                             <option value="">Selecciona un país</option>
                                                             {paises.map(p => (
@@ -682,16 +890,19 @@ const CheckinFormContent = () => {
                                                             ))}
                                                         </select>
                                                     </div>
+                                                    {/* Ciudad de Procedencia */}
                                                     <div>
-                                                        <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad de Procedencia *</label>
+                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            Ciudad de Procedencia
+                                                        </label>
                                                         <select
                                                             value={huesped.ciudad_procedencia}
                                                             onChange={(e) => handleHuespedChange(index, 'ciudad_procedencia', e.target.value)}
                                                             disabled={!huesped.pais_procedencia}
-                                                            className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal'
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal disabled:bg-gray-50 disabled:text-gray-400"
                                                         >
                                                             <option value="">Selecciona una ciudad</option>
-                                                            {(ciudadesByPais[huesped.pais_procedencia] || []).map(c => (
+                                                            {huesped.pais_procedencia && (ciudadesByPais[parseInt(huesped.pais_procedencia)] || []).map(c => (
                                                                 <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
                                                             ))}
                                                         </select>
