@@ -775,6 +775,7 @@ const CheckinFormContent = () => {
                                                             label={`Teléfono${index === 0 ? ' *' : ''}`}
                                                             value={huesped.telefono}
                                                             onChange={(value) => handleHuespedChange(index, 'telefono', value)}
+                                                            onFocus={() => handleHuespedFocus(index, 'telefono')}
                                                             placeholder="300 123 4567"
                                                             error={index === 0 && errors.huespedes && !huesped.telefono?.trim() ? "Requerido" : ""}
                                                             required={index === 0}
