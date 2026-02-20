@@ -75,15 +75,21 @@ const Bookings: React.FC = () => {
   const canDelete = user?.permisos?.includes('eliminar_reservas') || true; // TEMPORAL: siempre true para debugging
 
   const filteredReservas = useMemo(() => {
-    if (selectedMonth === -1) {
-      return reservas;
-    }
     return reservas.filter(reserva => {
-      const fechaInicio = new Date(reserva.fecha_inicio);
-      const fechaFin = new Date(reserva.fecha_fin);
-      return fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth;
+      // Filtro por mes
+      if (selectedMonth !== -1) {
+        const fechaInicio = new Date(reserva.fecha_inicio);
+        const fechaFin = new Date(reserva.fecha_fin);
+        const pasaFiltroMes = fechaInicio.getMonth() === selectedMonth || fechaFin.getMonth() === selectedMonth;
+        if (!pasaFiltroMes) return false;
+      }
+      // Filtro por inmueble
+      if (selectedInmueble !== -1) {
+        if (Number(reserva.id_inmueble) !== selectedInmueble) return false;
+      }
+      return true;
     });
-  }, [reservas, selectedMonth]);
+  }, [reservas, selectedMonth, selectedInmueble]);
 
   const handleCreate = async (reservaData: IReservaForm) => {
     try {

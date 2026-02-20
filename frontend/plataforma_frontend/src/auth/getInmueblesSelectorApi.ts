@@ -1,26 +1,35 @@
-import { apiFetch } from './apiFetch';
-
 export interface InmuebleSelector {
   id: number;
   nombre: string;
 }
 
+/**
+ * Obtiene los inmuebles para el selector a través de la API interna de Next.js.
+ * Usa el proxy /api/inmuebles/getInmueblesSelector para que funcione en producción,
+ * ya que el backend no es accesible directamente desde el cliente.
+ */
 export const getInmueblesSelectorApi = async (): Promise<InmuebleSelector[]> => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
-  const res = await apiFetch<{
-    isError: boolean;
-    data: any[];
-  }>(`${backendUrl}inmuebles/selector`, {
+  const res = await fetch('/api/inmuebles/getInmueblesSelector', {
     method: 'GET',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
 
-  // apiFetch devuelve data directamente si existe
-  if (!res || !Array.isArray(res)) {
-    throw new Error('Respuesta inválida del backend');
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error al obtener inmuebles: ${errorText}`);
   }
 
-  return res.map((i: any) => ({
+  const json = await res.json();
+
+  if (!json.success || !Array.isArray(json.data)) {
+    throw new Error('Respuesta inválida del servidor');
+  }
+
+  return json.data.map((i: any) => ({
     id: Number(i.id),
     nombre: i.nombre,
   }));
