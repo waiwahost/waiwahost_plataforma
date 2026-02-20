@@ -26,8 +26,6 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
     }).format(amount);
   };
 
-  console.log(inmuebles);
-
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">

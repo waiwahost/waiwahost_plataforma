@@ -3,13 +3,14 @@ import React, { useMemo, useState, useEffect } from "react";
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "../atoms/Button";
-import { Plus, Filter, Lock } from "lucide-react";
+import { Plus, Filter, Lock, CheckCircle, AlertTriangle } from "lucide-react";
 import CreateReservaModal from "./CreateReservaModal";
 import CreateBloqueoModal from "./CreateBloqueoModal";
 import ReservaDetailModal from "./ReservaDetailModal";
 import { IReservaForm, IReservaTableData } from "../../interfaces/Reserva";
 import { createReservaApi, getReservaDetalleApi, editReservaApi } from "../../auth/reservasApi";
 import { IBloqueo } from "../../interfaces/Bloqueo";
+import { deleteBloqueoApi } from "../../auth/bloqueosApi";
 
 interface AvailabilityInmueble {
   id: string;
@@ -164,6 +165,10 @@ const Availability: React.FC = () => {
   const [selectedBloqueo, setSelectedBloqueo] = useState<IBloqueo | undefined>(undefined);
   const [isEditBloqueoMode, setIsEditBloqueoMode] = useState(false);
 
+  // Modales de notificación y confirmación
+  const [notifModal, setNotifModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
+
   // Calcular fechas a mostrar
   const fechas = useMemo(() => {
     if (periodoFijo) {
@@ -239,7 +244,7 @@ const Availability: React.FC = () => {
     if (reserva) {
       if (reserva.estado === 'bloqueado') {
         const bloqueoData: IBloqueo = {
-          id: parseInt(reserva.id),
+          id: parseInt(reserva.id.replace('blk-', '')),
           id_inmueble: parseInt(reserva.inmuebleId),
           fecha_inicio: reserva.start,
           fecha_fin: reserva.end,
@@ -267,7 +272,35 @@ const Availability: React.FC = () => {
 
   const handleCreateBloqueoSuccess = () => {
     fetchDisponibilidad();
-    alert("Bloqueo creado exitosamente");
+    setNotifModal({
+      open: true,
+      message: isEditBloqueoMode ? 'Bloqueo actualizado exitosamente' : 'Bloqueo creado exitosamente',
+    });
+  };
+
+  // Lo llama CreateBloqueoModal cuando el usuario presiona Eliminar
+  const handleDeleteBloqueoRequest = () => {
+    setIsCreateBloqueoModalOpen(false); // cierra el modal de edición
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedBloqueo?.id) return;
+    try {
+      await deleteBloqueoApi(selectedBloqueo.id);
+      setConfirmDeleteModal(false);
+      setSelectedBloqueo(undefined);
+      setIsEditBloqueoMode(false);
+      fetchDisponibilidad();
+      setNotifModal({ open: true, message: 'Bloqueo eliminado exitosamente' });
+    } catch (err: any) {
+      setConfirmDeleteModal(false);
+      let errorMsg = err.message || 'Error al eliminar el bloqueo';
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (parsed.message) errorMsg = parsed.message;
+      } catch (_) { /* no es JSON */ }
+      setNotifModal({ open: true, message: errorMsg });
+    }
   };
 
   const handleCreateReserva = async (data: IReservaForm) => {
@@ -514,8 +547,11 @@ const Availability: React.FC = () => {
                         >
                           {ocupado && (
                             reservaEnFecha?.estado === 'bloqueado' ?
-                              <Lock className="h-3 w-3" /> :
+                              <><Lock className="h-3 w-3" />
+                                <span>{reservaEnFecha.id}</span></> :
+
                               <span className="text-xs font-bold">●</span>
+
                           )}
                         </div>
                       </td>
@@ -562,6 +598,10 @@ const Availability: React.FC = () => {
           setIsEditBloqueoMode(false);
         }}
         onSuccess={handleCreateBloqueoSuccess}
+        onDeleteRequest={() => {
+          setIsCreateBloqueoModalOpen(false);
+          setConfirmDeleteModal(true);
+        }}
         initialData={selectedBloqueo}
         isEdit={isEditBloqueoMode}
       />
@@ -573,6 +613,49 @@ const Availability: React.FC = () => {
           reserva={selectedReservaDetail}
           onEdit={handleEditFromDetail}
         />
+      )}
+
+      {/* Modal de notificación de éxito */}
+      {notifModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70]">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <CheckCircle className="h-14 w-14 text-green-500 mx-auto mb-4" />
+            <p className="text-lg font-semibold text-gray-800 mb-5">{notifModal.message}</p>
+            <Button
+              className="bg-tourism-teal hover:bg-tourism-teal/80 text-white px-8"
+              onClick={() => setNotifModal({ open: false, message: '' })}
+            >
+              Aceptar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {confirmDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70]">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4">
+            <div className="flex flex-col items-center text-center mb-5">
+              <AlertTriangle className="h-14 w-14 text-amber-500 mb-3" />
+              <h3 className="text-lg font-bold text-gray-800">¿Eliminar bloqueo?</h3>
+              <p className="text-sm text-gray-500 mt-1">Esta acción no se puede deshacer.</p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={handleConfirmDelete}
+              >
+                Sí, eliminar
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
