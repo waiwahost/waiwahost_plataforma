@@ -4,14 +4,22 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
     User, Mail, Phone, Calendar, Users, FileText, Check, ShieldCheck,
-    CreditCard, ChevronDown, ChevronUp, CheckCircle, AlertCircle, X, Building
+    CreditCard, ChevronDown, ChevronUp, CheckCircle, AlertCircle, X, Building, Globe
 } from 'lucide-react';
 import PhoneInput from './PhoneInput';
+import { CHECKIN_I18N } from '../constants/checkinI18n';
 
 const CheckinFormContent = () => {
     const searchParams = useSearchParams();
     const inmuebleIdParam = searchParams.get('inmueble');
     const reservaIdParam = searchParams.get('reserva');
+
+    // ─── Language state ────────────────────────────────────────────────────────
+    const [lang, setLang] = useState('es');
+    const t = CHECKIN_I18N[lang];
+
+    const toggleLang = () => setLang(prev => prev === 'es' ? 'en' : 'es');
+    // ──────────────────────────────────────────────────────────────────────────
 
     const [formData, setFormData] = useState({
         id_inmueble: 0,
@@ -108,20 +116,13 @@ const CheckinFormContent = () => {
         }
     };
 
-    /**
-     * Resuelve el pais_id de cada huésped a partir del nombre de su ciudad guardada.
-     * Carga las ciudades necesarias para cada país.
-     * Usa la misma lógica que CreateReservaModal.
-     */
     const resolveGuestLocations = async (huespedes) => {
         try {
-            // 1. Traer todas las ciudades para poder cruzar nombre → id_pais
             const res = await fetch('/checkin/api/ciudades');
             if (!res.ok) return huespedes;
             const cidData = await res.json();
             const allCiudades = cidData.data || [];
 
-            // 2. Para cada huésped, resolver pais_residencia y pais_procedencia
             const updatedHuespedes = huespedes.map((h) => {
                 const updatedH = { ...h };
 
@@ -138,14 +139,12 @@ const CheckinFormContent = () => {
                 return updatedH;
             });
 
-            // 3. Recopilar todos los ids de países únicos
             const paisIds = new Set();
             updatedHuespedes.forEach(h => {
                 if (h.pais_residencia) paisIds.add(parseInt(h.pais_residencia));
                 if (h.pais_procedencia) paisIds.add(parseInt(h.pais_procedencia));
             });
 
-            // 4. Cargar ciudades de cada país en paralelo
             await Promise.all(
                 Array.from(paisIds).map(async (paisId) => {
                     if (!paisId || ciudadesByPais[paisId]) return;
@@ -223,7 +222,6 @@ const CheckinFormContent = () => {
 
                     const targetCount = reserva.numero_huespedes || 1;
 
-                    // Mapear los huéspedes existentes, añadir campos de país vacíos
                     const existingMapped = (reserva.huespedes || []).map(h => ({
                         ...h,
                         fecha_nacimiento: h.fecha_nacimiento ? h.fecha_nacimiento.split('T')[0] : '',
@@ -234,7 +232,6 @@ const CheckinFormContent = () => {
                         ciudad_procedencia: h.ciudad_procedencia || '',
                     }));
 
-                    // Completar con huéspedes vacíos hasta llegar a targetCount
                     const mappedHuespedes = [...existingMapped];
                     while (mappedHuespedes.length < targetCount) {
                         mappedHuespedes.push({
@@ -271,7 +268,6 @@ const CheckinFormContent = () => {
                         plataforma_origen: reserva.plataforma_origen
                     }));
 
-                    // Resolver países y cargar ciudades en background
                     resolveGuestLocations(mappedHuespedes).then(resolved => {
                         setFormData(prev => ({ ...prev, huespedes: resolved }));
                     });
@@ -300,7 +296,6 @@ const CheckinFormContent = () => {
         }
     };
 
-    // Un huésped "tiene datos reales" si al menos un campo clave no está vacío
     const hasHuespedData = (huesped) => {
         return !!(
             (huesped.nombre && huesped.nombre.trim()) ||
@@ -311,7 +306,6 @@ const CheckinFormContent = () => {
         );
     };
 
-    // El huésped principal se considera completo si tiene todos sus datos obligatorios
     const isPrincipalComplete = (huesped) => {
         return Boolean(
             huesped.nombre && huesped.nombre.trim() &&
@@ -323,7 +317,6 @@ const CheckinFormContent = () => {
         );
     };
 
-    // Para los acompañantes: checkmark verde si tienen algún dato, gris si están vacíos
     const isGuestComplete = (huesped, index) => {
         if (index === 0) return isPrincipalComplete(huesped);
         return hasHuespedData(huesped);
@@ -333,7 +326,6 @@ const CheckinFormContent = () => {
         setExpandedGuest(prev => (prev === index ? -1 : index));
     };
 
-    // Valores que el backend pone como placeholder cuando no hay dato real
     const PLACEHOLDER_VALUES = new Set([
         'Sin nombre', 'Sin apellido', 'sin-email@ejemplo.com',
         'Sin teléfono', 'Sin documento', '1990-01-01',
@@ -347,13 +339,11 @@ const CheckinFormContent = () => {
         }
     };
 
-    // Al hacer focus en un campo de huésped, limpiar si tiene valor placeholder
     const handleHuespedFocus = (index, field) => {
         const currentValue = formData.huespedes[index]?.[field];
         if (currentValue && PLACEHOLDER_VALUES.has(currentValue.trim().toLowerCase())) {
             handleHuespedChange(index, field, '');
         }
-        // También limpiar si tiene el value exacto (case-sensitive)
         if (currentValue && PLACEHOLDER_VALUES.has(currentValue)) {
             handleHuespedChange(index, field, '');
         }
@@ -367,7 +357,6 @@ const CheckinFormContent = () => {
             )
         }));
 
-        // Si el campo es un país, cargar sus ciudades y limpiar ciudad
         if (field === 'pais_residencia' || field === 'pais_procedencia') {
             const paisId = parseInt(value);
             if (!isNaN(paisId)) {
@@ -424,35 +413,33 @@ const CheckinFormContent = () => {
         const newErrors = {};
 
         if (!formData.id_inmueble) {
-            newErrors.id_inmueble = 'Debes seleccionar un apartamento/alojamiento.';
+            newErrors.id_inmueble = t.errorSelectAccommodation;
         }
 
         if (formData.huespedes.length === 0) {
-            newErrors.huespedes = 'Debe haber al menos un huésped';
+            newErrors.huespedes = t.errorAtLeastOneGuest;
         } else {
-            // Solo validar el huésped principal (index 0)
             const principal = formData.huespedes[0];
             if (!principal.nombre || !principal.nombre.trim()) {
-                newErrors.huespedes = 'El nombre del huésped principal es requerido';
+                newErrors.huespedes = t.errorPrincipalFirstName;
             } else if (!principal.apellido || !principal.apellido.trim()) {
-                newErrors.huespedes = 'El apellido del huésped principal es requerido';
+                newErrors.huespedes = t.errorPrincipalLastName;
             } else if (!principal.email || !principal.email.trim()) {
-                newErrors.huespedes = 'El email del huésped principal es requerido';
+                newErrors.huespedes = t.errorPrincipalEmail;
             } else if (!principal.telefono || !principal.telefono.trim()) {
-                newErrors.huespedes = 'El teléfono del huésped principal es requerido';
+                newErrors.huespedes = t.errorPrincipalPhone;
             } else if (!principal.documento_numero || !principal.documento_numero.trim()) {
-                newErrors.huespedes = 'El documento del huésped principal es requerido';
+                newErrors.huespedes = t.errorPrincipalDoc;
             } else if (!principal.fecha_nacimiento) {
-                newErrors.huespedes = 'La fecha de nacimiento del huésped principal es requerida';
+                newErrors.huespedes = t.errorPrincipalBirth;
             }
 
-            // Para acompañantes: si tienen algún dato, validar mínimo nombre+apellido
             if (!newErrors.huespedes) {
                 for (let i = 1; i < formData.huespedes.length; i++) {
                     const h = formData.huespedes[i];
                     if (hasHuespedData(h)) {
                         if (h.email && h.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(h.email)) {
-                            newErrors.huespedes = `El email del huésped ${i + 1} no es válido`;
+                            newErrors.huespedes = t.errorGuestEmail(i + 1);
                             break;
                         }
                     }
@@ -460,16 +447,16 @@ const CheckinFormContent = () => {
             }
         }
 
-        if (!formData.fecha_inicio) newErrors.fecha_inicio = 'La fecha de llegada es requerida';
-        if (!formData.fecha_fin) newErrors.fecha_fin = 'La fecha de salida es requerida';
+        if (!formData.fecha_inicio) newErrors.fecha_inicio = t.errorCheckIn;
+        if (!formData.fecha_fin) newErrors.fecha_fin = t.errorCheckOut;
         if (formData.fecha_inicio && formData.fecha_fin) {
             if (new Date(formData.fecha_inicio) >= new Date(formData.fecha_fin)) {
-                newErrors.fecha_fin = 'La fecha de salida debe ser posterior a la llegada';
+                newErrors.fecha_fin = t.errorDateOrder;
             }
         }
 
         if (!formData.terms) {
-            newErrors.terms = 'Debes aceptar los términos y condiciones';
+            newErrors.terms = t.errorTerms;
         }
 
         setErrors(newErrors);
@@ -484,8 +471,6 @@ const CheckinFormContent = () => {
         setSubmitError('');
 
         try {
-            // Filtrar huéspedes: el principal siempre va, los acompañantes solo si tienen datos
-            // Limpiar campos opcionales vacíos para no romper enums en el backend
             const huespedesToSend = formData.huespedes
                 .filter((h, i) => i === 0 || hasHuespedData(h))
                 .map(h => ({
@@ -497,7 +482,6 @@ const CheckinFormContent = () => {
                     documento_numero: h.documento_numero && h.documento_numero.trim() ? h.documento_numero : undefined,
                     ciudad_residencia: h.ciudad_residencia && h.ciudad_residencia.trim() ? h.ciudad_residencia : undefined,
                     ciudad_procedencia: h.ciudad_procedencia && h.ciudad_procedencia.trim() ? h.ciudad_procedencia : undefined,
-                    // No enviar campos de UI al backend
                     pais_residencia: undefined,
                     pais_procedencia: undefined,
                 }));
@@ -505,14 +489,12 @@ const CheckinFormContent = () => {
             const payload = {
                 ...formData,
                 huespedes: huespedesToSend,
-                terms: undefined, // no enviar al backend
+                terms: undefined,
             };
 
             const res = await fetch(`/checkin/api/proxy/reservas/public`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
 
@@ -521,15 +503,16 @@ const CheckinFormContent = () => {
             if (res.ok && data.success) {
                 setSubmitted(true);
             } else {
-                setSubmitError(data.message || 'Error al enviar la reserva. Inténtalo de nuevo.');
+                setSubmitError(data.message || t.connectionError);
             }
         } catch (error) {
-            setSubmitError('Error de conexión. Por favor verifica tu internet e inténtalo de nuevo.');
+            setSubmitError(t.connectionError);
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    // ─── Success screen ────────────────────────────────────────────────────────
     if (submitted) {
         return (
             <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
@@ -537,43 +520,60 @@ const CheckinFormContent = () => {
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Check className="w-10 h-10 text-green-600" />
                     </div>
-                    <h2 className="text-3xl font-serif text-slate-800 mb-4">¡Registro Completado!</h2>
+                    <h2 className="text-3xl font-serif text-slate-800 mb-4">{t.successTitle}</h2>
                     <p className="text-slate-600 mb-8">
-                        Gracias. Hemos procesado tu registro correctamente para el inmueble <span className="font-semibold">{inmuebleInfo?.nombre}</span>.
+                        {t.successMessage} <span className="font-semibold">{inmuebleInfo?.nombre}</span>.
                     </p>
                     <button
                         onClick={() => window.location.reload()}
                         className="px-8 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-lg"
                     >
-                        Volver al inicio
+                        {t.successButton}
                     </button>
                 </div>
             </div>
         );
     }
 
+    // ─── Motivos de viaje ──────────────────────────────────────────────────────
+    const TRAVEL_REASONS = ['Negocios', 'Vacaciones', 'Visitas', 'Educacion', 'Salud', 'Religion', 'Compras', 'Transito', 'Otros'];
+
+    // ─── Document types ────────────────────────────────────────────────────────
+    const DOC_TYPES = [
+        { value: 'cedula', label: t.cedula },
+        { value: 'pasaporte', label: t.pasaporte },
+        { value: 'tarjeta_identidad', label: t.tarjeta_identidad },
+    ];
+
     return (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
             <div className="w-full md:w-[60%] mx-auto">
                 <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-                    {/* Encabezado */}
+
+                    {/* ── Header ─────────────────────────────────────────────── */}
                     <div className="flex items-center justify-between p-6 border-b bg-white">
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-900">
-                                CheckIn
-                            </h2>
-                        </div>
+                        <h2 className="text-xl font-semibold text-gray-900">{t.formTitle}</h2>
+
+                        {/* Language toggle */}
+                        <button
+                            type="button"
+                            onClick={toggleLang}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-600 transition-colors"
+                            aria-label="Switch language"
+                        >
+                            <Globe className="w-4 h-4" />
+                            {t.langToggle}
+                        </button>
                     </div>
 
-                    {/* Cuerpo del Formulario */}
+                    {/* ── Form body ───────────────────────────────────────────── */}
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-                        {/* Fila: Selector de Inmueble y ID Reserva */}
+                        {/* Row: Inmueble selector + Reservation ID */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Selector de Inmueble */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Apartamento / Alojamiento *
+                                    {t.accommodation}
                                 </label>
                                 <div className="relative">
                                     <Building className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -583,14 +583,14 @@ const CheckinFormContent = () => {
                                         disabled={!!inmuebleIdParam || loadingList || !!reservaIdParam}
                                         className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal appearance-none bg-white ${errors.id_inmueble ? 'border-red-300' : 'border-gray-300'} ${(!!inmuebleIdParam || !!reservaIdParam) ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                     >
-                                        <option value="0">Selecciona un alojamiento</option>
+                                        <option value="0">{t.selectAccommodation}</option>
                                         {inmuebleIdParam || reservaIdParam ? (
                                             loadingInmueble ? (
-                                                <option disabled>Cargando información...</option>
+                                                <option disabled>{t.loadingInfo}</option>
                                             ) : inmuebleInfo ? (
                                                 <option value={String(inmuebleInfo.id_inmueble)}>{inmuebleInfo.nombre}</option>
                                             ) : (
-                                                <option disabled>Inmueble no encontrado</option>
+                                                <option disabled>{t.notFound}</option>
                                             )
                                         ) : (
                                             inmueblesList.map(inmueble => (
@@ -605,10 +605,9 @@ const CheckinFormContent = () => {
                                 {errors.id_inmueble && <p className="text-red-500 text-xs mt-1">{errors.id_inmueble}</p>}
                             </div>
 
-                            {/* ID Reserva */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    ID Reserva (Opcional)
+                                    {t.reservationId}
                                 </label>
                                 <div className="relative">
                                     <FileText className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -618,7 +617,7 @@ const CheckinFormContent = () => {
                                         onChange={(e) => setReservaIdInput(e.target.value)}
                                         onBlur={handleReservaIdBlur}
                                         disabled={!!reservaIdParam || loadingReserva}
-                                        placeholder="Ingresa ID de reserva"
+                                        placeholder={t.reservationIdPlaceholder}
                                         className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal ${!!reservaIdParam ? 'bg-gray-100 cursor-not-allowed' : ''} ${loadingReserva ? 'bg-gray-50' : ''}`}
                                     />
                                     {loadingReserva && (
@@ -630,11 +629,11 @@ const CheckinFormContent = () => {
                             </div>
                         </div>
 
-                        {/* Sección Fechas y Huéspedes */}
+                        {/* Dates + number of guests */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Fecha de Llegada *
+                                    {t.checkInDate}
                                 </label>
                                 <input
                                     type="date"
@@ -646,7 +645,7 @@ const CheckinFormContent = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Fecha de Salida *
+                                    {t.checkOutDate}
                                 </label>
                                 <input
                                     type="date"
@@ -658,7 +657,7 @@ const CheckinFormContent = () => {
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Número de Huéspedes *
+                                    {t.numberOfGuests}
                                 </label>
                                 <select
                                     value={formData.numero_huespedes}
@@ -667,20 +666,22 @@ const CheckinFormContent = () => {
                                 >
                                     {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => (
                                         <option key={num} value={num}>
-                                            {num} {num === 1 ? 'Huésped' : 'Huéspedes'}
+                                            {num} {num === 1 ? t.guestSingular : t.guestPlural}
                                         </option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
-                        {/* Sección Huéspedes */}
+                        {/* Guests section */}
                         <div>
                             <h3 className="text-lg font-medium text-gray-900 mb-1">
-                                Información de Huéspedes
+                                {t.guestInfoTitle}
                             </h3>
                             <p className="text-sm text-gray-500 mb-4">
-                                Solo el <span className="font-medium text-gray-700">Huésped Principal</span> es obligatorio. Los acompañantes son opcionales.
+                                {t.guestInfoSubtitle}{' '}
+                                <span className="font-medium text-gray-700">{t.guestInfoSubtitleBold}</span>{' '}
+                                {t.guestInfoSubtitleEnd}
                             </p>
                             {errors.huespedes && (
                                 <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm flex items-center">
@@ -708,16 +709,16 @@ const CheckinFormContent = () => {
                                                 )}
                                                 <div>
                                                     <h4 className="text-md font-medium text-gray-800">
-                                                        {index === 0 ? 'Huésped Principal' : `Huésped Acompañante ${index}`}
+                                                        {index === 0 ? t.principalGuest : `${t.companionGuest} ${index}`}
                                                     </h4>
                                                     {index === 0 && (
-                                                        <span className="text-xs text-red-500 font-medium">Obligatorio</span>
+                                                        <span className="text-xs text-red-500 font-medium">{t.required}</span>
                                                     )}
                                                     {index > 0 && isEmpty && (
-                                                        <span className="text-xs text-gray-400">Opcional — sin datos</span>
+                                                        <span className="text-xs text-gray-400">{t.optional}</span>
                                                     )}
                                                     {index > 0 && !isEmpty && (
-                                                        <span className="text-xs text-green-600">Con datos</span>
+                                                        <span className="text-xs text-green-600">{t.withData}</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -731,9 +732,10 @@ const CheckinFormContent = () => {
                                         {isExpanded && (
                                             <div className="p-4 border-t border-gray-200 bg-white">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* First Name */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Nombre {index === 0 ? '*' : ''}
+                                                            {t.firstName} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <input
                                                             type="text"
@@ -741,12 +743,13 @@ const CheckinFormContent = () => {
                                                             onChange={(e) => handleHuespedChange(index, 'nombre', e.target.value)}
                                                             onFocus={() => handleHuespedFocus(index, 'nombre')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                                            placeholder="Nombre"
+                                                            placeholder={t.firstName}
                                                         />
                                                     </div>
+                                                    {/* Last Name */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Apellido {index === 0 ? '*' : ''}
+                                                            {t.lastName} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <input
                                                             type="text"
@@ -754,12 +757,13 @@ const CheckinFormContent = () => {
                                                             onChange={(e) => handleHuespedChange(index, 'apellido', e.target.value)}
                                                             onFocus={() => handleHuespedFocus(index, 'apellido')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                                            placeholder="Apellido"
+                                                            placeholder={t.lastName}
                                                         />
                                                     </div>
+                                                    {/* Email */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Email {index === 0 ? '*' : ''}
+                                                            {t.email} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <input
                                                             type="email"
@@ -767,37 +771,40 @@ const CheckinFormContent = () => {
                                                             onChange={(e) => handleHuespedChange(index, 'email', e.target.value)}
                                                             onFocus={() => handleHuespedFocus(index, 'email')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                                            placeholder="correo@ejemplo.com"
+                                                            placeholder={t.emailPlaceholder}
                                                         />
                                                     </div>
+                                                    {/* Phone */}
                                                     <div>
                                                         <PhoneInput
-                                                            label={`Teléfono${index === 0 ? ' *' : ''}`}
+                                                            label={`${t.phone}${index === 0 ? ' *' : ''}`}
                                                             value={huesped.telefono}
                                                             onChange={(value) => handleHuespedChange(index, 'telefono', value)}
                                                             onFocus={() => handleHuespedFocus(index, 'telefono')}
-                                                            placeholder="300 123 4567"
-                                                            error={index === 0 && errors.huespedes && !huesped.telefono?.trim() ? "Requerido" : ""}
+                                                            placeholder={t.phonePlaceholder}
+                                                            error={index === 0 && errors.huespedes && !huesped.telefono?.trim() ? t.required : ""}
                                                             required={index === 0}
                                                         />
                                                     </div>
+                                                    {/* Document Type */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Tipo de Documento {index === 0 ? '*' : ''}
+                                                            {t.docType} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <select
                                                             value={huesped.documento_tipo}
                                                             onChange={(e) => handleHuespedChange(index, 'documento_tipo', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
-                                                            <option value="cedula">Cédula</option>
-                                                            <option value="pasaporte">Pasaporte</option>
-                                                            <option value="tarjeta_identidad">Tarjeta de Identidad</option>
+                                                            {DOC_TYPES.map(dt => (
+                                                                <option key={dt.value} value={dt.value}>{dt.label}</option>
+                                                            ))}
                                                         </select>
                                                     </div>
+                                                    {/* Document Number */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Número de Documento {index === 0 ? '*' : ''}
+                                                            {t.docNumber} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <input
                                                             type="text"
@@ -805,12 +812,13 @@ const CheckinFormContent = () => {
                                                             onChange={(e) => handleHuespedChange(index, 'documento_numero', e.target.value)}
                                                             onFocus={() => handleHuespedFocus(index, 'documento_numero')}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                                            placeholder="Número de documento"
+                                                            placeholder={t.docNumberPlaceholder}
                                                         />
                                                     </div>
+                                                    {/* Birth Date */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Fecha de Nacimiento {index === 0 ? '*' : ''}
+                                                            {t.birthDate} {index === 0 ? '*' : ''}
                                                         </label>
                                                         <input
                                                             type="date"
@@ -820,47 +828,42 @@ const CheckinFormContent = () => {
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         />
                                                     </div>
+                                                    {/* Travel Reason */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Motivo de Viaje
+                                                            {t.travelReason}
                                                         </label>
                                                         <select
                                                             value={huesped.motivo_viaje || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'motivo_viaje', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
-                                                            <option value="">Seleccione un motivo</option>
-                                                            <option value="Negocios">Negocios</option>
-                                                            <option value="Vacaciones">Vacaciones</option>
-                                                            <option value="Visitas">Visitas</option>
-                                                            <option value="Educacion">Educacion</option>
-                                                            <option value="Salud">Salud</option>
-                                                            <option value="Religion">Religion</option>
-                                                            <option value="Compras">Compras</option>
-                                                            <option value="Transito">Transito</option>
-                                                            <option value="Otros">Otros</option>
+                                                            <option value="">{t.selectReason}</option>
+                                                            {TRAVEL_REASONS.map(reason => (
+                                                                <option key={reason} value={reason}>{t[reason]}</option>
+                                                            ))}
                                                         </select>
                                                     </div>
-                                                    {/* País de Residencia */}
+                                                    {/* Country of Residence */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            País de Residencia
+                                                            {t.countryResidence}
                                                         </label>
                                                         <select
                                                             value={huesped.pais_residencia || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'pais_residencia', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
-                                                            <option value="">Selecciona un país</option>
+                                                            <option value="">{t.selectCountry}</option>
                                                             {paises.map(p => (
                                                                 <option key={p.id_pais} value={p.id_pais}>{p.nombre}</option>
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    {/* Ciudad de Residencia */}
+                                                    {/* City of Residence */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Ciudad de Residencia
+                                                            {t.cityResidence}
                                                         </label>
                                                         <select
                                                             value={huesped.ciudad_residencia}
@@ -868,32 +871,32 @@ const CheckinFormContent = () => {
                                                             disabled={!huesped.pais_residencia}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal disabled:bg-gray-50 disabled:text-gray-400"
                                                         >
-                                                            <option value="">Selecciona una ciudad</option>
+                                                            <option value="">{t.selectCity}</option>
                                                             {huesped.pais_residencia && (ciudadesByPais[parseInt(huesped.pais_residencia)] || []).map(c => (
                                                                 <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    {/* País de Procedencia */}
+                                                    {/* Country of Origin */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            País de Procedencia
+                                                            {t.countryOrigin}
                                                         </label>
                                                         <select
                                                             value={huesped.pais_procedencia || ''}
                                                             onChange={(e) => handleHuespedChange(index, 'pais_procedencia', e.target.value)}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
                                                         >
-                                                            <option value="">Selecciona un país</option>
+                                                            <option value="">{t.selectCountry}</option>
                                                             {paises.map(p => (
                                                                 <option key={p.id_pais} value={p.id_pais}>{p.nombre}</option>
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    {/* Ciudad de Procedencia */}
+                                                    {/* City of Origin */}
                                                     <div>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            Ciudad de Procedencia
+                                                            {t.cityOrigin}
                                                         </label>
                                                         <select
                                                             value={huesped.ciudad_procedencia}
@@ -901,7 +904,7 @@ const CheckinFormContent = () => {
                                                             disabled={!huesped.pais_procedencia}
                                                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal disabled:bg-gray-50 disabled:text-gray-400"
                                                         >
-                                                            <option value="">Selecciona una ciudad</option>
+                                                            <option value="">{t.selectCity}</option>
                                                             {huesped.pais_procedencia && (ciudadesByPais[parseInt(huesped.pais_procedencia)] || []).map(c => (
                                                                 <option key={c.id_ciudad} value={c.nombre}>{c.nombre}</option>
                                                             ))}
@@ -915,21 +918,21 @@ const CheckinFormContent = () => {
                             })}
                         </div>
 
-                        {/* Observaciones */}
+                        {/* Observations */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Observaciones Adicionales
+                                {t.observations}
                             </label>
                             <textarea
                                 value={formData.observaciones}
                                 onChange={(e) => handleInputChange('observaciones', e.target.value)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-tourism-teal"
-                                placeholder="¿Alguna petición especial?"
+                                placeholder={t.observationsPlaceholder}
                                 rows={3}
                             />
                         </div>
 
-                        {/* Términos y Botón */}
+                        {/* Terms + Submit */}
                         <div className="pt-4 border-t border-gray-100">
                             <label className="flex items-start gap-3 cursor-pointer group mb-6">
                                 <div className="relative flex items-center pt-1">
@@ -944,7 +947,7 @@ const CheckinFormContent = () => {
                                     </span>
                                 </div>
                                 <span className={`text-sm ${errors.terms ? 'text-red-500 font-medium' : 'text-gray-600 group-hover:text-gray-800'}`}>
-                                    Acepto los términos y condiciones, así como la política de privacidad.
+                                    {t.termsLabel}
                                 </span>
                             </label>
 
@@ -964,10 +967,10 @@ const CheckinFormContent = () => {
                                         ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-tourism-teal hover:bg-teal-700'}
                                     `}
                                 >
-                                    {isSubmitting ? 'Procesando...' : (
+                                    {isSubmitting ? t.submitting : (
                                         <>
                                             <ShieldCheck size={18} />
-                                            Confirmar Check-in
+                                            {t.submit}
                                         </>
                                     )}
                                 </button>
@@ -982,7 +985,7 @@ const CheckinFormContent = () => {
 
 export default function CheckinForm() {
     return (
-        <Suspense fallback={<div className="p-8 text-center text-gray-500">Cargando formulario...</div>}>
+        <Suspense fallback={<div className="p-8 text-center text-gray-500">{CHECKIN_I18N.es.loadingForm}</div>}>
             <CheckinFormContent />
         </Suspense>
     );
