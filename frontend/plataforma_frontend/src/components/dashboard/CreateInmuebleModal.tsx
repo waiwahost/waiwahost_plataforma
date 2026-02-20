@@ -27,6 +27,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const [loadingPropietarios, setLoadingPropietarios] = useState(false);
   const [empresas, setEmpresas] = useState<{ id_empresa: number; nombre: string }[]>([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -76,29 +77,28 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const apartamento = watch('apartamento');
 
   useEffect(() => {
-  if (!isEdit && tipoAcomodacion === 'Apartamento') {
-    const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''}${apartamento || ''}`;
-    setValue('especificacion_acomodacion', spec.trim(), {
-      shouldValidate: true,
-      shouldDirty: true
-    });
-  }
-}, [tipoAcomodacion, edificio, apartamento, setValue, isEdit]);
+    if (!isEdit && tipoAcomodacion === 'Apartamento') {
+      const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''}${apartamento || ''}`;
+      setValue('especificacion_acomodacion', spec.trim(), {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+    }
+  }, [tipoAcomodacion, edificio, apartamento, setValue, isEdit]);
 
 
 
   useEffect(() => {
-  if (tipoAcomodacion === 'Apartamento') {
-    const spec = `${edificio || ''}${
-      edificio && apartamento ? ' Apto ' : ''
-    }${apartamento || ''}`;
+    if (tipoAcomodacion === 'Apartamento') {
+      const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''
+        }${apartamento || ''}`;
 
-    setValue('especificacion_acomodacion', spec.trim(), {
-      shouldValidate: true,
-      shouldDirty: true
-    });
-  }
-}, [tipoAcomodacion, edificio, apartamento, setValue]);
+      setValue('especificacion_acomodacion', spec.trim(), {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+    }
+  }, [tipoAcomodacion, edificio, apartamento, setValue]);
 
 
 
@@ -159,6 +159,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
   useEffect(() => {
     if (open) {
+      setSubmitError(null);
       if (isEdit && initialData) {
         reset(initialData);
       } else {
@@ -189,6 +190,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
 
   const onSubmit = async (data: IInmuebleForm) => {
+    setSubmitError(null);
     try {
       // Convertir comision a número, reemplazando coma por punto si es necesario
       const formattedData = {
@@ -204,8 +206,14 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       if (!isEdit) {
         reset();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al procesar inmueble:', error);
+      let msg = error?.message || 'Error al guardar el inmueble';
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.message) msg = parsed.message;
+      } catch (_) { /* no es JSON */ }
+      setSubmitError(msg);
     }
   };
 
@@ -366,22 +374,21 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   Especificacion Inmueble *
                 </label>
                 <input
-                    type="text"
-                    {...register('especificacion_acomodacion', {
-                      required: 'La especificación del inmueble es requerida'
-                    })}
-                    disabled={tipoAcomodacion === 'Apartamento'}
-                    className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${
-                      tipoAcomodacion === 'Apartamento'
-                        ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75'
-                        : ''
+                  type="text"
+                  {...register('especificacion_acomodacion', {
+                    required: 'La especificación del inmueble es requerida'
+                  })}
+                  disabled={tipoAcomodacion === 'Apartamento'}
+                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white ${tipoAcomodacion === 'Apartamento'
+                    ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-75'
+                    : ''
                     }`}
-                    placeholder={
-                      tipoAcomodacion === 'Apartamento'
-                        ? 'Se genera automáticamente'
-                        : 'Ej: Finca Vista Hermosa'
-                    }
-                  />
+                  placeholder={
+                    tipoAcomodacion === 'Apartamento'
+                      ? 'Se genera automáticamente'
+                      : 'Ej: Finca Vista Hermosa'
+                  }
+                />
 
                 {errors.especificacion_acomodacion && tipoAcomodacion !== 'Apartamento' && (
                   <p className="text-red-500 text-xs mt-1">{errors.especificacion_acomodacion.message}</p>
@@ -393,38 +400,38 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
             </div>
 
             {tipoAcomodacion === 'Apartamento' && (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Edificio *
-      </label>
-      <input
-        type="text"
-        {...register('edificio', { required: 'El edificio es requerido' })}
-        className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-        placeholder="Ej: Torre Central"
-      />
-      {errors.edificio && (
-        <p className="text-red-500 text-xs mt-1">{errors.edificio.message}</p>
-      )}
-    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Edificio *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('edificio', { required: 'El edificio es requerido' })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="Ej: Torre Central"
+                  />
+                  {errors.edificio && (
+                    <p className="text-red-500 text-xs mt-1">{errors.edificio.message}</p>
+                  )}
+                </div>
 
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        Apartamento *
-      </label>
-      <input
-        type="text"
-        {...register('apartamento', { required: 'El apartamento es requerido' })}
-        className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-        placeholder="Ej: 504"
-      />
-      {errors.apartamento && (
-        <p className="text-red-500 text-xs mt-1">{errors.apartamento.message}</p>
-      )}
-    </div>
-  </div>
-)}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Apartamento *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('apartamento', { required: 'El apartamento es requerido' })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="Ej: 504"
+                  />
+                  {errors.apartamento && (
+                    <p className="text-red-500 text-xs mt-1">{errors.apartamento.message}</p>
+                  )}
+                </div>
+              </div>
+            )}
 
 
 
@@ -512,8 +519,16 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   {...register('comision', {
                     required: 'La comisión es requerida',
                     validate: (value) => {
-                      if (!/^[0-9]*[.,]?[0-9]*$/.test(value.toString())) {
+                      const str = value?.toString().trim();
+                      if (!str || str === '' || str === '0') {
+                        return 'Debe ingresar un porcentaje de comisión mayor a 0';
+                      }
+                      if (!/^[0-9]*[.,]?[0-9]*$/.test(str)) {
                         return 'Solo se permiten números y decimales (punto o coma)';
+                      }
+                      const num = parseFloat(str.replace(',', '.'));
+                      if (isNaN(num) || num <= 0) {
+                        return 'Debe ingresar un porcentaje de comisión mayor a 0';
                       }
                       return true;
                     }
@@ -660,6 +675,16 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                 </span>
               </label>
             </div>
+
+            {/* Error del servidor */}
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start gap-2 text-sm">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{submitError}</span>
+              </div>
+            )}
 
             {/* Botones */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
