@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             response = await fetch(`${apiUrl}/bloqueos/${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': token,
                 },
             });
@@ -34,7 +33,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(response.status).json(errorData);
         }
 
-        const data = await response.json();
+        // Manejar respuestas sin body (ej: 204 No Content en DELETE)
+        const contentType = response.headers.get('content-type');
+        const hasBody = contentType && contentType.includes('application/json');
+        const data = hasBody ? await response.json() : {};
         return res.status(200).json(data);
 
     } catch (error) {

@@ -3,18 +3,19 @@ import { X, AlertCircle } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { IInmueble } from '../../interfaces/Inmueble';
-import { createBloqueoApi, updateBloqueoApi, deleteBloqueoApi } from '../../auth/bloqueosApi';
+import { createBloqueoApi, updateBloqueoApi } from '../../auth/bloqueosApi';
 import { CreateBloqueoRequest, IBloqueo } from '../../interfaces/Bloqueo';
 
 interface CreateBloqueoModalProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    onDeleteRequest?: () => void;  // El padre muestra el modal de confirmación
     initialData?: IBloqueo;
     isEdit?: boolean;
 }
 
-const CreateBloqueoModal: React.FC<CreateBloqueoModalProps> = ({ open, onClose, onSuccess, initialData, isEdit }) => {
+const CreateBloqueoModal: React.FC<CreateBloqueoModalProps> = ({ open, onClose, onSuccess, onDeleteRequest, initialData, isEdit }) => {
     const [inmuebles, setInmuebles] = useState<IInmueble[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -56,7 +57,8 @@ const CreateBloqueoModal: React.FC<CreateBloqueoModalProps> = ({ open, onClose, 
     const loadInmuebles = async () => {
         try {
             const data = await getInmueblesApi();
-            setInmuebles(data.filter(i => i.estado === 'disponible'));
+            // En modo edición cargar todos los inmuebles (el bloqueado puede no estar 'disponible')
+            setInmuebles(isEdit ? data : data.filter(i => i.estado === 'disponible'));
         } catch (err) {
             console.error('Error cargando inmuebles', err);
         }
@@ -69,16 +71,18 @@ const CreateBloqueoModal: React.FC<CreateBloqueoModalProps> = ({ open, onClose, 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
 
-        // Validaciones básicas
-        if (!formData.id_inmueble) return setError('Seleccione un inmueble');
-        if (!formData.fecha_inicio) return setError('Seleccione fecha de inicio');
-        if (!formData.fecha_fin) return setError('Seleccione fecha de fin');
+        // Validaciones básicas (antes de setLoading para no quedar atascado)
+        if (!formData.id_inmueble) { setError('Seleccione un inmueble'); return; }
+        if (!formData.fecha_inicio) { setError('Seleccione fecha de inicio'); return; }
+        if (!formData.fecha_fin) { setError('Seleccione fecha de fin'); return; }
         if (new Date(formData.fecha_inicio) > new Date(formData.fecha_fin)) {
-            return setError('La fecha de fin debe ser posterior a la de inicio');
+            setError('La fecha de fin debe ser posterior a la de inicio');
+            return;
         }
+
+        setLoading(true);
 
         try {
             if (isEdit && initialData?.id) {
@@ -101,21 +105,12 @@ const CreateBloqueoModal: React.FC<CreateBloqueoModalProps> = ({ open, onClose, 
         }
     };
 
-    const handleDelete = async () => {
+    const handleDelete = () => {
         if (!initialData?.id) return;
-        if (!confirm('¿Estás seguro de eliminar este bloqueo?')) return;
-
-        setLoading(true);
-        try {
-            await deleteBloqueoApi(initialData.id);
-            onSuccess();
-            onClose();
-        } catch (err: any) {
-            let msg = err.message || 'Error al eliminar bloqueo';
-            setError(msg);
-        } finally {
-            setLoading(false);
-        }
+        // Delegar la confirmación y el borrado al padre (Availability)
+        // IMPORTANTE: llamar onDeleteRequest primero; el padre cierra este modal
+        // sin limpiar selectedBloqueo, para que handleConfirmDelete tenga el ID.
+        onDeleteRequest?.();
     };
 
     if (!open) return null;
