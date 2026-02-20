@@ -69,6 +69,7 @@ export interface GetReservasQuery {
   estado?: string;
   fecha_inicio?: string;
   fecha_fin?: string;
+  plataforma_origen?: string;
 }
 
 export interface CreateHuespedData {

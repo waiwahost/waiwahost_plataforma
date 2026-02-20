@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, MapPin, CreditCard, Users, Clock, Trash2, AlertCircle } from 'lucide-react';
+import { X, Calendar, User, MapPin, CreditCard, Users, Clock, Trash2, AlertCircle, Share2, CheckCheck, Link } from 'lucide-react';
+import { copyToClipboard } from '../../lib/utils';
 import { Button } from '../atoms/Button';
 import { IReservaTableData } from '../../interfaces/Reserva';
 import { IPago } from '../../interfaces/Pago';
@@ -21,6 +22,7 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
   const [pagos, setPagos] = useState<IPago[]>([]);
   const [loadingPagos, setLoadingPagos] = useState(false);
   const [errorPagos, setErrorPagos] = useState<string | null>(null);
+  const [linkCopiado, setLinkCopiado] = useState(false);
 
   // Cargar pagos cuando se abre el modal
   useEffect(() => {
@@ -92,6 +94,16 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
 
   if (!open || !reserva) return null;
 
+  const checkinLink = `${process.env.NEXT_PUBLIC_FORM_URL || (typeof window !== 'undefined' ? window.location.origin.replace('3001', '3000') : '')}/checkin?reserva=${reserva.id}`;
+
+  const handleCopyCheckinLink = async () => {
+    const success = await copyToClipboard(checkinLink);
+    if (success) {
+      setLinkCopiado(true);
+      setTimeout(() => setLinkCopiado(false), 3000);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -160,6 +172,14 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                 Editar
               </button>
             )}
+            <button
+              onClick={handleCopyCheckinLink}
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-md text-sm transition-colors"
+              title="Copiar enlace de check-in"
+            >
+              {linkCopiado ? <CheckCheck className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+              {linkCopiado ? 'Copiado' : 'Check-in'}
+            </button>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 transition-colors"
@@ -451,6 +471,35 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Enlace Check-in */}
+          <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Link className="h-5 w-5 text-purple-600" />
+              Enlace de Check-in
+            </h4>
+            <p className="text-sm text-gray-600 mb-3">
+              Comparte este enlace con el huésped para que complete el formulario de check-in.
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-white border border-purple-200 rounded-md px-3 py-2 text-sm text-gray-700 font-mono truncate">
+                {checkinLink}
+              </div>
+              <button
+                onClick={handleCopyCheckinLink}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${linkCopiado
+                    ? 'bg-green-600 text-white'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
+              >
+                {linkCopiado ? (
+                  <><CheckCheck className="h-4 w-4" /> Copiado!</>
+                ) : (
+                  <><Share2 className="h-4 w-4" /> Copiar enlace</>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Observaciones */}
