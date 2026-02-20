@@ -6,6 +6,9 @@ import { authMiddleware } from '../middlewares/authMiddleware';
 import { getReservasSchema, createReservaSchema, editReservaSchema } from '../schemas/reserva.schema';
 
 export async function reservasRoutes(server: FastifyInstance, opts: FastifyPluginOptions) {
+  // GET /reservas/export-excel?fecha_inicio={fecha_inicio}&fecha_fin={fecha_fin}&estado={estado}&id_inmueble={id_inmueble}&plataforma_origen={plataforma} - Exportar reservas a Excel
+  server.get('/export-excel', { preHandler: [authMiddleware] }, reservasController.exportExcel);
+
   // GET /reservas - Obtener lista de reservas
   server.get('/', {
     preHandler: [authMiddleware],

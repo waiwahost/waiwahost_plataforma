@@ -12,6 +12,9 @@ import SuccessModal from './SuccessModal';
 import ConfirmModal from './ConfirmModal';
 import MonthSelector from './MonthSelector'
 import InmuebleSelector from './InmuebleSelector';
+import ExportExcelButton from './ExportExcelButton';
+import ExportReservasModal from './ExportReservasModal';
+
 
 import { useInmuebleSelector } from '../../hooks/useInmuebleSelector';
 import { useAuth } from '../../auth/AuthContext';
@@ -61,6 +64,7 @@ const Bookings: React.FC = () => {
   const [tarjetas, setTarjetas] = useState<IEstadoTarjetaResponse[]>([]);
   const [reservaToViewTarjeta, setReservaToViewTarjeta] = useState<IReservaTableData | null>(null);
   const [tarjetaModalOpen, setTarjetaModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [reservaError, setReservaError] = useState<string | null>(null);
 
   // Inmuebles
@@ -293,6 +297,7 @@ const Bookings: React.FC = () => {
           />
 
 
+          <ExportExcelButton onClick={() => setExportModalOpen(true)} />
           <CreateReservaButton
             onClick={() => {
               if (canCreate) {
@@ -439,6 +444,11 @@ const Bookings: React.FC = () => {
         open={successOpen}
         message={successMsg}
         onClose={() => setSuccessOpen(false)}
+      />
+
+      <ExportReservasModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
       />
     </div>
   );

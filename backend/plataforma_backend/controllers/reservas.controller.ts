@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { GetReservasService } from '../services/reservas/getReservasService';
 import { CreateReservaService } from '../services/reservas/createReservaService';
 import { editReservaService } from '../services/reservas/editReservaService';
+import { ExportReservasExcelService } from '../services/reservas/exportReservasExcelService';
 import { GetReservasQuery, CreateReservaRequest, EditReservaRequest } from '../interfaces/reserva.interface';
 import { successResponse, errorResponse } from '../libs/responseHelper';
 
@@ -184,6 +185,49 @@ export class ReservasController {
     } catch (error: any) {
       console.error('Error en ReservasController.deleteReserva:', error);
       return reply.code(400).send(errorResponse({ message: error.message || 'Error al anular reserva', code: 400 }));
+    }
+  }
+
+  /**
+   * Exporta reservas a Excel
+   * GET /reservas/export-excel?fecha_inicio={fecha_inicio}&fecha_fin={fecha_fin}&estado={estado}&id_inmueble={id_inmueble}&plataforma_origen={plataforma}
+   */
+  async exportExcel(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const ctx = (request as any).userContext || (request as any).user?.userContext;
+      if (!ctx) {
+        return reply.code(401).send(errorResponse({ message: 'No autenticado o token inválido', code: 401 }));
+      }
+
+      const query = request.query as any;
+
+      // Lógica superadmin: si es superadmin y empresaId es null, no filtrar por empresa
+      let id_empresa: number | undefined;
+      if (ctx.id_roles === 1 && (ctx.empresaId === null || ctx.empresaId === undefined)) {
+        id_empresa = undefined;
+      } else {
+        if (!ctx.empresaId) {
+          return reply.code(401).send(errorResponse({ message: 'No autenticado o token inválido', code: 401 }));
+        }
+        id_empresa = Number(ctx.empresaId);
+      }
+
+      const { buffer, fileName } = await ExportReservasExcelService.execute({
+        fecha_inicio: query.fecha_inicio,
+        fecha_fin: query.fecha_fin,
+        estado: query.estado,
+        id_inmueble: query.id_inmueble ? Number(query.id_inmueble) : undefined,
+        plataforma_origen: query.plataforma_origen,
+        id_empresa,
+      });
+
+      reply.header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      reply.header('Content-Disposition', `attachment; filename=${fileName}`);
+
+      return reply.send(buffer);
+    } catch (error: any) {
+      console.error('Error en ReservasController.exportExcel:', error);
+      return reply.code(500).send(errorResponse({ message: 'Error al generar el reporte de Excel', code: 500 }));
     }
   }
 }

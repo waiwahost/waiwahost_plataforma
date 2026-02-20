@@ -133,3 +133,72 @@ export const deleteReservaApi = async (id: number): Promise<{ id: number }> => {
     throw error instanceof Error ? error : new Error('Error al eliminar reserva');
   }
 };
+
+/**
+ * Exporta reservas a Excel filtradas
+ * Realiza la descarga directa del archivo
+ */
+export const exportReservasToExcel = async (filters: {
+  fecha_inicio: string;
+  fecha_fin: string;
+  id_inmueble?: string;
+  estado?: string;
+  plataforma_origen?: string;
+}): Promise<void> => {
+  try {
+    const queryParams = new URLSearchParams({
+      fecha_inicio: filters.fecha_inicio,
+      fecha_fin: filters.fecha_fin
+    });
+
+    if (filters.id_inmueble) queryParams.append('id_inmueble', filters.id_inmueble);
+    if (filters.estado && filters.estado !== 'todas') queryParams.append('estado', filters.estado);
+    if (filters.plataforma_origen && filters.plataforma_origen !== 'todas') queryParams.append('plataforma_origen', filters.plataforma_origen);
+
+    const url = `/api/reservas/exportExcel?${queryParams.toString()}`;
+
+    // Obtener token para la petición
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: HeadersInit = {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    // Realizar la petición
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Error al generar el reporte de Excel', { cause: response.statusText });
+    }
+
+    // Obtener el blob
+    const blob = await response.blob();
+
+    // Crear un link temporal para la descarga
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+
+    // El nombre del archivo lo da el header Content-Disposition si es posible, 
+    // si no ponemos uno por defecto
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let fileName = `Reporte_Reservas_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename=(.+)/);
+      if (match && match[1]) fileName = match[1].replace(/['"]/g, ''); // Limpiar comillas si existen
+    }
+
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpieza
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error('❌ Error al exportar reservas a Excel:', error);
+    throw error;
+  }
+};
