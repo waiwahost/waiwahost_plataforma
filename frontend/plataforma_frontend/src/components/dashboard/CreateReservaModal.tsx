@@ -554,8 +554,6 @@ const CreateReservaModal: React.FC<CreateReservaModalProps> = ({
     }));
   };
 
-  console.log(formData);
-
 
   if (!open) return null;
 
