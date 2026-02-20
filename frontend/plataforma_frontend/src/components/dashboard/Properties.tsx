@@ -49,8 +49,9 @@ const Properties: React.FC = () => {
       // Refrescar la lista de inmuebles
       const updatedInmuebles = await getInmueblesApi();
       setInmuebles(updatedInmuebles);
-    } catch (e) {
-      alert(e || 'Error al crear inmueble');
+    } catch (e: any) {
+      // Relanzar para que CreateInmuebleModal lo muestre inline sin cerrar ni perder datos
+      throw e;
     }
   };
 
