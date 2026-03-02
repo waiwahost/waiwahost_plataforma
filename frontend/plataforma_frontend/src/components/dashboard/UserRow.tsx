@@ -33,15 +33,15 @@ const UserRow: React.FC<UserRowProps> = ({ cedula, nombre, apellido, username, e
         <div className="text-[13px] text-gray-700 dark:text-gray-300">{email}</div>
       </td>
       <td className="px-5 py-4 whitespace-nowrap">
-        <div className="text-[13px] capitalize text-gray-700 dark:text-gray-300">{rol.replace('_', ' ')}</div>
+        <div className="text-[13px] capitalize text-gray-700 dark:text-gray-300">{(rol || '').replace('_', ' ')}</div>
       </td>
       <td className="px-5 py-4 whitespace-nowrap">
         <div className="text-[13px] text-gray-700 dark:text-gray-300">{empresa}</div>
       </td>
       <td className="px-5 py-4 whitespace-nowrap text-center">
         <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap inline-flex items-center justify-center capitalize ${estado === 'activo'
-            ? 'bg-[#dcfce7] text-[#15803d] dark:bg-[#dcfce7]/10 dark:text-[#dcfce7]'
-            : 'bg-[#fee2e2] text-[#b91c1c] dark:bg-[#fee2e2]/10 dark:text-[#fee2e2]'
+          ? 'bg-[#dcfce7] text-[#15803d] dark:bg-[#dcfce7]/10 dark:text-[#dcfce7]'
+          : 'bg-[#fee2e2] text-[#b91c1c] dark:bg-[#fee2e2]/10 dark:text-[#fee2e2]'
           }`}>
           {estado}
         </span>
@@ -59,8 +59,8 @@ const UserRow: React.FC<UserRowProps> = ({ cedula, nombre, apellido, username, e
         <button
           onClick={canDelete ? onDelete : undefined}
           className={`p-1.5 rounded-md border border-transparent transition-colors items-center justify-center ${canDelete
-              ? 'hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/40 dark:hover:text-red-400'
-              : 'text-gray-400 cursor-not-allowed opacity-50'
+            ? 'hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/40 dark:hover:text-red-400'
+            : 'text-gray-400 cursor-not-allowed opacity-50'
             }`}
           title={canDelete ? 'Eliminar' : 'No tienes permisos para eliminar'}
           disabled={!canDelete}

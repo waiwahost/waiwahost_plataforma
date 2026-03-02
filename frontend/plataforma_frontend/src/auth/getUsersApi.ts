@@ -7,5 +7,9 @@ export async function getUsersApi() {
     },
   });
   if (!res.ok) throw new Error('Error al obtener usuarios');
-  return res.json();
+  const data = await res.json();
+  if (data && typeof data === 'object' && 'data' in data && Array.isArray(data.data)) {
+    return data.data;
+  }
+  return Array.isArray(data) ? data : [];
 }

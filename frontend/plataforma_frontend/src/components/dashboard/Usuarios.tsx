@@ -42,7 +42,14 @@ const Usuarios: React.FC = () => {
 
   useEffect(() => {
     getUsersApi()
-      .then(setUsers)
+      .then(res => {
+        if (Array.isArray(res)) {
+          setUsers(res);
+        } else {
+          console.error('getUsersApi did not return an array:', res);
+          setUsers([]);
+        }
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);

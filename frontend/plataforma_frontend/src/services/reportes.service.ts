@@ -36,11 +36,17 @@ export const getOpcionesReporte = async (empresaId?: number, tipo?: 'empresas' |
             method: 'GET',
         });
 
-        if (response.success && response.data) {
-            return response.data as IOpcionesReporte;
+        // apiFetch already unwraps the 'data' property if it exists
+        if (response && (response.empresas || response.inmuebles || response.propietarios)) {
+            return response as IOpcionesReporte;
         }
 
-        console.error('Error al obtener opciones de reporte:', response.message);
+        // If it's not the wrapped format, maybe it's the raw data or an error
+        if (response && typeof response === 'object') {
+            return response as IOpcionesReporte;
+        }
+
+        console.error('Error al obtener opciones de reporte o respuesta vacía:', response);
         return null;
     } catch (error) {
         console.error('Error en getOpcionesReporte:', error);
