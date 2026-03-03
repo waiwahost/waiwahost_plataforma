@@ -5,8 +5,10 @@ export interface UnitKpis {
     adr: number;
     revpar: number;
     ingreso_neto: number;
+    ingreso_total: number;
     costo_limpieza: number;
     utilidad: number;
+    gasto_proporcional_asignado?: number;
     noches_disponibles: number;
     noches_ocupadas: number;
     total_reservas: number;
@@ -19,6 +21,7 @@ export interface BuildingKpis {
     ocupacion_global: number;
     revpar_edificio: number;
     ingresos_totales: number;
+    ingresos_brutos: number;
     utilidad_total: number;
     margen_neto: number;
     total_area_m2: number;

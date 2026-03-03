@@ -36,13 +36,9 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
 
   const formatShortDate = (dateString: string) => {
     if (!dateString) return '-';
-    const fechaParte = dateString.split('T')[0];
-    if (!fechaParte) return '-';
-    const [year, month, day] = fechaParte.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    if (isNaN(date.getTime())) return '-';
-    // Mismo formato de la imagen, ej: "Mar 12, 2035"
-    return format(date, "MMM dd, yyyy", { locale: es });
+    const date = new Date(dateString);
+    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return format(localDate, "MMM dd, yyyy", { locale: es });
   };
 
   const formatCurrency = (amount: number) => {
@@ -169,8 +165,8 @@ const ReservasTable: React.FC<ReservasTableProps> = ({
                     <td className="px-5 py-2 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1.5 text-gray-600 dark:text-gray-400">
                         <div className="text-xs text-gray-400 dark:text-muted-foreground mt-0.5 font-medium">
-                        {noches} noche(s)
-                      </div>
+                          {noches} noche(s)
+                        </div>
                       </div>
                     </td>
 

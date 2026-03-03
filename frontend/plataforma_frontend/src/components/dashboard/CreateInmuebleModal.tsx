@@ -79,7 +79,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const tipoAcomodacion = watch('tipo_acomodacion');
   const edificioVal = watch('edificio');
   const apartamentoVal = watch('apartamento');
-  const tipoRegistro = watch('tipo_registro');
+  const tipoRegistro = watch('tipo_registro') as 'edificio' | 'unidad' | 'independiente';
   const parentId = watch('parent_id');
 
   useEffect(() => {
@@ -274,6 +274,9 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   <option value="edificio">Proyecto / Edificio (Padre)</option>
                   <option value="unidad">Unidad / Apartamento (Hijo)</option>
                 </select>
+                {errors.tipo_registro && (
+                  <p className="text-red-500 text-xs mt-1">{errors.tipo_registro.message}</p>
+                )}
               </div>
 
               {tipoRegistro === 'unidad' && (
@@ -595,41 +598,44 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
 
             {/* Precios y comisión */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Porcentaje de Comisión *
-                </label>
-                <input
-                  type="text"
-                  {...register('comision', {
-                    required: 'La comisión es requerida',
-                    validate: (value) => {
-                      const str = value?.toString().trim();
-                      if (!str || str === '' || str === '0') {
-                        return 'Debe ingresar un porcentaje de comisión mayor a 0';
+              {tipoRegistro !== 'unidad' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Porcentaje de Comisión *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('comision', {
+                      required: tipoRegistro !== 'unidad' ? 'La comisión es requerida' : false,
+                      validate: (value) => {
+                        if (tipoRegistro === 'unidad') return true;
+                        const str = value?.toString().trim();
+                        if (!str || str === '' || str === '0') {
+                          return 'Debe ingresar un porcentaje de comisión mayor a 0';
+                        }
+                        if (!/^[0-9]*[.,]?[0-9]*$/.test(str)) {
+                          return 'Solo se permiten números y decimales (punto o coma)';
+                        }
+                        const num = parseFloat(str.replace(',', '.'));
+                        if (isNaN(num) || num <= 0) {
+                          return 'Debe ingresar un porcentaje de comisión mayor a 0';
+                        }
+                        return true;
                       }
-                      if (!/^[0-9]*[.,]?[0-9]*$/.test(str)) {
-                        return 'Solo se permiten números y decimales (punto o coma)';
+                    })}
+                    onKeyPress={(e) => {
+                      if (!/[0-9.,]/.test(e.key)) {
+                        e.preventDefault();
                       }
-                      const num = parseFloat(str.replace(',', '.'));
-                      if (isNaN(num) || num <= 0) {
-                        return 'Debe ingresar un porcentaje de comisión mayor a 0';
-                      }
-                      return true;
-                    }
-                  })}
-                  onKeyPress={(e) => {
-                    if (!/[0-9.,]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  placeholder="10.5"
-                />
-                {errors.comision && (
-                  <p className="text-red-500 text-xs mt-1">{errors.comision.message}</p>
-                )}
-              </div>
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="10.5"
+                  />
+                  {errors.comision && (
+                    <p className="text-red-500 text-xs mt-1">{errors.comision.message}</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

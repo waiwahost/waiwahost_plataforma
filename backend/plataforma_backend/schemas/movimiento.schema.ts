@@ -14,16 +14,20 @@ const fechaNoFuturaSchema = fechaSchema.refine((fecha) => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
+  const minimo = new Date();
+  minimo.setMonth(minimo.getMonth() - 2);
+  minimo.setHours(0, 0, 0, 0);
+
   const maximo = new Date();
   maximo.setMonth(maximo.getMonth() + 5);
   maximo.setHours(23, 59, 59, 999);
 
   return (
-    fechaMovimiento >= hoy &&
+    fechaMovimiento >= minimo &&
     fechaMovimiento <= maximo
   );
 }, {
-  message: "La fecha debe estar entre hoy y máximo 5 meses después"
+  message: "La fecha debe estar entre hace 2 meses y máximo 5 meses después"
 });
 
 
