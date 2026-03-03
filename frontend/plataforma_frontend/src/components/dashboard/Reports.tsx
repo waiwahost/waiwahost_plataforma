@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../atoms/Button';
 import { Calendar, Filter, Download, RefreshCw, AlertCircle, TrendingUp } from 'lucide-react';
 import { getReporteFinanciero, ReporteFinancieroFilters, getOpcionesReporte, IOpcionesReporte } from '../../services/reportes.service';
+import { getKpis } from '../../services/kpi.service';
+import { KpiResponse, BuildingKpis, UnitKpis } from '../../interfaces/Kpi';
 import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { getPropietariosApi } from '../../auth/propietariosApi';
 import jsPDF from 'jspdf';
@@ -18,6 +20,7 @@ export default function NuevoReporteFinanciero() {
         fechaFin: '',
     });
     const [reportData, setReportData] = useState<any>(null);
+    const [kpiData, setKpiData] = useState<KpiResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [opciones, setOpciones] = useState<IOpcionesReporte | null>(null);
@@ -111,19 +114,27 @@ export default function NuevoReporteFinanciero() {
         setLoading(true);
         setError(null);
         try {
-            const response = await getReporteFinanciero(filters);
+            const reportPromise = getReporteFinanciero(filters);
+            let kpiPromise: Promise<KpiResponse | null> = Promise.resolve(null);
+
+            if (filters.inmuebleId) {
+                kpiPromise = getKpis({
+                    id_inmueble: filters.inmuebleId,
+                    fecha_inicio: filters.fechaInicio!,
+                    fecha_fin: filters.fechaFin!
+                });
+            }
+
+            const [response, kpiRes] = await Promise.all([reportPromise, kpiPromise]);
+            setKpiData(kpiRes);
 
             // Robust data extraction to handle different nesting levels
             let payload = null;
-
             if (response.data && response.data.resumen) {
-                // Case 1: Standard response { isError: false, data: { ... }, ... }
                 payload = response.data;
             } else if (response.data && response.data.data && response.data.data.resumen) {
-                // Case 2: Double nested { data: { data: { ... } } }
                 payload = response.data.data;
             } else if (response.resumen) {
-                // Case 3: Direct payload { reservas: ..., resumen: ... }
                 payload = response;
             }
 
@@ -307,7 +318,9 @@ export default function NuevoReporteFinanciero() {
                         <Card className="bg-green-50 border-green-200">
                             <CardContent className="p-6">
                                 <h3 className="text-green-700 font-medium">Ingresos Totales</h3>
-                                <p className="text-2xl font-bold text-green-800">{formatCurrency(reportData.resumen.totalIngresos)}</p>
+                                <p className="text-2xl font-bold text-green-800">
+                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ingreso_neto : (kpiData.data as BuildingKpis).ingresos_totales) : formatCurrency(reportData.resumen.totalIngresos)}
+                                </p>
                             </CardContent>
                         </Card>
                         <Card className="bg-red-50 border-red-200">
@@ -318,34 +331,91 @@ export default function NuevoReporteFinanciero() {
                         </Card>
                         <Card className="bg-blue-50 border-blue-200">
                             <CardContent className="p-6">
-                                <h3 className="text-blue-700 font-medium">Balance</h3>
-                                <p className="text-2xl font-bold text-blue-800">{formatCurrency(reportData.resumen.balance)}</p>
+                                <h3 className="text-blue-700 font-medium">Utilidad / Balance</h3>
+                                <p className="text-2xl font-bold text-blue-800">
+                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).utilidad : (kpiData.data as BuildingKpis).utilidad_total) : formatCurrency(reportData.resumen.balance)}
+                                </p>
                             </CardContent>
                         </Card>
                     </div>
 
                     {/* Indicators */}
                     <Card>
-                        <CardHeader><CardTitle>Indicadores Clave</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Indicadores Clave (KPIs)</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
-                                <p className="text-sm text-gray-500">Noches Ocupadas</p>
-                                <p className="text-xl font-semibold">{reportData.indicadores.nochesOcupadas}</p>
+                                <p className="text-sm text-gray-500">Ocupación</p>
+                                <p className="text-xl font-semibold">
+                                    {kpiData && kpiData.data ? (kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ocupacion : (kpiData.data as BuildingKpis).ocupacion_global).toFixed(1) : reportData.indicadores.porcentajeOcupacion}%
+                                </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">% Ocupación (Est.)</p>
-                                <p className="text-xl font-semibold">{reportData.indicadores.porcentajeOcupacion}%</p>
+                                <p className="text-sm text-gray-500">{kpiData?.type === 'building' ? 'RevPAR Edificio' : 'ADR'}</p>
+                                <p className="text-xl font-semibold">
+                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).adr : (kpiData.data as BuildingKpis).revpar_edificio) : formatCurrency(reportData.indicadores.ingresoPorReserva)}
+                                </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Total Reservas</p>
-                                <p className="text-xl font-semibold">{reportData.indicadores.totalReservas}</p>
+                                <p className="text-sm text-gray-500">RevPAR</p>
+                                <p className="text-xl font-semibold">
+                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).revpar : (kpiData.data as BuildingKpis).revpar_edificio) : 'N/A'}
+                                </p>
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Ingreso Promedio / Reserva</p>
-                                <p className="text-xl font-semibold">{formatCurrency(reportData.indicadores.ingresoPorReserva)}</p>
-                            </div>
+                            {kpiData?.type === 'unit' && kpiData.data ? (
+                                <div>
+                                    <p className="text-sm text-gray-500">Noches Ocupadas</p>
+                                    <p className="text-xl font-semibold">{(kpiData.data as UnitKpis).noches_ocupadas} / {(kpiData.data as UnitKpis).noches_disponibles}</p>
+                                </div>
+                            ) : kpiData?.type === 'building' && kpiData.data ? (
+                                <div>
+                                    <p className="text-sm text-gray-500">Margen Neto</p>
+                                    <p className="text-xl font-semibold">{(kpiData.data as BuildingKpis).margen_neto.toFixed(1)}%</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-sm text-gray-500">Total Reservas</p>
+                                    <p className="text-xl font-semibold">{reportData.indicadores.totalReservas}</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
+
+                    {/* Building Unit Breakdown */}
+                    {kpiData?.type === 'building' && (
+                        <Card>
+                            <CardHeader><CardTitle>Desglose de Unidades (Reparto Proporcional por m²)</CardTitle></CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead>
+                                            <tr className="border-b">
+                                                <th className="py-2">Unidad</th>
+                                                <th className="py-2">Área (m²)</th>
+                                                <th className="py-2 text-center">Ocupación</th>
+                                                <th className="py-2 text-right">ADR</th>
+                                                <th className="py-2 text-right">RevPAR</th>
+                                                <th className="py-2 text-right">Gasto Prop.</th>
+                                                <th className="py-2 text-right font-bold">Utilidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {kpiData.data && (kpiData.data as BuildingKpis).unidades && (kpiData.data as BuildingKpis).unidades.map((unit) => (
+                                                <tr key={unit.id_inmueble} className="border-b hover:bg-gray-50">
+                                                    <td className="py-2 font-medium">{unit.nombre}</td>
+                                                    <td className="py-2">{unit.area_m2} m²</td>
+                                                    <td className="py-2 text-center">{unit.ocupacion.toFixed(1)}%</td>
+                                                    <td className="py-2 text-right">{formatCurrency(unit.adr)}</td>
+                                                    <td className="py-2 text-right">{formatCurrency(unit.revpar)}</td>
+                                                    <td className="py-2 text-right text-red-600">-{formatCurrency(unit.gasto_proporcional_asignado)}</td>
+                                                    <td className="py-2 text-right font-bold text-green-700">{formatCurrency(unit.utilidad)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Reservations Table */}
                     <div className="rounded-[1rem] border border-gray-100 dark:border-border overflow-hidden bg-white dark:bg-card shadow-sm w-full">

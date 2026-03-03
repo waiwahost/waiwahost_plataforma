@@ -3,6 +3,7 @@ import dbClient from '../libs/db';
 export interface ReporteFinancieroFilters {
     empresaId?: number;
     inmuebleId?: number;
+    edificioId?: number;
     propietarioId?: number;
     fechaInicio?: string;
     fechaFin?: string;
@@ -11,7 +12,7 @@ export interface ReporteFinancieroFilters {
 export class ReportesService {
     async getReporteFinanciero(filters: ReporteFinancieroFilters) {
         try {
-            const { empresaId, inmuebleId, propietarioId, fechaInicio, fechaFin } = filters;
+            const { empresaId, inmuebleId, edificioId, propietarioId, fechaInicio, fechaFin } = filters;
 
             // 1. Reservas Query
             let reservasQuery = `
@@ -50,6 +51,10 @@ export class ReportesService {
                 reservasQuery += ` AND r.id_inmueble = $${pIndex++}`;
                 reservasParams.push(inmuebleId);
             }
+            if (edificioId) {
+                reservasQuery += ` AND (i.id_inmueble = $${pIndex} OR i.parent_id = $${pIndex++})`;
+                reservasParams.push(edificioId);
+            }
             if (propietarioId) {
                 reservasQuery += ` AND i.id_propietario = $${pIndex++}`;
                 reservasParams.push(propietarioId);
@@ -75,8 +80,12 @@ export class ReportesService {
           m.fecha,
           m.concepto,
           m.descripcion,
+          m.descripcion,
           m.monto,
-          i.nombre as nombre_inmueble
+          i.nombre as nombre_inmueble,
+          i.id_inmueble,
+          i.parent_id,
+          i.area_m2
         FROM movimientos m
         INNER JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::varchar
         WHERE m.tipo IN ('egreso', 'deducible')
@@ -92,6 +101,10 @@ export class ReportesService {
             if (inmuebleId) {
                 gastosQuery += ` AND m.id_inmueble = $${pIndex++}::varchar`;
                 gastosParams.push(inmuebleId);
+            }
+            if (edificioId) {
+                gastosQuery += ` AND (i.id_inmueble = $${pIndex} OR i.parent_id = $${pIndex++})::varchar`;
+                gastosParams.push(edificioId);
             }
             // For owner filter in expenses, we need to join inmuebles which we did.
             if (propietarioId) {

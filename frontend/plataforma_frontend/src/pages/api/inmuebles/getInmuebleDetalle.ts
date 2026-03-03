@@ -28,6 +28,9 @@ interface ExternalInmuebleResponse {
   especificacion_acomodacion: string | null;
   rnt: string | null;
   tra_token: string | null;
+  area_m2: string | number | null;
+  parent_id: number | string | null;
+  tipo_registro: 'edificio' | 'unidad' | 'independiente' | null;
 }
 
 interface ExternalApiResponse {
@@ -46,27 +49,29 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio ?? null,
     apartamento: inmuebleAPI.apartamento ?? null,
-    comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
+    comision: inmuebleAPI.comision ?? 0,
     id_propietario: (inmuebleAPI.id_propietario ?? 0).toString(),
-    tipo: mapTipoInmueble(inmuebleAPI.nombre), // Mockeo basado en el nombre
+    tipo: mapTipoInmueble(inmuebleAPI.nombre),
     estado: mapEstadoInmueble(inmuebleAPI.estado),
-    precio: generateMockPrice(inmuebleAPI.capacidad_maxima ?? inmuebleAPI.capacidad ?? 1), // Mockeo basado en capacidad
+    precio: 0, // No viene en el detalle básico, se deja en 0 o se puede extender
     precio_limpieza: inmuebleAPI.precio_limpieza ?? 0,
     id_producto_sigo: inmuebleAPI.id_prod_sigo || 'SIN_ID',
     descripcion: inmuebleAPI.descripcion || 'Sin descripción',
     capacidad_maxima: inmuebleAPI.capacidad_maxima ?? inmuebleAPI.capacidad ?? 1,
     habitaciones: inmuebleAPI.nro_habitaciones ?? 1,
     banos: inmuebleAPI.nro_bahnos ?? 1,
-    area: generateMockArea(inmuebleAPI.nro_habitaciones ?? 1), // Mockeo basado en habitaciones
+    area_m2: parseFloat(inmuebleAPI.area_m2?.toString() || '0'),
     tiene_cocina: inmuebleAPI.cocina ?? false,
     id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
-    fecha_creacion: new Date().toISOString(), // Mockeo - no viene en la API
-    fecha_actualizacion: new Date().toISOString(), // Mockeo - no viene en la API
+    fecha_creacion: new Date().toISOString(),
+    fecha_actualizacion: new Date().toISOString(),
     tipo_acomodacion: inmuebleAPI.tipo_acomodacion || 'Sin tipo',
     especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'Sin especificación',
     rnt: inmuebleAPI.rnt || 'SIN_RNT',
-    tra_token: inmuebleAPI.tra_token || 'SIN_TRA_TOKEN'
+    tra_token: inmuebleAPI.tra_token || 'SIN_TRA_TOKEN',
+    parent_id: inmuebleAPI.parent_id ? parseInt(inmuebleAPI.parent_id.toString()) : null,
+    tipo_registro: inmuebleAPI.tipo_registro || 'independiente'
   };
 };
 

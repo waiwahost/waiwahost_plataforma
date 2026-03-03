@@ -20,9 +20,12 @@ interface ExternalInmuebleCreateRequest {
   nro_bahnos: number;
   cocina: boolean;
   rnt: string;
-  tra_token: string;  
+  tra_token: string;
   tipo_acomodacion: string;
   especificacion_acomodacion: string;
+  area_m2: number;
+  parent_id: number | null;
+  tipo_registro: 'edificio' | 'unidad' | 'independiente';
 }
 
 // Interfaz para la respuesta de la API externa
@@ -52,6 +55,9 @@ interface ExternalInmuebleResponse {
   tra_token: string | null;
   tipo_acomodacion: string | null;
   especificacion_acomodacion: string | null;
+  area_m2: string | number | null;
+  parent_id: number | string | null;
+  tipo_registro: 'edificio' | 'unidad' | 'independiente' | null;
 }
 
 interface ExternalApiResponse {
@@ -81,7 +87,7 @@ const validateInmuebleData = (inmuebleData: any): string[] => {
     errors.push('La ciudad del inmueble es obligatoria');
   }
 
-  
+
   if (!inmuebleData.tipo_acomodacion || inmuebleData.tipo_acomodacion.trim() === '') {
     errors.push('El tipo de acomodación es obligatorio');
   }
@@ -146,7 +152,7 @@ const mapToExternalFormat = (inmuebleData: any): ExternalInmuebleCreateRequest =
     descripcion: inmuebleData.descripcion.trim(),
     direccion: inmuebleData.direccion.trim(),
     ciudad: inmuebleData.ciudad.trim(),
-    capacidad: Number(inmuebleData.capacidad_maxima), // Usar capacidad_maxima como capacidad
+    capacidad: Number(inmuebleData.capacidad_maxima),
     id_propietario: Number(inmuebleData.id_propietario),
     id_empresa: Number(inmuebleData.id_empresa),
     edificio: inmuebleData.edificio.trim(),
@@ -161,7 +167,10 @@ const mapToExternalFormat = (inmuebleData: any): ExternalInmuebleCreateRequest =
     rnt: inmuebleData.rnt.trim(),
     tra_token: inmuebleData.tra_token.trim(),
     tipo_acomodacion: inmuebleData.tipo_acomodacion.trim(),
-    especificacion_acomodacion: inmuebleData.especificacion_acomodacion.trim()
+    especificacion_acomodacion: inmuebleData.especificacion_acomodacion.trim(),
+    area_m2: Number(inmuebleData.area_m2 || 0),
+    parent_id: inmuebleData.parent_id ? Number(inmuebleData.parent_id) : null,
+    tipo_registro: inmuebleData.tipo_registro || 'independiente'
   };
 };
 
@@ -175,18 +184,18 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     ciudad: inmuebleAPI.ciudad || 'Sin ciudad',
     edificio: inmuebleAPI.edificio || 'Sin edificio',
     apartamento: inmuebleAPI.apartamento || 'Sin apartamento',
-    comision: (inmuebleAPI.comision ?? 0) * 1000, // Convertir porcentaje a valor monetario
+    comision: inmuebleAPI.comision ?? 0,
     id_propietario: (inmuebleAPI.id_propietario ?? 0).toString(),
-    tipo: mapTipoInmueble(inmuebleAPI.nombre), // Mockeo basado en el nombre
+    tipo: mapTipoInmueble(inmuebleAPI.nombre),
     estado: mapEstadoInmueble(inmuebleAPI.estado),
-    precio: generateMockPrice(inmuebleAPI.capacidad_maxima ?? inmuebleAPI.capacidad ?? 1), // Mockeo basado en capacidad
+    precio: 0,
     precio_limpieza: inmuebleAPI.precio_limpieza ?? 0,
     id_producto_sigo: inmuebleAPI.id_prod_sigo || 'SIN_ID',
     descripcion: inmuebleAPI.descripcion || 'Sin descripción',
     capacidad_maxima: inmuebleAPI.capacidad_maxima ?? inmuebleAPI.capacidad ?? 1,
     habitaciones: inmuebleAPI.nro_habitaciones ?? 1,
     banos: inmuebleAPI.nro_bahnos ?? 1,
-    area: generateMockArea(inmuebleAPI.nro_habitaciones ?? 1), // Mockeo basado en habitaciones
+    area_m2: parseFloat(inmuebleAPI.area_m2?.toString() || '0'),
     tiene_cocina: inmuebleAPI.cocina ?? false,
     id_empresa: (inmuebleAPI.id_empresa ?? 0).toString(),
     nombre_empresa: inmuebleAPI.empresa_nombre || 'Sin empresa',
@@ -195,7 +204,9 @@ const mapInmuebleFromAPI = (inmuebleAPI: ExternalInmuebleResponse): IInmueble =>
     rnt: inmuebleAPI.rnt || 'SIN_RNT',
     tra_token: inmuebleAPI.tra_token || 'SIN_TRA_TOKEN',
     tipo_acomodacion: inmuebleAPI.tipo_acomodacion || 'SIN_TIPO_ACOMODACION',
-    especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'SIN_ESPECIFICACION_ACOMODACION'
+    especificacion_acomodacion: inmuebleAPI.especificacion_acomodacion || 'SIN_ESPECIFICACION_ACOMODACION',
+    parent_id: inmuebleAPI.parent_id ? parseInt(inmuebleAPI.parent_id.toString(), 10) : null,
+    tipo_registro: inmuebleAPI.tipo_registro || 'independiente'
   };
 };
 

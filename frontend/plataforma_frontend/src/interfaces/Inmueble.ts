@@ -18,7 +18,7 @@ export interface IInmueble {
   capacidad_maxima: number;
   habitaciones: number;
   banos: number;
-  area: number;
+  area_m2: number;
   tiene_cocina: boolean;
   id_empresa?: string;
   nombre_empresa: string;
@@ -28,6 +28,8 @@ export interface IInmueble {
   tra_token: string;
   tipo_acomodacion: string;
   especificacion_acomodacion: string;
+  parent_id?: number | null;
+  tipo_registro: 'edificio' | 'unidad' | 'independiente';
 }
 
 // Para formularios de creación/edición
@@ -45,12 +47,15 @@ export interface IInmuebleForm {
   capacidad_maxima: number;
   habitaciones: number;
   banos: number;
+  area_m2: number;
   tiene_cocina: boolean;
   id_empresa: string;
   rnt: string;
   tra_token: string;
   tipo_acomodacion: string;
   especificacion_acomodacion: string;
+  parent_id?: number | null;
+  tipo_registro: 'edificio' | 'unidad' | 'independiente';
 }
 
 // Para respuestas de API
