@@ -41,3 +41,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     }
   }
 }
+
+/**
+   * Formatea una fecha evitando el desfase de zona horaria (-1 día).
+   */
+export function formatDateLocal(dateString: string): string {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+  return localDate.toLocaleDateString();
+}

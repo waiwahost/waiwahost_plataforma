@@ -193,6 +193,14 @@ export default function NuevoReporteFinanciero() {
         return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount || 0);
     };
 
+    const formatDateLocal = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        // Add offset to get local date correctly avoiding -1 day issue
+        const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+        return localDate.toLocaleDateString();
+    };
+
     return (
         <div className="space-y-6 p-6">
             <div className="flex justify-between items-center">
@@ -319,7 +327,7 @@ export default function NuevoReporteFinanciero() {
                             <CardContent className="p-6">
                                 <h3 className="text-green-700 font-medium">Ingresos Totales</h3>
                                 <p className="text-2xl font-bold text-green-800">
-                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ingreso_neto : (kpiData.data as BuildingKpis).ingresos_totales) : formatCurrency(reportData.resumen.totalIngresos)}
+                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ingreso_total : (kpiData.data as BuildingKpis).ingresos_totales) : formatCurrency(reportData.resumen.totalIngresos)}
                                 </p>
                             </CardContent>
                         </Card>
@@ -339,80 +347,58 @@ export default function NuevoReporteFinanciero() {
                         </Card>
                     </div>
 
-                    {/* Indicators */}
-                    <Card>
-                        <CardHeader><CardTitle>Indicadores Clave (KPIs)</CardTitle></CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Ocupación</p>
-                                <p className="text-xl font-semibold">
-                                    {kpiData && kpiData.data ? (kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ocupacion : (kpiData.data as BuildingKpis).ocupacion_global).toFixed(1) : reportData.indicadores.porcentajeOcupacion}%
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">{kpiData?.type === 'building' ? 'RevPAR Edificio' : 'ADR'}</p>
-                                <p className="text-xl font-semibold">
-                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).adr : (kpiData.data as BuildingKpis).revpar_edificio) : formatCurrency(reportData.indicadores.ingresoPorReserva)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">RevPAR</p>
-                                <p className="text-xl font-semibold">
-                                    {kpiData && kpiData.data ? formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).revpar : (kpiData.data as BuildingKpis).revpar_edificio) : 'N/A'}
-                                </p>
-                            </div>
-                            {kpiData?.type === 'unit' && kpiData.data ? (
-                                <div>
-                                    <p className="text-sm text-gray-500">Noches Ocupadas</p>
-                                    <p className="text-xl font-semibold">{(kpiData.data as UnitKpis).noches_ocupadas} / {(kpiData.data as UnitKpis).noches_disponibles}</p>
-                                </div>
-                            ) : kpiData?.type === 'building' && kpiData.data ? (
-                                <div>
-                                    <p className="text-sm text-gray-500">Margen Neto</p>
-                                    <p className="text-xl font-semibold">{(kpiData.data as BuildingKpis).margen_neto.toFixed(1)}%</p>
-                                </div>
-                            ) : (
-                                <div>
+                    {/* Global Indicators Summary - Optional / Context based */}
+                    {!kpiData && (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <Card>
+                                <CardContent className="p-4">
+                                    <p className="text-sm text-gray-500">Ocupación</p>
+                                    <p className="text-xl font-semibold">{(reportData.indicadores.ocupacionPromedio * 100).toFixed(1)}%</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardContent className="p-4">
                                     <p className="text-sm text-gray-500">Total Reservas</p>
                                     <p className="text-xl font-semibold">{reportData.indicadores.totalReservas}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
-                    {/* Building Unit Breakdown */}
-                    {kpiData?.type === 'building' && (
+                    {/* Indicators */}
+                    {kpiData && (
                         <Card>
-                            <CardHeader><CardTitle>Desglose de Unidades (Reparto Proporcional por m²)</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left">
-                                        <thead>
-                                            <tr className="border-b">
-                                                <th className="py-2">Unidad</th>
-                                                <th className="py-2">Área (m²)</th>
-                                                <th className="py-2 text-center">Ocupación</th>
-                                                <th className="py-2 text-right">ADR</th>
-                                                <th className="py-2 text-right">RevPAR</th>
-                                                <th className="py-2 text-right">Gasto Prop.</th>
-                                                <th className="py-2 text-right font-bold">Utilidad</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {kpiData.data && (kpiData.data as BuildingKpis).unidades && (kpiData.data as BuildingKpis).unidades.map((unit) => (
-                                                <tr key={unit.id_inmueble} className="border-b hover:bg-gray-50">
-                                                    <td className="py-2 font-medium">{unit.nombre}</td>
-                                                    <td className="py-2">{unit.area_m2} m²</td>
-                                                    <td className="py-2 text-center">{unit.ocupacion.toFixed(1)}%</td>
-                                                    <td className="py-2 text-right">{formatCurrency(unit.adr)}</td>
-                                                    <td className="py-2 text-right">{formatCurrency(unit.revpar)}</td>
-                                                    <td className="py-2 text-right text-red-600">-{formatCurrency(unit.gasto_proporcional_asignado)}</td>
-                                                    <td className="py-2 text-right font-bold text-green-700">{formatCurrency(unit.utilidad)}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            <CardHeader><CardTitle>Indicadores Clave (KPIs)</CardTitle></CardHeader>
+                            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Ocupación</p>
+                                    <p className="text-xl font-semibold">
+                                        {kpiData.type === 'unit' ? (kpiData.data as UnitKpis).ocupacion.toFixed(1) : (kpiData.data as BuildingKpis).ocupacion_global.toFixed(1)}%
+                                    </p>
                                 </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">{kpiData.type === 'building' ? 'RevPAR Edificio' : 'ADR'}</p>
+                                    <p className="text-xl font-semibold">
+                                        {formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).adr : (kpiData.data as BuildingKpis).revpar_edificio)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">RevPAR</p>
+                                    <p className="text-xl font-semibold">
+                                        {formatCurrency(kpiData.type === 'unit' ? (kpiData.data as UnitKpis).revpar : (kpiData.data as BuildingKpis).revpar_edificio)}
+                                    </p>
+                                </div>
+                                {kpiData.type === 'unit' ? (
+                                    <div>
+                                        <p className="text-sm text-gray-500">Noches Ocupadas</p>
+                                        <p className="text-xl font-semibold">{(kpiData.data as UnitKpis).noches_ocupadas} / {(kpiData.data as UnitKpis).noches_disponibles}</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-sm text-gray-500">Margen Neto</p>
+                                        <p className="text-xl font-semibold">{(kpiData.data as BuildingKpis).margen_neto.toFixed(1)}%</p>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     )}
@@ -429,7 +415,7 @@ export default function NuevoReporteFinanciero() {
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Código</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Inmueble</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Huésped</th>
-                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black text-center">Plataforma</th>
+                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Plataforma</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Ingreso</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Salida</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black text-center">Noches</th>
@@ -442,19 +428,17 @@ export default function NuevoReporteFinanciero() {
                                             <td className="px-5 py-4 whitespace-nowrap font-semibold text-gray-900 dark:text-foreground text-[13px]">{r.codigo_reserva}</td>
                                             <td className="px-5 py-4 text-[13px] font-medium text-gray-900 dark:text-foreground">{r.nombre_inmueble}</td>
                                             <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{r.nombre_huesped} {r.apellido_huesped}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-center text-[13px]">
-                                                <span className="capitalize">{r.plataforma_origen || 'N/A'}</span>
-                                            </td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{new Date(r.fecha_inicio).toLocaleDateString()}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{new Date(r.fecha_fin).toLocaleDateString()}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] capitalize">{r.plataforma_origen || 'Directa'}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{formatDateLocal(r.fecha_inicio)}</td>
+                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{formatDateLocal(r.fecha_fin)}</td>
                                             <td className="px-5 py-4 whitespace-nowrap text-center text-[13px] text-gray-700 dark:text-gray-300 font-medium">{r.noches}</td>
                                             <td className="px-5 py-4 whitespace-nowrap font-bold text-right text-[13px]">{formatCurrency(r.total_reserva)}</td>
                                         </tr>
                                     ))}
                                     {reportData.reservas.length > 0 && (
-                                        <tr className="bg-green-50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-900/30">
-                                            <td colSpan={7} className="px-5 py-4 text-right font-bold text-green-800 dark:text-green-400 text-[13px] uppercase tracking-wider">Total Reservas:</td>
-                                            <td className="px-5 py-4 font-bold text-right text-green-800 dark:text-green-400 text-base">
+                                        <tr className="bg-green-50 dark:bg-green-900/10 border-t-2 border-green-200 dark:border-green-900/30">
+                                            <td colSpan={7} className="px-5 py-5 text-right font-bold text-green-800 dark:text-green-400 text-sm uppercase tracking-wider">Total Reservas:</td>
+                                            <td className="px-5 py-5 font-bold text-right text-green-800 dark:text-green-400 text-lg">
                                                 {formatCurrency(reportData.reservas.reduce((sum: number, r: any) => sum + Number(r.total_reserva || 0), 0))}
                                             </td>
                                         </tr>
@@ -474,34 +458,187 @@ export default function NuevoReporteFinanciero() {
                             <table className="w-full text-sm text-left relative">
                                 <thead className="bg-waiwa-sky dark:bg-waiwa-amber text-[#64748b] dark:text-muted-foreground text-[13px] font-semibold border-b border-gray-100 dark:border-border">
                                     <tr>
-                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Fecha</th>
                                         <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Inmueble</th>
-                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Concepto</th>
-                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Descripción</th>
-                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black text-right">Valor</th>
+                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Cuenta</th>
+                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black">Descripcion</th>
+                                        <th className="px-5 py-4 whitespace-nowrap font-medium dark:text-black text-right">Importe</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-border/50 bg-white dark:bg-card">
-                                    {reportData.gastos.map((g: any) => (
-                                        <tr key={g.id_movimiento} className="hover:bg-gray-50/80 dark:hover:bg-muted/20 transition-colors group">
-                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] text-gray-700 dark:text-gray-300">{new Date(g.fecha).toLocaleDateString()}</td>
-                                            <td className="px-5 py-4 text-[13px] font-medium text-gray-900 dark:text-foreground">{g.nombre_inmueble}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-[13px] font-medium text-gray-700 dark:text-gray-300 capitalize">{g.concepto.replace('_', ' ')}</td>
-                                            <td className="px-5 py-4 text-[13px] text-gray-700 dark:text-gray-300 truncate max-w-xs">{g.descripcion}</td>
-                                            <td className="px-5 py-4 whitespace-nowrap text-right font-bold text-red-600 dark:text-red-400 text-[13px]">{formatCurrency(g.monto)}</td>
-                                        </tr>
-                                    ))}
+                                <tbody className="bg-white dark:bg-card">
+                                    {Object.entries(
+                                        reportData.gastos.reduce((acc: any, g: any) => {
+                                            if (!acc[g.nombre_inmueble]) acc[g.nombre_inmueble] = {};
+                                            if (!acc[g.nombre_inmueble][g.concepto]) acc[g.nombre_inmueble][g.concepto] = [];
+                                            acc[g.nombre_inmueble][g.concepto].push(g);
+                                            return acc;
+                                        }, {})
+                                    ).map(([inmueble, conceptos]: [string, any]) => {
+                                        const subtotalInmueble = Object.values(conceptos).flat().reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0);
+                                        return (
+                                            <React.Fragment key={inmueble}>
+                                                {Object.entries(conceptos).map(([concepto, items]: [string, any]) => {
+                                                    const subtotalConcepto = items.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0);
+                                                    return (
+                                                        <React.Fragment key={concepto}>
+                                                            {items.map((g: any, idx: number) => (
+                                                                <tr key={g.id_movimiento} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                                                    <td className="px-5 py-3 text-[13px] font-bold text-gray-900">{idx === 0 ? g.nombre_inmueble : ''}</td>
+                                                                    <td className="px-5 py-3 text-[13px] text-gray-700 capitalize">{idx === 0 ? g.concepto.replace('_', ' ') : ''}</td>
+                                                                    <td className="px-5 py-3 text-[13px] text-gray-700">{g.descripcion}</td>
+                                                                    <td className="px-5 py-3 text-right font-medium text-gray-700 text-[13px]">{formatCurrency(-g.monto)}</td>
+                                                                </tr>
+                                                            ))}
+                                                            <tr className="border-b border-gray-100 bg-gray-50/30">
+                                                                <td colSpan={3} className="px-5 py-2 text-right font-bold text-[12px] uppercase">Subtotal</td>
+                                                                <td className="px-5 py-2 text-right font-bold text-[13px]">{formatCurrency(-subtotalConcepto)}</td>
+                                                            </tr>
+                                                        </React.Fragment>
+                                                    );
+                                                })}
+                                                <tr className="bg-gray-100/50">
+                                                    <td colSpan={3} className="px-5 py-3 text-right font-bold text-[13px] uppercase tracking-wider">Subtotal {inmueble}</td>
+                                                    <td className="px-5 py-3 text-right font-bold text-[14px]">{formatCurrency(-subtotalInmueble)}</td>
+                                                </tr>
+                                            </React.Fragment>
+                                        );
+                                    })}
                                     {reportData.gastos.length > 0 && (
-                                        <tr className="bg-red-50 dark:bg-red-900/10 border-t border-red-200 dark:border-red-900/30">
-                                            <td colSpan={4} className="px-5 py-4 text-right font-bold text-red-800 dark:text-red-400 text-[13px] uppercase tracking-wider">Total Gastos:</td>
-                                            <td className="px-5 py-4 font-bold text-right text-red-800 dark:text-red-400 text-base">
-                                                {formatCurrency(reportData.gastos.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0))}
+                                        <tr className="bg-gray-200/50">
+                                            <td colSpan={3} className="px-5 py-4 text-left font-bold text-tourism-navy text-[14px] uppercase tracking-widest">Total</td>
+                                            <td className="px-5 py-4 text-right font-bold text-tourism-navy text-[15px]">
+                                                {formatCurrency(-reportData.gastos.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0))}
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                             {reportData.gastos.length === 0 && <p className="text-center py-12 text-gray-500 dark:text-muted-foreground">No hay gastos en este periodo.</p>}
+                        </div>
+                    </div>
+
+                    {/* Resumen por Inmueble - Ingresos/Egresos */}
+                    <div className="rounded-[1rem] border border-gray-100 overflow-hidden bg-white shadow-sm w-full">
+                        <div className="p-4 border-b border-gray-100 bg-white">
+                            <h3 className="text-lg font-bold text-tourism-navy">Resumen por inmueble - Ingresos/Egresos</h3>
+                        </div>
+                        <div className="overflow-x-auto w-full">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-waiwa-sky text-[#64748b] text-[13px] font-semibold border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-5 py-4">Inmueble</th>
+                                        <th className="px-5 py-4 text-center">Ingreso</th>
+                                        <th className="px-5 py-4 text-center">Egreso</th>
+                                        <th className="px-5 py-4 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(
+                                        [...reportData.reservas, ...reportData.gastos].reduce((acc: any, item: any) => {
+                                            const name = item.nombre_inmueble;
+                                            if (!acc[name]) acc[name] = { ingreso: 0, egreso: 0 };
+                                            if (item.total_reserva) acc[name].ingreso += Number(item.total_reserva);
+                                            if (item.monto) acc[name].egreso += Number(item.monto);
+                                            return acc;
+                                        }, {})
+                                    ).map(([name, totals]: [string, any]) => (
+                                        <tr key={name} className="border-b border-gray-50 hover:bg-gray-50">
+                                            <td className="px-5 py-3 font-bold text-gray-900">{name}</td>
+                                            <td className="px-5 py-3 text-center">{formatCurrency(totals.ingreso)}</td>
+                                            <td className="px-5 py-3 text-center text-red-600">-{formatCurrency(totals.egreso)}</td>
+                                            <td className="px-5 py-3 text-right font-bold">{formatCurrency(totals.ingreso - totals.egreso)}</td>
+                                        </tr>
+                                    ))}
+                                    <tr className="bg-gray-50">
+                                        <td className="px-5 py-4 font-bold uppercase">Total</td>
+                                        <td className="px-5 py-4 text-center font-bold text-green-700">{formatCurrency(reportData.resumen.totalIngresos)}</td>
+                                        <td className="px-5 py-4 text-center font-bold text-red-600">-{formatCurrency(reportData.resumen.totalEgresos)}</td>
+                                        <td className="px-5 py-3 text-right font-bold text-tourism-navy">{formatCurrency(reportData.resumen.balance)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Resumen por Inmueble - Indicadores */}
+                    <div className="rounded-[1rem] border border-gray-100 overflow-hidden bg-white shadow-sm w-full">
+                        <div className="p-4 border-b border-gray-100 bg-white">
+                            <h3 className="text-lg font-bold text-tourism-navy">Resumen por inmueble - Indicadores</h3>
+                        </div>
+                        <div className="overflow-x-auto w-full">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-waiwa-sky text-[#64748b] text-[13px] font-semibold border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-5 py-4">Inmueble</th>
+                                        <th className="px-5 py-4 text-center">Noches</th>
+                                        <th className="px-5 py-4 text-center font-medium">% Ocupacion</th>
+                                        <th className="px-5 py-4 text-center">ADR</th>
+                                        <th className="px-5 py-4 text-center">RevPAR</th>
+                                        <th className="px-5 py-4 text-right">Utilidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {/* Si hay datos de KPI de edificio o unidad, mostrarlos aquí prioritariamente */}
+                                    {kpiData?.type === 'building' ? (
+                                        (kpiData.data as BuildingKpis).unidades.map((unit) => (
+                                            <tr key={unit.id_inmueble} className="border-b border-gray-50 hover:bg-gray-50">
+                                                <td className="px-5 py-3 font-bold text-gray-900">{unit.nombre}</td>
+                                                <td className="px-5 py-3 text-center">{unit.noches_ocupadas}</td>
+                                                <td className="px-5 py-3 text-center">{unit.ocupacion.toFixed(1)}%</td>
+                                                <td className="px-5 py-3 text-center">{formatCurrency(unit.adr)}</td>
+                                                <td className="px-5 py-3 text-center">{formatCurrency(unit.revpar)}</td>
+                                                <td className="px-5 py-3 text-right font-bold text-green-700">{formatCurrency(unit.utilidad)}</td>
+                                            </tr>
+                                        ))
+                                    ) : kpiData?.type === 'unit' ? (
+                                        <tr className="border-b border-gray-50 hover:bg-gray-50">
+                                            <td className="px-5 py-3 font-bold text-gray-900">{(kpiData.data as UnitKpis).nombre}</td>
+                                            <td className="px-5 py-3 text-center">{(kpiData.data as UnitKpis).noches_ocupadas}</td>
+                                            <td className="px-5 py-3 text-center">{(kpiData.data as UnitKpis).ocupacion.toFixed(1)}%</td>
+                                            <td className="px-5 py-3 text-center">{formatCurrency((kpiData.data as UnitKpis).adr)}</td>
+                                            <td className="px-5 py-3 text-center">{formatCurrency((kpiData.data as UnitKpis).revpar)}</td>
+                                            <td className="px-5 py-3 text-right font-bold text-green-700">{formatCurrency((kpiData.data as UnitKpis).utilidad)}</td>
+                                        </tr>
+                                    ) : (
+                                        /* Fallback a agregación básica de reportes si no hay kpiData */
+                                        Object.entries(
+                                            reportData.reservas.reduce((acc: any, r: any) => {
+                                                const name = r.nombre_inmueble;
+                                                if (!acc[name]) acc[name] = { noches: 0, ingreso: 0, count: 0 };
+                                                acc[name].noches += Number(r.noches);
+                                                acc[name].ingreso += Number(r.total_reserva);
+                                                acc[name].count += 1;
+                                                return acc;
+                                            }, {})
+                                        ).map(([name, data]: [string, any]) => {
+                                            const start = new Date(filters.fechaInicio || new Date());
+                                            const end = new Date(filters.fechaFin || new Date());
+                                            const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+                                            const occ = days > 0 ? (data.noches / days) * 100 : 0;
+                                            return (
+                                                <tr key={name} className="border-b border-gray-50 hover:bg-gray-50">
+                                                    <td className="px-5 py-3 font-bold text-gray-900">{name}</td>
+                                                    <td className="px-5 py-3 text-center">{data.noches}</td>
+                                                    <td className="px-5 py-3 text-center">{occ.toFixed(2)}%</td>
+                                                    <td className="px-5 py-3 text-center">{formatCurrency(data.ingreso / (data.noches || 1))}</td>
+                                                    <td className="px-5 py-3 text-center">{formatCurrency(data.ingreso / (days || 1))}</td>
+                                                    <td className="px-5 py-3 text-right font-bold text-green-700">{formatCurrency(data.ingreso)}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                    {/* Mostrar totales si kpiData está presente */}
+                                    {kpiData?.type === 'building' && (
+                                        <tr className="bg-gray-50 font-bold border-t-2">
+                                            <td className="px-5 py-4 uppercase">Total Edificio</td>
+                                            <td className="px-5 py-4 text-center">{(kpiData.data as BuildingKpis).noches_ocupadas_total}</td>
+                                            <td className="px-5 py-4 text-center">{(kpiData.data as BuildingKpis).ocupacion_global.toFixed(1)}%</td>
+                                            <td className="px-5 py-4 text-center">-</td>
+                                            <td className="px-5 py-4 text-center">{formatCurrency((kpiData.data as BuildingKpis).revpar_edificio)}</td>
+                                            <td className="px-5 py-4 text-right text-tourism-navy text-lg">{formatCurrency((kpiData.data as BuildingKpis).utilidad_total)}</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
