@@ -56,7 +56,7 @@ export const inmueblesController = {
         id_empresa = Number(ctx.empresaId);
       }
       // Llamar al servicio para obtener los inmuebles
-      const { data, error } = await getInmueblesService(ctx, id_empresa, id);
+      const { data, error } = await getInmueblesService.execute(ctx, id_empresa, id);
       if (error) {
         return reply.status(error.status || 500).send(
           errorResponse({
@@ -107,7 +107,7 @@ export const inmueblesController = {
       // Forzar id_empresa del usuario autenticado
       const inmuebleData = { ...bodyValidation.data, id_empresa: Number(ctx.empresaId) };
       // Llamar al servicio
-      const { data, error } = await createInmuebleService(Number(ctx.id), inmuebleData);
+      const { data, error } = await createInmuebleService.execute(Number(ctx.id), inmuebleData);
 
       if (error) {
         console.error('Error al crear inmueble:', error);
@@ -185,7 +185,7 @@ export const inmueblesController = {
 
 
       // Llamar al servicio
-      const { data, error } = await editInmuebleService(
+      const { data, error } = await editInmuebleService.execute(
         Number(ctx.id),
         inmuebleId,
         inmuebleData
@@ -249,7 +249,7 @@ export const inmueblesController = {
       const { id: inmuebleId } = queryValidation.data;
 
       // Llamar al servicio
-      const { data, error } = await deleteInmuebleService(Number(ctx.id), inmuebleId);
+      const { data, error } = await deleteInmuebleService.execute(Number(ctx.id), inmuebleId);
 
       if (error) {
         console.error('Error al eliminar inmueble:', error);

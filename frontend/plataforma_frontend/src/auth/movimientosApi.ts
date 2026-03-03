@@ -10,12 +10,15 @@ import { apiFetch } from './apiFetch';
  * Obtiene movimientos por fecha con filtro opcional por plataforma
  * Conectado a la API externa a través de API interna
  */
-export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: string): Promise<IMovimientoApiResponse> => {
+export const getMovimientosByFecha = async (fecha: string, plataformaOrigen?: string, idInmueble?: string): Promise<IMovimientoApiResponse> => {
   try {
     // Construir URL con parámetros de consulta
     let url = `/api/movimientos/getMovimientosByFecha?fecha=${fecha}`;
     if (plataformaOrigen) {
       url += `&plataforma_origen=${plataformaOrigen}`;
+    }
+    if (idInmueble) {
+      url += `&id_inmueble=${idInmueble}`;
     }
 
     const data = await apiFetch(url, {

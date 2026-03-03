@@ -161,7 +161,8 @@ export const EditMovimientoSchema = z.object({
 // Schema para query parameters de obtener movimientos por fecha
 export const MovimientosFechaQuerySchema = z.object({
   empresa_id: z.string().min(1, { message: "El ID de empresa es requerido" }),
-  plataforma_origen: z.string().optional() // Filtro opcional por plataforma
+  plataforma_origen: z.string().optional(), // Filtro opcional por plataforma
+  id_inmueble: z.string().optional() // Filtro opcional por inmueble
 });
 
 // Schema para query parameters de obtener movimientos por inmueble

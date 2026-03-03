@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { IInmuebleForm } from '../../interfaces/Inmueble';
+import { IInmuebleForm, IInmueble } from '../../interfaces/Inmueble';
 import { useAuth } from '../../auth/AuthContext';
 import { getPropietariosApi } from '../../auth/propietariosApi';
 import { IPropietarioTableData } from '../../interfaces/Propietario';
 import { getEmpresasApi } from '../../auth/getEmpresasApi';
+import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { CIUDADES_COLOMBIA } from '../../constants/ciudades';
 
 interface CreateInmuebleModalProps {
@@ -27,15 +28,15 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   const [loadingPropietarios, setLoadingPropietarios] = useState(false);
   const [empresas, setEmpresas] = useState<{ id_empresa: number; nombre: string }[]>([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(false);
+  const [edificios, setEdificios] = useState<IInmueble[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-
     reset,
     watch,
-    setValue, // Added setValue
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<IInmuebleForm>({
     defaultValues: initialData || {
@@ -51,13 +52,16 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       banos: 1,
       comision: 0,
       precio_limpieza: 0,
+      area_m2: 0,
       tiene_cocina: false,
       id_propietario: '',
       id_empresa: '1',
       rnt: '',
       tra_token: '',
       tipo_acomodacion: '',
-      especificacion_acomodacion: ''
+      especificacion_acomodacion: '',
+      tipo_registro: 'independiente',
+      parent_id: null
     }
   });
 
@@ -73,36 +77,20 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
   };
 
   const tipoAcomodacion = watch('tipo_acomodacion');
-  const edificio = watch('edificio');
-  const apartamento = watch('apartamento');
+  const edificioVal = watch('edificio');
+  const apartamentoVal = watch('apartamento');
+  const tipoRegistro = watch('tipo_registro');
+  const parentId = watch('parent_id');
 
   useEffect(() => {
     if (!isEdit && tipoAcomodacion === 'Apartamento') {
-      const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''}${apartamento || ''}`;
+      const spec = `${edificioVal || ''}${edificioVal && apartamentoVal ? ' Apto ' : ''}${apartamentoVal || ''}`;
       setValue('especificacion_acomodacion', spec.trim(), {
         shouldValidate: true,
         shouldDirty: true
       });
     }
-  }, [tipoAcomodacion, edificio, apartamento, setValue, isEdit]);
-
-
-
-  useEffect(() => {
-    if (tipoAcomodacion === 'Apartamento') {
-      const spec = `${edificio || ''}${edificio && apartamento ? ' Apto ' : ''
-        }${apartamento || ''}`;
-
-      setValue('especificacion_acomodacion', spec.trim(), {
-        shouldValidate: true,
-        shouldDirty: true
-      });
-    }
-  }, [tipoAcomodacion, edificio, apartamento, setValue]);
-
-
-
-
+  }, [tipoAcomodacion, edificioVal, apartamentoVal, setValue, isEdit]);
 
   useEffect(() => {
     const fetchPropietarios = async () => {
@@ -123,13 +111,6 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
         const response = await getEmpresasApi();
         if (response.success) {
           setEmpresas(response.data);
-          // Si solo hay una empresa, seleccionarla automáticamente
-          if (response.data.length === 1) {
-            // Usamos setValue de react-hook-form si estuviéramos fuera del reset, 
-            // pero como esto corre al inicio, el reset inicial o el useEffect de abajo lo manejará.
-            // Sin embargo, para asegurar que se seleccione visualmente si ya se renderizó:
-            // setValue('id_empresa', response.data[0].id_empresa.toString());
-          }
         }
       } catch (error) {
         console.error('Error fetching empresas:', error);
@@ -138,11 +119,44 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
       }
     };
 
+    const fetchEdificios = async () => {
+      try {
+        const data = await getInmueblesApi();
+        const filterEdificios = data.filter((iValue: any) =>
+          iValue.tipo_registro === 'edificio' ||
+          iValue.tipo_acomodacion === 'Edificio' ||
+          iValue.nombre.toLowerCase().includes('edificio')
+        );
+        setEdificios(filterEdificios);
+      } catch (error) {
+        console.error('Error fetching edificios:', error);
+      }
+    };
+
     if (open) {
       fetchPropietarios();
       fetchEmpresas();
+      fetchEdificios();
     }
   }, [open]);
+
+  // Si se selecciona un edificio como padre, autocompletar campos heredados
+  useEffect(() => {
+    if (tipoRegistro === 'unidad' && parentId) {
+      const selectedEdificio = edificios.find(e =>
+        (e.id_inmueble || e.id).toString() === parentId.toString()
+      );
+      if (selectedEdificio) {
+        setValue('edificio', selectedEdificio.nombre);
+        setValue('direccion', selectedEdificio.direccion);
+        setValue('ciudad', selectedEdificio.ciudad);
+        setValue('rnt', selectedEdificio.rnt);
+        setValue('tra_token', selectedEdificio.tra_token);
+        if (selectedEdificio.id_propietario) setValue('id_propietario', selectedEdificio.id_propietario.toString());
+        if (selectedEdificio.id_empresa) setValue('id_empresa', selectedEdificio.id_empresa.toString());
+      }
+    }
+  }, [parentId, tipoRegistro, edificios, setValue]);
 
 
 
@@ -182,7 +196,10 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
           rnt: '',
           tra_token: '',
           tipo_acomodacion: '',
-          especificacion_acomodacion: ''
+          especificacion_acomodacion: '',
+          tipo_registro: 'independiente',
+          parent_id: null,
+          area_m2: 0
         });
       }
     }
@@ -200,7 +217,11 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
           : data.comision,
         precio_limpieza: typeof data.precio_limpieza === 'string'
           ? (data.precio_limpieza === '' ? 0 : parseInt(data.precio_limpieza as string, 10))
-          : data.precio_limpieza
+          : data.precio_limpieza,
+        area_m2: data.tipo_registro === 'edificio'
+          ? 0
+          : (typeof data.area_m2 === 'string' ? parseFloat(data.area_m2) : data.area_m2),
+        parent_id: data.parent_id ? parseInt(data.parent_id.toString(), 10) : null
       };
       await onCreate(formattedData);
       if (!isEdit) {
@@ -238,6 +259,46 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Tipo de Registro y Jerarquía */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-600">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Tipo de Registro *
+                </label>
+                <select
+                  {...register('tipo_registro', { required: 'El tipo de registro es requerido' })}
+                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Seleccione el tipo de registro</option>
+                  <option value="independiente">Independiente (Casa, Local, etc.)</option>
+                  <option value="edificio">Proyecto / Edificio (Padre)</option>
+                  <option value="unidad">Unidad / Apartamento (Hijo)</option>
+                </select>
+              </div>
+
+              {tipoRegistro === 'unidad' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Edificio Padre *
+                  </label>
+                  <select
+                    {...register('parent_id', { required: tipoRegistro === 'unidad' ? 'Debe seleccionar un edificio padre' : false })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Seleccione el proyecto/edificio</option>
+                    {edificios.map((edificio) => (
+                      <option key={edificio.id_inmueble || edificio.id} value={edificio.id_inmueble || edificio.id}>
+                        {edificio.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.parent_id && (
+                    <p className="text-red-500 text-xs mt-1">{errors.parent_id.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Información básica */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -274,76 +335,79 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  RNT *
-                </label>
-                <input
-                  type="text"
-                  {...register('rnt', { required: 'El RNT es requerido' })}
-                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  placeholder="Ej: 123456"
-                />
-                {errors.rnt && (
-                  <p className="text-red-500 text-xs mt-1">{errors.rnt.message}</p>
-                )}
-              </div>
+            {tipoRegistro !== 'unidad' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    RNT *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('rnt', { required: tipoRegistro !== 'unidad' ? 'El RNT es requerido' : false })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="Ej: 123456"
+                  />
+                  {errors.rnt && (
+                    <p className="text-red-500 text-xs mt-1">{errors.rnt.message}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Token RNT *
-                </label>
-                <input
-                  type="text"
-                  {...register('tra_token', { required: 'El Token RNT es requerido' })}
-                  disabled={false}
-                  className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white`}
-                  placeholder="Ej: eyb2891...."
-                />
-                {errors.tra_token && (
-                  <p className="text-red-500 text-xs mt-1">{errors.tra_token.message}</p>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Token RNT *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('tra_token', { required: tipoRegistro !== 'unidad' ? 'El Token RNT es requerido' : false })}
+                    className={`w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white`}
+                    placeholder="Ej: eyb2891...."
+                  />
+                  {errors.tra_token && (
+                    <p className="text-red-500 text-xs mt-1">{errors.tra_token.message}</p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Dirección y ubicación */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Dirección *
-                </label>
-                <input
-                  type="text"
-                  {...register('direccion', { required: 'La dirección es requerida' })}
-                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                  placeholder="Ej: Calle 10 #5-20, Centro"
-                />
-                {errors.direccion && (
-                  <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>
-                )}
-              </div>
+            {tipoRegistro !== 'unidad' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dirección *
+                  </label>
+                  <input
+                    type="text"
+                    {...register('direccion', { required: tipoRegistro !== 'unidad' ? 'La dirección es requerida' : false })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="Ej: Calle 10 #5-20, Centro"
+                  />
+                  {errors.direccion && (
+                    <p className="text-red-500 text-xs mt-1">{errors.direccion.message}</p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Ciudad *
-                </label>
-                <select
-                  {...register('ciudad', { required: 'La ciudad es requerida' })}
-                  className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Seleccione una ciudad</option>
-                  {CIUDADES_COLOMBIA.map((ciudad) => (
-                    <option key={ciudad} value={ciudad}>
-                      {ciudad}
-                    </option>
-                  ))}
-                </select>
-                {errors.ciudad && (
-                  <p className="text-red-500 text-xs mt-1">{errors.ciudad.message}</p>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Ciudad *
+                  </label>
+                  <select
+                    {...register('ciudad', { required: tipoRegistro !== 'unidad' ? 'La ciudad es requerida' : false })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">Seleccione una ciudad</option>
+                    {CIUDADES_COLOMBIA.map((ciudad) => (
+                      <option key={ciudad} value={ciudad}>
+                        {ciudad}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.ciudad && (
+                    <p className="text-red-500 text-xs mt-1">{errors.ciudad.message}</p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -497,7 +561,7 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   type="number"
                   {...register('banos', {
                     required: 'Los baños son requeridos',
-                    min: { value: 1, message: 'Debe tener al menos 1 baño' }
+                    min: { value: 0, message: 'Debe ser mayor o igual a 0' }
                   })}
                   className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   placeholder="1"
@@ -506,6 +570,27 @@ const CreateInmuebleModal: React.FC<CreateInmuebleModalProps> = ({
                   <p className="text-red-500 text-xs mt-1">{errors.banos.message}</p>
                 )}
               </div>
+
+              {watch('tipo_registro') !== 'edificio' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Área (m²) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    {...register('area_m2', {
+                      required: watch('tipo_registro') !== 'edificio' ? 'El área es requerida' : false,
+                      min: { value: 1, message: 'Debe ser mayor a 0' }
+                    })}
+                    className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="45.5"
+                  />
+                  {errors.area_m2 && (
+                    <p className="text-red-500 text-xs mt-1">{errors.area_m2.message}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Precios y comisión */}

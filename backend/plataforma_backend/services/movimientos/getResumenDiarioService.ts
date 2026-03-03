@@ -15,7 +15,8 @@ interface ServiceResponse<T> {
  */
 export async function getResumenDiarioService(
   empresaId: string | null | undefined,
-  fecha: string
+  fecha: string,
+  idInmueble?: string
 ): Promise<ServiceResponse<ResumenDiario>> {
   try {
     // Si empresaId está definido y no es vacío, validar existencia
@@ -35,7 +36,7 @@ export async function getResumenDiarioService(
 
     // Si empresaId es null, undefined o vacío, pasar undefined al repositorio para no filtrar por empresa
     const empresaIdParam = (empresaId && empresaId !== '' && empresaId !== 'null') ? empresaId : undefined;
-    const resumen = await MovimientosRepository.getResumenDiario(fecha, empresaIdParam);
+    const resumen = await MovimientosRepository.getResumenDiario(fecha, empresaIdParam, idInmueble);
 
     return {
       data: resumen,

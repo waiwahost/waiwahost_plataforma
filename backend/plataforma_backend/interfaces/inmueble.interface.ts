@@ -31,6 +31,9 @@ export interface Inmueble {
   'Camping' |
   'Otro';
   especificacion_acomodacion?: string;
+  parent_id?: number | null;
+  tipo_registro?: 'edificio' | 'unidad' | 'independiente';
+  area_m2?: number;
 }
 
 export interface InmueblesQueryParams {
@@ -41,7 +44,7 @@ export interface InmueblesQueryParams {
 export interface CreateInmuebleData {
   nombre: string;
   descripcion?: string;
-  direccion: string;
+  direccion?: string;
   ciudad?: string;
   capacidad: number;
   id_propietario: number;
@@ -55,8 +58,8 @@ export interface CreateInmuebleData {
   nro_habitaciones?: number;
   nro_bahnos?: number;
   cocina?: boolean;
-  rnt?: string,
-  tra_token?: string,
+  rnt?: string;
+  tra_token?: string;
   tipo_acomodacion?:
   'Apartamento' |
   'Casa' |
@@ -67,6 +70,9 @@ export interface CreateInmuebleData {
   'Camping' |
   'Otro';
   especificacion_acomodacion?: string;
+  parent_id?: number | null;
+  tipo_registro?: 'edificio' | 'unidad' | 'independiente';
+  area_m2?: number;
 }
 
 export interface EditInmuebleData {
@@ -99,4 +105,10 @@ export interface EditInmuebleData {
   'Camping' |
   'Otro';
   especificacion_acomodacion?: string;
+  parent_id?: number | null;
+  tipo_registro?: 'edificio' | 'unidad' | 'independiente';
+  area_m2?: number;
 }
+
+// Para compatibilidad con el servicio
+export type InmuebleUpdate = EditInmuebleData;

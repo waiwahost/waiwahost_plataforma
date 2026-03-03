@@ -1,24 +1,25 @@
-import { InmuebleRepository } from '../repositories/inmueble.repository';
-import { InmuebleUpdate } from '../schemas/inmueble.schema';
+import { InmueblesRepository } from '../repositories/inmuebles.repository';
+import { InmuebleUpdate } from '../interfaces/inmueble.interface';
 
 export class InmuebleService {
-  private repo: InmuebleRepository;
+  private repo: InmueblesRepository;
 
   constructor() {
-    this.repo = new InmuebleRepository();
+    this.repo = new InmueblesRepository();
   }
 
-  async getById(id: string) {
-    return await this.repo.getById(id);
+  async getById(id: number) {
+    return await this.repo.getInmuebleById(id);
   }
 
-  async update(id: string, data: InmuebleUpdate, userContext: {
+  async update(id: number, data: InmuebleUpdate, userContext: {
     role: string;
     empresaId?: number;
     propietarioId?: number;
   }) {
     // Obtener inmueble para validar que existe y verificar permisos
-    const { data: inmueble, error } = await this.repo.getById(id);
+    const { data: inmueble, error } = await this.repo.getInmuebleById(id);
+
     if (error || !inmueble) {
       return { error: { status: 404, message: 'Inmueble no encontrado' } };
     }
@@ -39,16 +40,17 @@ export class InmuebleService {
       return { error: { status: 400, message: 'No hay campos editables proporcionados' } };
     }
 
-    const { success, error: updateError } = await this.repo.updateById(id, editableFields);
+    const { data: updatedInmueble, error: updateError } = await this.repo.updateInmueble(id, editableFields);
+
     if (updateError) {
       return { error: { status: 500, message: updateError.message } };
     }
 
-    if (!success) {
+    if (!updatedInmueble) {
       return { error: { status: 404, message: 'Inmueble no encontrado o no actualizado' } };
     }
 
-    return { success: true };
+    return { success: true, data: updatedInmueble };
   }
 
   private checkUpdatePermission(inmueble: any, userContext: {
@@ -65,7 +67,7 @@ export class InmuebleService {
 
     // Empresa/Admin puede actualizar inmuebles de su empresa
     if (role === 'empresa' || role === 'administrador') {
-      if (inmueble.id_empresa === empresaId) {
+      if (Number(inmueble.id_empresa) === Number(empresaId)) {
         return { allowed: true };
       }
       return { allowed: false, reason: 'Solo puede actualizar inmuebles de su empresa' };
@@ -73,10 +75,10 @@ export class InmuebleService {
 
     // Propietario puede actualizar solo inmuebles de su empresa y que estén asociados a su id_propietario
     if (role === 'propietario') {
-      if (inmueble.id_empresa !== empresaId) {
+      if (Number(inmueble.id_empresa) !== Number(empresaId)) {
         return { allowed: false, reason: 'Solo puede actualizar inmuebles de su empresa' };
       }
-      if (inmueble.id_propietario !== propietarioId) {
+      if (Number(inmueble.id_propietario) !== Number(propietarioId)) {
         return { allowed: false, reason: 'Solo puede actualizar sus propios inmuebles' };
       }
       return { allowed: true };
