@@ -130,8 +130,10 @@ const validateInmuebleData = (inmuebleData: any): string[] => {
     errors.push('El precio de limpieza debe ser mayor o igual a 0');
   }
 
-  if (!inmuebleData.comision || Number(inmuebleData.comision) <= 0) {
-    errors.push('La comisión debe ser mayor a 0');
+  if (inmuebleData.tipo_registro !== 'unidad') {
+    if (!inmuebleData.comision || Number(inmuebleData.comision) <= 0) {
+      errors.push('La comisión debe ser mayor a 0');
+    }
   }
 
   if (!inmuebleData.id_propietario || Number(inmuebleData.id_propietario) <= 0) {

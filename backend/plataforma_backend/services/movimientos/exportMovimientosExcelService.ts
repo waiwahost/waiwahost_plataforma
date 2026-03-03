@@ -26,12 +26,15 @@ export class ExportMovimientosExcelService {
             { header: 'Plataforma', key: 'plataforma_origen', width: 15 }
         ];
 
-        worksheet.getRow(1).font = { bold: true };
-        worksheet.getRow(1).fill = {
+        // Estilo encabezado
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFE0E0E0' }
+            fgColor: { argb: 'FF2D9CDB' }, // Azul Waiwa
         };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
         movimientos.forEach((mov) => {
             const row = worksheet.addRow({

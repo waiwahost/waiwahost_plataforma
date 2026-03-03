@@ -14,6 +14,24 @@ export class ReportesService {
         try {
             const { empresaId, inmuebleId, edificioId, propietarioId, fechaInicio, fechaFin } = filters;
 
+            // 1. Check if inmuebleId is a building to handle hierarchy
+            let targetInmuebleIds: number[] = [];
+            let isBuildingReport = false;
+            let buildingData: any = null;
+
+            if (inmuebleId) {
+                const hierarchyRes = await dbClient.query(
+                    `SELECT id_inmueble, nombre, tipo_registro FROM inmuebles WHERE id_inmueble = $1 OR parent_id = $1`,
+                    [inmuebleId]
+                );
+                targetInmuebleIds = hierarchyRes.rows.map((r: any) => r.id_inmueble);
+                const requestedProp = hierarchyRes.rows.find((r: any) => Number(r.id_inmueble) === Number(inmuebleId));
+                if (requestedProp && requestedProp.tipo_registro === 'edificio') {
+                    isBuildingReport = true;
+                    buildingData = requestedProp;
+                }
+            }
+
             // 1. Reservas Query
             let reservasQuery = `
         SELECT 
@@ -26,18 +44,21 @@ export class ReportesService {
           r.estado,
           r.plataforma_origen,
           i.nombre as nombre_inmueble,
+          i.id_inmueble,
+          COALESCE(i.comision, p.comision) as comision,
           hp.nombre as nombre_huesped,
           hp.apellido as apellido_huesped,
           (r.fecha_fin - r.fecha_inicio) as noches
         FROM reservas r
         INNER JOIN inmuebles i ON r.id_inmueble = i.id_inmueble
+        LEFT JOIN inmuebles p ON i.parent_id = p.id_inmueble
         LEFT JOIN (
             SELECT hr.id_reserva, h.nombre, h.apellido
             FROM huespedes_reservas hr
             JOIN huespedes h ON hr.id_huesped = h.id_huesped
             WHERE hr.es_principal = true
         ) hp ON r.id_reserva = hp.id_reserva
-        WHERE i.estado = 'activo'
+        WHERE i.estado = 'activo' AND r.estado != 'cancelada'
       `;
 
             const reservasParams: any[] = [];
@@ -48,8 +69,15 @@ export class ReportesService {
                 reservasParams.push(empresaId);
             }
             if (inmuebleId) {
-                reservasQuery += ` AND r.id_inmueble = $${pIndex++}`;
-                reservasParams.push(inmuebleId);
+                if (targetInmuebleIds.length > 0) {
+                    const placeholders = targetInmuebleIds.map((_, i) => `$${pIndex + i}`).join(',');
+                    reservasQuery += ` AND r.id_inmueble IN (${placeholders})`;
+                    reservasParams.push(...targetInmuebleIds);
+                    pIndex += targetInmuebleIds.length;
+                } else {
+                    reservasQuery += ` AND r.id_inmueble = $${pIndex++}`;
+                    reservasParams.push(inmuebleId);
+                }
             }
             if (edificioId) {
                 reservasQuery += ` AND (i.id_inmueble = $${pIndex} OR i.parent_id = $${pIndex++})`;
@@ -80,7 +108,6 @@ export class ReportesService {
           m.fecha,
           m.concepto,
           m.descripcion,
-          m.descripcion,
           m.monto,
           i.nombre as nombre_inmueble,
           i.id_inmueble,
@@ -99,14 +126,20 @@ export class ReportesService {
                 gastosParams.push(empresaId);
             }
             if (inmuebleId) {
-                gastosQuery += ` AND m.id_inmueble = $${pIndex++}::varchar`;
-                gastosParams.push(inmuebleId);
+                if (targetInmuebleIds.length > 0) {
+                    const placeholders = targetInmuebleIds.map((_, i) => `$${pIndex + i}`).join(',');
+                    gastosQuery += ` AND m.id_inmueble IN (${placeholders})`;
+                    gastosParams.push(...targetInmuebleIds.map(id => String(id)));
+                    pIndex += targetInmuebleIds.length;
+                } else {
+                    gastosQuery += ` AND m.id_inmueble = $${pIndex++}::varchar`;
+                    gastosParams.push(inmuebleId.toString());
+                }
             }
             if (edificioId) {
                 gastosQuery += ` AND (i.id_inmueble = $${pIndex} OR i.parent_id = $${pIndex++})::varchar`;
                 gastosParams.push(edificioId);
             }
-            // For owner filter in expenses, we need to join inmuebles which we did.
             if (propietarioId) {
                 gastosQuery += ` AND i.id_propietario = $${pIndex++}`;
                 gastosParams.push(propietarioId);
@@ -123,7 +156,27 @@ export class ReportesService {
             gastosQuery += ` ORDER BY m.fecha DESC`;
 
             const gastosResult = await dbClient.query(gastosQuery, gastosParams);
-            const gastos = gastosResult.rows;
+            const baseGastos = gastosResult.rows;
+
+            // 2.1 Calculate Dynamic Commission Expenses
+            const comisionesGastos = reservas.map((r: any) => {
+                const comisionPerc = Number(r.comision || 0);
+                const montoComision = (Number(r.total_reserva) * comisionPerc) / 100;
+
+                return {
+                    id_movimiento: `com-${r.id_reserva}`,
+                    fecha: r.fecha_inicio,
+                    concepto: 'comision',
+                    descripcion: `Comisión (${comisionPerc}%) - Reserva ${r.codigo_reserva} (${r.nombre_inmueble})`,
+                    monto: montoComision,
+                    nombre_inmueble: isBuildingReport ? buildingData.nombre : r.nombre_inmueble,
+                    id_inmueble: isBuildingReport ? buildingData.id_inmueble : r.id_inmueble,
+                    parent_id: null,
+                    area_m2: 0
+                };
+            }).filter((c: any) => c.monto > 0);
+
+            const gastos = [...baseGastos, ...comisionesGastos];
 
             // 3. Calculate Indicators
             const totalIngresos = reservas.reduce((sum: number, r: any) => sum + Number(r.total_reserva || 0), 0);
@@ -133,26 +186,22 @@ export class ReportesService {
             const ingresoPorReserva = totalReservas > 0 ? totalIngresos / totalReservas : 0;
 
             // Occupancy % calculation requires total available nights.
-            // This is complex as it depends on the number of properties and the date range.
-            // For now, we can approximate or leave it simple.
-            // If date range is provided:
             let porcentajeOcupacion = 0;
             if (fechaInicio && fechaFin) {
                 const start = new Date(fechaInicio);
                 const end = new Date(fechaFin);
                 const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
 
-                // Count unique properties in the result or filter
                 let numInmuebles = 0;
                 if (inmuebleId) {
-                    numInmuebles = 1;
+                    // Check if it's a building or unit to count units correctly
+                    const countUnitsRes = await dbClient.query(
+                        `SELECT COUNT(*) as total FROM inmuebles WHERE (id_inmueble = $1 OR parent_id = $1) AND tipo_registro != 'edificio' AND estado = 'activo'`,
+                        [inmuebleId]
+                    );
+                    numInmuebles = parseInt(countUnitsRes.rows[0].total) || 1;
                 } else {
-                    // We need to count how many properties are relevant to the filter
-                    // This might need a separate query or just use the ones found in reservations (which is inaccurate if some had 0 reservations)
-                    // For simplicity, let's count unique properties in the reservations list for now, 
-                    // OR better, query the count of properties matching the filter.
-
-                    let countInmueblesQuery = `SELECT COUNT(*) as total FROM inmuebles WHERE estado = 'activo'`;
+                    let countInmueblesQuery = `SELECT COUNT(*) as total FROM inmuebles WHERE estado = 'activo' AND tipo_registro != 'edificio'`;
                     const countParams = [];
                     let cIndex = 1;
                     if (empresaId) { countInmueblesQuery += ` AND id_empresa = $${cIndex++}`; countParams.push(empresaId); }

@@ -5,8 +5,10 @@ export interface UnitKpis {
     adr: number; // Average Daily Rate
     revpar: number; // Revenue Per Available Room
     ingreso_neto: number; // after platform commission
+    ingreso_total: number; // gross income
     costo_limpieza: number;
     utilidad: number;
+    gasto_proporcional_asignado?: number;
     noches_disponibles: number;
     noches_ocupadas: number;
     total_reservas: number;
@@ -20,6 +22,7 @@ export interface BuildingKpis {
     revpar_edificio: number;
     ingresos_totales: number;
     utilidad_total: number;
+    ingresos_brutos: number;
     margen_neto: number; // Percentage (%)
     total_area_m2: number;
     unidades: UnitKpis[];

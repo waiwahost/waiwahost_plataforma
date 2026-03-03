@@ -42,6 +42,8 @@ interface ExternalInmuebleResponse {
   id_prod_sigo: string | null;
   comision: number | null;
   precio_limpieza: number | null;
+  id_empresa: number | null;
+  id_propietario: number | null;
   capacidad_maxima: number | null;
   nro_habitaciones: number | null;
   nro_bahnos: number | null;
@@ -142,7 +144,7 @@ const validateInmuebleEditData = (inmuebleData: any): string[] => {
 
   if (inmuebleData.comision !== undefined) {
     const comision = Number(inmuebleData.comision);
-    if (isNaN(comision) || comision <= 0) {
+    if (inmuebleData.tipo_registro !== 'unidad' && (isNaN(comision) || comision <= 0)) {
       errors.push('La comisión debe ser un número mayor a 0');
     }
   }
