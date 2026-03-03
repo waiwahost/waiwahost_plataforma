@@ -12,7 +12,7 @@ export class MovimientosRepository {
   /**
    * Obtiene movimientos por fecha y empresa
    */
-  static async getMovimientosByFecha(fecha: string, empresaId?: string, plataformaOrigen?: string): Promise<Movimiento[]> {
+  static async getMovimientosByFecha(fecha: string, empresaId?: string, plataformaOrigen?: string, idInmueble?: string): Promise<Movimiento[]> {
     let query = `
       SELECT 
         m.id,
@@ -23,6 +23,8 @@ export class MovimientosRepository {
         m.monto,
         m.id_inmueble,
         i.nombre as nombre_inmueble,
+        COALESCE(p.nombre, '') as nombre_edificio,
+        i.tipo_registro,
         m.id_reserva,
         r.codigo_reserva as codigo_reserva,
         m.metodo_pago,
@@ -34,6 +36,7 @@ export class MovimientosRepository {
         m.id_pago
       FROM movimientos m
       LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
+      LEFT JOIN inmuebles p ON i.parent_id = p.id_inmueble
       LEFT JOIN reservas r ON m.id_reserva = r.id_reserva::text
       WHERE m.fecha = $1 AND i.estado = 'activo'
     `;
@@ -41,6 +44,10 @@ export class MovimientosRepository {
     if (empresaId) {
       query += ` AND m.id_empresa = $${params.length + 1}`;
       params.push(empresaId);
+    }
+    if (idInmueble) {
+      query += ` AND (m.id_inmueble = $${params.length + 1} OR m.id_inmueble IN (SELECT id_inmueble::text FROM inmuebles WHERE parent_id = $${params.length + 1}::int))`;
+      params.push(idInmueble);
     }
     if (plataformaOrigen) {
       query += ` AND m.plataforma_origen = $${params.length + 1}`;
@@ -90,7 +97,8 @@ export class MovimientosRepository {
    */
   static async getResumenDiario(
     fecha: string,
-    empresaId?: string
+    empresaId?: string,
+    idInmueble?: string
   ): Promise<ResumenDiario> {
 
     let query = `
@@ -125,9 +133,9 @@ export class MovimientosRepository {
 
     const params: any[] = [fecha];
 
-    if (empresaId) {
-      query += ' AND id_empresa = $2';
-      params.push(empresaId);
+    if (idInmueble) {
+      query += ` AND (id_inmueble = $${params.length + 1} OR id_inmueble IN (SELECT id_inmueble::text FROM inmuebles WHERE parent_id = $${params.length + 1}::int))`;
+      params.push(idInmueble);
     }
 
     query += ' GROUP BY fecha';
@@ -486,6 +494,8 @@ export class MovimientosRepository {
         m.monto,
         m.id_inmueble,
         i.nombre as nombre_inmueble,
+        COALESCE(p.nombre, '') as nombre_edificio,
+        i.tipo_registro,
         m.id_reserva,
         r.codigo_reserva as codigo_reserva,
         m.metodo_pago,
@@ -497,6 +507,7 @@ export class MovimientosRepository {
         m.id_pago
       FROM movimientos m
       LEFT JOIN inmuebles i ON m.id_inmueble = i.id_inmueble::text
+      LEFT JOIN inmuebles p ON i.parent_id = p.id_inmueble
       LEFT JOIN reservas r ON m.id_reserva = r.id_reserva::text
       WHERE m.fecha >= $1 AND m.fecha <= $2 AND m.id_empresa = $3
     `;
@@ -504,7 +515,7 @@ export class MovimientosRepository {
     const params: any[] = [filters.fecha_inicio, filters.fecha_fin, filters.id_empresa];
 
     if (filters.id_inmueble) {
-      query += ` AND m.id_inmueble = $${params.length + 1}`;
+      query += ` AND (m.id_inmueble = $${params.length + 1} OR m.id_inmueble IN (SELECT id_inmueble::text FROM inmuebles WHERE parent_id = $${params.length + 1}::int))`;
       params.push(filters.id_inmueble);
     }
 

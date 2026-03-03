@@ -12,6 +12,7 @@ export class InmueblesRepository {
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
              i.tipo_acomodacion, i.especificacion_acomodacion,
+             i.parent_id, i.tipo_registro, i.area_m2,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -39,6 +40,7 @@ export class InmueblesRepository {
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
              i.tipo_acomodacion, i.especificacion_acomodacion,
+             i.parent_id, i.tipo_registro, i.area_m2,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -66,6 +68,7 @@ export class InmueblesRepository {
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
              i.tipo_acomodacion, i.especificacion_acomodacion,
+             i.parent_id, i.tipo_registro, i.area_m2,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -92,6 +95,7 @@ export class InmueblesRepository {
              i.id_prod_sigo, i.comision, i.precio_limpieza, i.capacidad_maxima,
              i.nro_habitaciones, i.nro_bahnos, i.cocina, i.rnt, i.tra_token, 
              i.tipo_acomodacion, i.especificacion_acomodacion,
+             i.parent_id, i.tipo_registro, i.area_m2,
              e.nombre as empresa_nombre,
              u.nombre as propietario_nombre, u.email as propietario_email
       FROM inmuebles i
@@ -118,8 +122,8 @@ export class InmueblesRepository {
         nombre, descripcion, direccion, ciudad, capacidad, id_propietario, id_empresa,
         edificio, apartamento, id_prod_sigo, comision, precio_limpieza,
         capacidad_maxima, nro_habitaciones, nro_bahnos, cocina, estado, rnt, tra_token,
-        tipo_acomodacion, especificacion_acomodacion
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'activo', $17, $18, $19, $20)
+        tipo_acomodacion, especificacion_acomodacion, parent_id, tipo_registro, area_m2
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'activo', $17, $18, $19, $20, $21, $22, $23)
       RETURNING *
     `;
 
@@ -143,7 +147,10 @@ export class InmueblesRepository {
       inmuebleData.rnt || null,
       inmuebleData.tra_token || null,
       inmuebleData.tipo_acomodacion || null,
-      inmuebleData.especificacion_acomodacion || null
+      inmuebleData.especificacion_acomodacion || null,
+      inmuebleData.parent_id || null,
+      inmuebleData.tipo_registro || 'independiente',
+      inmuebleData.area_m2 || 0
     ];
 
     try {
@@ -249,6 +256,48 @@ export class InmueblesRepository {
       return { exists: rows.length > 0, error: null };
     } catch (error: any) {
       return { exists: false, error };
+    }
+  }
+
+  /**
+   * Alias for getAllInmuebles - for service compatibility
+   */
+  async list() {
+    return this.getAllInmuebles();
+  }
+
+  /**
+   * Alias for getInmueblesByEmpresa - for service compatibility
+   */
+  async getByEmpresa(empresaId: number) {
+    return this.getInmueblesByEmpresa(empresaId);
+  }
+
+  /**
+   * Alias for getInmueblesByEmpresaAndPropietario - for service compatibility
+   */
+  async getByPropietario(propietarioId: number) {
+    // In this context, we usually list for a specific propietario. 
+    // The previous implementation used getInmueblesByEmpresaAndPropietario which requires empresaId.
+    // If the service doesn't provide empresaId, we might need a simpler query.
+    // However, looking at the service, it calls this.repo.getByPropietario(propietarioId).
+
+    const query = `
+      SELECT i.*, 
+             e.nombre as empresa_nombre,
+             u.nombre as propietario_nombre, u.email as propietario_email
+      FROM inmuebles i
+      LEFT JOIN empresas e ON i.id_empresa = e.id_empresa
+      LEFT JOIN propietarios p ON i.id_propietario = p.id_propietario
+      LEFT JOIN usuarios u ON p.id_usuario = u.id_usuario
+      WHERE i.id_propietario = $1 AND i.estado = 'activo'
+      ORDER BY i.id_inmueble DESC
+    `;
+    try {
+      const { rows } = await pool.query(query, [propietarioId]);
+      return { data: rows, error: null };
+    } catch (error: any) {
+      return { data: null, error };
     }
   }
 }

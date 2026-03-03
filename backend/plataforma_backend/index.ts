@@ -24,6 +24,7 @@ import { tarjetaRegistroRoutes } from './routes/tarjetaRegistro.routes';
 import { paisesRoutes } from './routes/paises.routes';
 import { ciudadesRoutes } from './routes/ciudades.routes';
 import { bloqueosRoutes } from './routes/bloqueos.routes';
+import { kpiRoutes } from './routes/kpis.routes';
 
 import { errorHandler } from './middlewares/errorHandler';
 
@@ -82,6 +83,7 @@ server.register(tarjetaRegistroRoutes, { prefix: '/tarjeta-registro' });
 server.register(paisesRoutes, { prefix: '/paises' });
 server.register(ciudadesRoutes, { prefix: '/ciudades' });
 server.register(bloqueosRoutes, { prefix: '/bloqueos' });
+server.register(kpiRoutes, { prefix: '/kpis' });
 
 // Error handler
 server.setErrorHandler(errorHandler);

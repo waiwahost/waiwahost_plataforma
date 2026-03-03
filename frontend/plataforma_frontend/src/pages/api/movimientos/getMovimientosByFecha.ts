@@ -24,8 +24,8 @@ export default async function handler(
   }
 
   try {
-    const { fecha, plataforma_origen } = req.query;
-    
+    const { fecha, plataforma_origen, id_inmueble } = req.query;
+
     // Validar parámetros
     if (!fecha || typeof fecha !== 'string') {
       return res.status(400).json({
@@ -40,10 +40,15 @@ export default async function handler(
 
     // Construir endpoint con filtro opcional de plataforma
     let endpoint = `/movimientos/fecha/${fecha}?empresa_id=${empresaId}`;
-    
+
     // Agregar filtro de plataforma si se proporciona
     if (plataforma_origen && typeof plataforma_origen === 'string') {
       endpoint += `&plataforma_origen=${plataforma_origen}`;
+    }
+
+    // Agregar filtro de inmueble si se proporciona
+    if (id_inmueble && typeof id_inmueble === 'string') {
+      endpoint += `&id_inmueble=${id_inmueble}`;
     }
 
     // Llamar a la API externa
