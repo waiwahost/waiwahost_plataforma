@@ -17,7 +17,8 @@ interface ServiceResponse<T> {
 export async function getMovimientosFechaService(
   empresaId: string | null | undefined,
   fecha: string,
-  plataformaOrigen?: string
+  plataformaOrigen?: string,
+  idInmueble?: string
 ): Promise<ServiceResponse<Movimiento[]>> {
   try {
     // Validar plataforma si se especifica
@@ -49,12 +50,12 @@ export async function getMovimientosFechaService(
 
     // Si empresaId es null, undefined o vacío, pasar undefined al repositorio para no filtrar por empresa
     const empresaIdParam = (empresaId && empresaId !== '' && empresaId !== 'null') ? empresaId : undefined;
-    const movimientos = await MovimientosRepository.getMovimientosByFecha(fecha, empresaIdParam, plataformaOrigen);
+    const movimientos = await MovimientosRepository.getMovimientosByFecha(fecha, empresaIdParam, plataformaOrigen, idInmueble);
 
 
     // Movimientos solo TIPO= ingreso&egreso
     const movimientosFiltrados = movimientos.filter(movimiento => movimiento.tipo === 'ingreso' || movimiento.tipo === 'egreso' || movimiento.tipo === 'deducible');
-    
+
     return {
       data: movimientosFiltrados,
       error: null

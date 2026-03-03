@@ -188,10 +188,13 @@ const Properties: React.FC = () => {
           tiene_cocina: inmuebleToEdit.tiene_cocina,
           id_empresa: inmuebleToEdit.id_empresa,
           tipo_acomodacion: inmuebleToEdit.tipo_acomodacion,
-          especificacion_acomodacion: inmuebleToEdit.especificacion_acomodacion,
-          rnt: inmuebleToEdit.rnt,
-          tra_token: inmuebleToEdit.tra_token,
-        } : undefined}
+          especificacion_acomodacion: inmuebleToEdit.especificacion_acomodacion || '',
+          rnt: inmuebleToEdit.rnt || '',
+          tra_token: inmuebleToEdit.tra_token || '',
+          area_m2: inmuebleToEdit.area_m2 || 0,
+          tipo_registro: inmuebleToEdit.tipo_registro || 'independiente',
+          parent_id: inmuebleToEdit.parent_id || null,
+        } as any : undefined}
         isEdit={true}
       />
       <ConfirmModal
@@ -211,6 +214,11 @@ const Properties: React.FC = () => {
           setInmuebleToView(null);
         }}
         inmueble={inmuebleToView}
+        totalArea={inmuebleToView?.tipo_registro === 'edificio'
+          ? inmuebles
+            .filter(u => u.parent_id?.toString() === (inmuebleToView.id_inmueble || inmuebleToView.id).toString())
+            .reduce((sum, u) => sum + (u.area_m2 || 0), 0)
+          : undefined}
       />
     </div>
   );

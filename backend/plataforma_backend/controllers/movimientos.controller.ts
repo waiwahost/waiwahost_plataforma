@@ -132,7 +132,7 @@ export const movimientosController = {
       }
 
       const { fecha } = pathValidation.data;
-      const { plataforma_origen } = queryValidation.data;
+      const { plataforma_origen, id_inmueble } = queryValidation.data;
       // Lógica superadmin: si es superadmin y empresaId es null, no filtrar por empresa
       let empresa_id: string;
       if (ctx.id_roles === 1 && (ctx.empresaId === null || ctx.empresaId === undefined)) {
@@ -149,8 +149,8 @@ export const movimientosController = {
         }
         empresa_id = String(ctx.empresaId);
       }
-      // Llamar al servicio con filtro de plataforma
-      const { data, error } = await getMovimientosFechaService(empresa_id, fecha, plataforma_origen);
+      // Llamar al servicio con filtro de plataforma e inmueble
+      const { data, error } = await getMovimientosFechaService(empresa_id, fecha, plataforma_origen, id_inmueble);
 
       if (error) {
         return reply.status(error.status || 500).send(
@@ -217,9 +217,10 @@ export const movimientosController = {
       }
 
       const { fecha } = pathValidation.data;
+      const { id_inmueble } = queryValidation.data;
       const empresa_id = String(ctx.empresaId);
       // Llamar al servicio
-      const { data, error } = await getResumenDiarioService(empresa_id, fecha);
+      const { data, error } = await getResumenDiarioService(empresa_id, fecha, id_inmueble);
 
       if (error) {
         return reply.status(error.status || 500).send(

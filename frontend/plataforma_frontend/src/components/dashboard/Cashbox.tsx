@@ -15,6 +15,8 @@ import {
   getResumenDiario,
   deleteMovimiento
 } from '../../auth/movimientosApi';
+import { getInmueblesApi } from '../../auth/getInmueblesApi';
+import { IInmueble } from '../../interfaces/Inmueble';
 import { PLATAFORMAS_ORIGEN, PlataformaOrigen } from '../../constants/plataformas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -25,6 +27,8 @@ const Cashbox: React.FC = () => {
   });
   const [movimientos, setMovimientos] = useState<IMovimiento[]>([]);
   const [selectedPlataforma, setSelectedPlataforma] = useState<PlataformaOrigen | 'todas'>('todas');
+  const [selectedInmueble, setSelectedInmueble] = useState<string>('todos');
+  const [inmuebles, setInmuebles] = useState<IInmueble[]>([]);
   const [resumen, setResumen] = useState<IResumenDiario | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,16 +48,29 @@ const Cashbox: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [selectedDate, selectedPlataforma]);
+  }, [selectedDate, selectedPlataforma, selectedInmueble]);
+
+  useEffect(() => {
+    const fetchInmuebles = async () => {
+      try {
+        const data = await getInmueblesApi();
+        setInmuebles(data);
+      } catch (error) {
+        console.error('Error fetching inmuebles:', error);
+      }
+    };
+    fetchInmuebles();
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
       // Determinar si hay un filtro de plataforma aplicado
       const plataformaFiltro = selectedPlataforma !== 'todas' ? selectedPlataforma : undefined;
+      const inmuebleFiltro = selectedInmueble !== 'todos' ? selectedInmueble : undefined;
 
       const [movimientosResponse, resumenResponse] = await Promise.all([
-        getMovimientosByFecha(selectedDate, plataformaFiltro),
+        getMovimientosByFecha(selectedDate, plataformaFiltro, inmuebleFiltro),
         getResumenDiario(selectedDate)
       ]);
 
@@ -174,6 +191,28 @@ const Cashbox: React.FC = () => {
               Mostrando solo movimientos de {PLATAFORMAS_ORIGEN.find(p => p.value === selectedPlataforma)?.label}
             </span>
           )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 pt-4 border-t border-gray-50 dark:border-border/50">
+          <label className="text-sm font-medium text-tourism-navy dark:text-foreground">
+            Filtrar por inmueble:
+          </label>
+          <Select
+            value={selectedInmueble}
+            onValueChange={(value) => setSelectedInmueble(value)}
+          >
+            <SelectTrigger className="w-full sm:w-[260px] border-gray-200 dark:border-border bg-white dark:bg-muted/40 text-gray-700 dark:text-gray-200 focus:ring-tourism-teal focus:border-tourism-teal">
+              <SelectValue placeholder="Todos los inmuebles" />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-card border-gray-100 dark:border-border shadow-md">
+              <SelectItem value="todos" className="focus:bg-gray-50 dark:focus:bg-muted/50 focus:text-tourism-teal dark:focus:text-tourism-teal cursor-pointer">Todos los inmuebles</SelectItem>
+              {inmuebles.map((inmueble) => (
+                <SelectItem key={inmueble.id_inmueble || (inmueble as any).id} value={(inmueble.id_inmueble || (inmueble as any).id).toString()} className="focus:bg-gray-50 dark:focus:bg-muted/50 focus:text-tourism-teal dark:focus:text-tourism-teal cursor-pointer">
+                  {inmueble.nombre} {inmueble.tipo_registro === 'edificio' ? '(Proyecto)' : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
