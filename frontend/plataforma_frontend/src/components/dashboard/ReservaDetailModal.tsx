@@ -106,12 +106,12 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
+    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+    return localDate.toLocaleDateString('es-ES', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC'
+      day: 'numeric'
     });
   };
 
@@ -489,8 +489,8 @@ const ReservaDetailModal: React.FC<ReservaDetailModalProps> = ({
               <button
                 onClick={handleCopyCheckinLink}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${linkCopiado
-                    ? 'bg-green-600 text-white'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-purple-600 hover:bg-purple-700 text-white'
                   }`}
               >
                 {linkCopiado ? (

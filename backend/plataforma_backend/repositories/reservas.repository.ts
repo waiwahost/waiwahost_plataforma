@@ -66,12 +66,12 @@ export class ReservasRepository {
       }
 
       if (filters.fecha_fin) {
-        query += ` AND r.fecha_fin <= $${paramIndex}`;
+        query += ` AND r.fecha_inicio <= $${paramIndex}`;
         params.push(filters.fecha_fin);
         paramIndex++;
       }
 
-      query += ' ORDER BY r.created_at DESC';
+      query += ' ORDER BY r.fecha_inicio ASC';
 
       const result = await dbClient.query(query, params);
       return result.rows;

@@ -26,6 +26,9 @@ export class CreateInmuebleService {
           if (!inmuebleData.ciudad) inmuebleData.ciudad = parentInmueble.ciudad;
           if (!inmuebleData.rnt) inmuebleData.rnt = parentInmueble.rnt;
           if (!inmuebleData.tra_token) inmuebleData.tra_token = parentInmueble.tra_token;
+          if (!inmuebleData.comision && parentInmueble.comision) {
+            inmuebleData.comision = Number(parentInmueble.comision);
+          }
           if (!inmuebleData.edificio && parentInmueble.tipo_registro === 'edificio') {
             inmuebleData.edificio = parentInmueble.nombre;
           }

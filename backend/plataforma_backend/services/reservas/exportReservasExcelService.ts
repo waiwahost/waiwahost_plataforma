@@ -38,16 +38,16 @@ export class ExportReservasExcelService {
             { header: 'Código', key: 'codigo_reserva', width: 18 },
             { header: 'Fecha Creación', key: 'fecha_creacion', width: 15 },
             { header: 'Inmueble', key: 'nombre_inmueble', width: 30 },
-            { header: 'Huésped Principal', key: 'huesped', width: 30 },
-            { header: 'Tipo Documento', key: 'tipo_documento', width: 30 },
-            { header: 'Documento', key: 'documento', width: 30 },
-            { header: 'Fecha Nacimiento', key: 'fecha_nacimiento', width: 30 },
+            { header: 'Huésped', key: 'huesped', width: 30 },
+            { header: 'Tipo Huésped', key: 'tipo_huesped', width: 15 },
+            { header: 'Tipo Documento', key: 'tipo_documento', width: 20 },
+            { header: 'Documento', key: 'documento', width: 20 },
+            { header: 'Fecha Nacimiento', key: 'fecha_nacimiento', width: 18 },
             { header: 'Email', key: 'email', width: 30 },
             { header: 'Teléfono', key: 'telefono', width: 16 },
             { header: 'Fecha Entrada', key: 'fecha_inicio', width: 15 },
             { header: 'Fecha Salida', key: 'fecha_fin', width: 15 },
             { header: 'Noches', key: 'noches', width: 10 },
-            { header: 'Nº Huéspedes', key: 'numero_huespedes', width: 14 },
             { header: 'Plataforma', key: 'plataforma_origen', width: 14 },
             { header: 'Estado', key: 'estado', width: 14 },
             { header: 'Total Reserva', key: 'total_reserva', width: 16 },
@@ -74,11 +74,13 @@ export class ExportReservasExcelService {
                 return Math.ceil((salida.getTime() - entrada.getTime()) / (1000 * 60 * 60 * 24));
             })();
 
-            const row = worksheet.addRow({
+            // 1. Añadir Huésped Principal (con datos financieros)
+            const rowPrincipal = worksheet.addRow({
                 codigo_reserva: reserva.codigo_reserva,
                 fecha_creacion: reserva.fecha_creacion,
                 nombre_inmueble: reserva.nombre_inmueble,
                 huesped: `${reserva.huesped_principal.nombre} ${reserva.huesped_principal.apellido}`,
+                tipo_huesped: 'Principal',
                 tipo_documento: reserva.huesped_principal.documento_tipo,
                 documento: reserva.huesped_principal.documento_numero,
                 fecha_nacimiento: reserva.huesped_principal.fecha_nacimiento,
@@ -87,7 +89,6 @@ export class ExportReservasExcelService {
                 fecha_inicio: reserva.fecha_inicio,
                 fecha_fin: reserva.fecha_fin,
                 noches,
-                numero_huespedes: reserva.numero_huespedes,
                 plataforma_origen: reserva.plataforma_origen || 'directa',
                 estado: reserva.estado,
                 total_reserva: Number(reserva.total_reserva) || 0,
@@ -96,13 +97,16 @@ export class ExportReservasExcelService {
                 observaciones: reserva.observaciones || '',
             });
 
-            // Formato moneda para columnas financieras
+            // Estilo para la fila principal (opcional: ligeramente diferente)
+            rowPrincipal.getCell('huesped').font = { bold: true };
+
+            // Formato moneda para columnas financieras en el principal
             ['total_reserva', 'total_pagado', 'total_pendiente'].forEach((key) => {
-                row.getCell(key).numFmt = '"$"#,##0.00';
+                rowPrincipal.getCell(key).numFmt = '"$"#,##0.00';
             });
 
-            // Color según estado
-            const estadoCell = row.getCell('estado');
+            // Color según estado (solo en el principal)
+            const estadoCell = rowPrincipal.getCell('estado');
             switch (reserva.estado) {
                 case 'confirmada':
                     estadoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD6EAF8' } };
@@ -118,12 +122,22 @@ export class ExportReservasExcelService {
                     break;
             }
 
-            // Color rojo si hay pendiente
-            if (Number(reserva.total_pendiente) > 0) {
-                row.getCell('total_pendiente').font = { color: { argb: 'FFCC0000' }, bold: true };
-            } else {
-                row.getCell('total_pendiente').font = { color: { argb: 'FF27AE60' }, bold: true };
-            }
+            // 2. Añadir Acompañantes (sin datos financieros para evitar confusión en sumas manuales)
+            const acompañantes = reserva.huespedes.filter(h => !h.es_principal);
+            acompañantes.forEach(acompañante => {
+                worksheet.addRow({
+                    codigo_reserva: reserva.codigo_reserva, // Repetimos código para vincular visualmente
+                    nombre_inmueble: reserva.nombre_inmueble,
+                    huesped: `${acompañante.nombre} ${acompañante.apellido}`,
+                    tipo_huesped: 'Acompañante',
+                    tipo_documento: acompañante.documento_tipo,
+                    documento: acompañante.documento_numero,
+                    fecha_nacimiento: acompañante.fecha_nacimiento,
+                    email: acompañante.email,
+                    telefono: acompañante.telefono,
+                    // Dejamos vacío el resto para que no se sume por error y se vea limpio
+                });
+            });
         });
 
         // Fila de totales al final
