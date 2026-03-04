@@ -20,12 +20,11 @@ import {
 import { useAuth } from '../../auth/AuthContext';
 
 const menuItems = [
-  { key: 'main', title: 'Panel Principal', icon: Home },
+  { key: 'main', title: 'Calendario', icon: Home },
   { key: 'bookings', title: 'Reservas', icon: Calendar },
   { key: 'properties', title: 'Inmuebles', icon: Building2 },
   { key: 'propietarios', title: 'Propietarios', icon: UserCheck },
   { key: 'guests', title: 'Huéspedes', icon: Users },
-  { key: 'availability', title: 'Disponibilidad', icon: FileText },
 ];
 
 const analyticsItems = [
@@ -43,7 +42,6 @@ const PERMISO_MENU_MAP: Record<string, string> = {
   crear_reserva: 'bookings',
   ver_reportes: 'reports',
   ver_huespedes: 'guests',
-  ver_disponibilidad: 'availability',
   ver_caja: 'cashbox',
   ver_ingresos: 'incomes',
   ver_egresos: 'deductions',
