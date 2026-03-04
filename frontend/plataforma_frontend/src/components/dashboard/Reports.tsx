@@ -478,20 +478,33 @@ export default function NuevoReporteFinanciero() {
                                             <React.Fragment key={inmueble}>
                                                 {Object.entries(conceptos).map(([concepto, items]: [string, any]) => {
                                                     const subtotalConcepto = items.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0);
+                                                    const isComision = String(concepto || '').toLowerCase().includes('comision') || String(concepto || '').toLowerCase().includes('comisión');
+
                                                     return (
                                                         <React.Fragment key={concepto}>
-                                                            {items.map((g: any, idx: number) => (
-                                                                <tr key={g.id_movimiento} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                                                    <td className="px-5 py-3 text-[13px] font-bold text-gray-900">{idx === 0 ? g.nombre_inmueble : ''}</td>
-                                                                    <td className="px-5 py-3 text-[13px] text-gray-700 capitalize">{idx === 0 ? g.concepto.replace('_', ' ') : ''}</td>
-                                                                    <td className="px-5 py-3 text-[13px] text-gray-700">{g.descripcion}</td>
-                                                                    <td className="px-5 py-3 text-right font-medium text-gray-700 text-[13px]">{formatCurrency(-g.monto)}</td>
+                                                            {isComision ? (
+                                                                <tr className="border-b border-gray-50 hover:bg-gray-50/50">
+                                                                    <td className="px-5 py-3 text-[13px] font-bold text-gray-900">{items[0]?.nombre_inmueble}</td>
+                                                                    <td className="px-5 py-3 text-[13px] text-gray-700 capitalize">{concepto.replace('_', ' ')}</td>
+                                                                    <td className="px-5 py-3 text-[13px] text-gray-700">Total de {items.length} comision{items.length !== 1 ? 'es' : ''}</td>
+                                                                    <td className="px-5 py-3 text-right font-medium text-gray-700 text-[13px]">{formatCurrency(-subtotalConcepto)}</td>
                                                                 </tr>
-                                                            ))}
-                                                            <tr className="border-b border-gray-100 bg-gray-50/30">
-                                                                <td colSpan={3} className="px-5 py-2 text-right font-bold text-[12px] uppercase">Subtotal</td>
-                                                                <td className="px-5 py-2 text-right font-bold text-[13px]">{formatCurrency(-subtotalConcepto)}</td>
-                                                            </tr>
+                                                            ) : (
+                                                                items.map((g: any, idx: number) => (
+                                                                    <tr key={g.id_movimiento} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                                                        <td className="px-5 py-3 text-[13px] font-bold text-gray-900">{idx === 0 ? g.nombre_inmueble : ''}</td>
+                                                                        <td className="px-5 py-3 text-[13px] text-gray-700 capitalize">{idx === 0 ? g.concepto.replace('_', ' ') : ''}</td>
+                                                                        <td className="px-5 py-3 text-[13px] text-gray-700">{g.descripcion}</td>
+                                                                        <td className="px-5 py-3 text-right font-medium text-gray-700 text-[13px]">{formatCurrency(-g.monto)}</td>
+                                                                    </tr>
+                                                                ))
+                                                            )}
+                                                            {!isComision && (
+                                                                <tr className="border-b border-gray-100 bg-gray-50/30">
+                                                                    <td colSpan={3} className="px-5 py-2 text-right font-bold text-[12px] uppercase">Subtotal</td>
+                                                                    <td className="px-5 py-2 text-right font-bold text-[13px]">{formatCurrency(-subtotalConcepto)}</td>
+                                                                </tr>
+                                                            )}
                                                         </React.Fragment>
                                                     );
                                                 })}
