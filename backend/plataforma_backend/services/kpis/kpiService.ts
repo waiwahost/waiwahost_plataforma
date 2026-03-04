@@ -13,7 +13,11 @@ export class KpiService {
         const { fecha_inicio, fecha_fin } = filters;
         const start = new Date(fecha_inicio);
         const end = new Date(fecha_fin);
-        const availableNightsPerProperty = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+        // Para que incluya por ejemplo febrero (28 días) si se manda 1 al 28, la diferencia en fechas es 27, entonces sumamos 1.
+        // Convertir fechas a UTC asegurando que midan medianoche para no tener desfase de horario
+        const startTime = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+        const endTime = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+        const availableNightsPerProperty = Math.round(Math.abs((endTime - startTime) / (1000 * 3600 * 24))) + 1;
 
         // 1. Get Property Data (Hierarchy)
         const properties = await this.kpiRepository.getPropertiesHierarchy(null, id_inmueble);
