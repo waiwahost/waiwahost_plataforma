@@ -408,7 +408,7 @@ export default function NuevoReporteFinanciero() {
                         <div className="p-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card flex justify-between items-center">
                             <h3 className="text-lg font-semibold text-tourism-navy dark:text-foreground">Detalle de Reservas</h3>
                         </div>
-                        <div className="overflow-x-auto w-full">
+                        <div className="overflow-x-auto w-full max-h-[400px] overflow-y-auto">
                             <table className="w-full text-sm text-left relative">
                                 <thead className="bg-waiwa-sky dark:bg-waiwa-amber text-[#64748b] dark:text-muted-foreground text-[13px] font-semibold border-b border-gray-100 dark:border-border">
                                     <tr>
@@ -454,7 +454,7 @@ export default function NuevoReporteFinanciero() {
                         <div className="p-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card flex justify-between items-center">
                             <h3 className="text-lg font-semibold text-tourism-navy dark:text-foreground">Detalle de Gastos</h3>
                         </div>
-                        <div className="overflow-x-auto w-full">
+                        <div className="overflow-x-auto w-full max-h-[400px] overflow-y-auto">
                             <table className="w-full text-sm text-left relative">
                                 <thead className="bg-waiwa-sky dark:bg-waiwa-amber text-[#64748b] dark:text-muted-foreground text-[13px] font-semibold border-b border-gray-100 dark:border-border">
                                     <tr>
@@ -486,7 +486,7 @@ export default function NuevoReporteFinanciero() {
                                                                 <tr className="border-b border-gray-50 hover:bg-gray-50/50">
                                                                     <td className="px-5 py-3 text-[13px] font-bold text-gray-900">{items[0]?.nombre_inmueble}</td>
                                                                     <td className="px-5 py-3 text-[13px] text-gray-700 capitalize">{concepto.replace('_', ' ')}</td>
-                                                                    <td className="px-5 py-3 text-[13px] text-gray-700">Total de {items.length} comision{items.length !== 1 ? 'es' : ''}</td>
+                                                                    <td className="px-5 py-3 text-[13px] text-gray-700">Total Admon</td>
                                                                     <td className="px-5 py-3 text-right font-medium text-gray-700 text-[13px]">{formatCurrency(-subtotalConcepto)}</td>
                                                                 </tr>
                                                             ) : (
@@ -534,8 +534,8 @@ export default function NuevoReporteFinanciero() {
                         <div className="p-4 border-b border-gray-100 bg-white">
                             <h3 className="text-lg font-bold text-tourism-navy">Resumen por inmueble - Ingresos/Egresos</h3>
                         </div>
-                        <div className="overflow-x-auto w-full">
-                            <table className="w-full text-sm text-left">
+                        <div className="overflow-x-auto w-full max-h-[400px] overflow-y-auto">
+                            <table className="w-full text-sm text-left relative">
                                 <thead className="bg-waiwa-sky text-[#64748b] text-[13px] font-semibold border-b border-gray-100">
                                     <tr>
                                         <th className="px-5 py-4">Inmueble</th>
@@ -577,8 +577,8 @@ export default function NuevoReporteFinanciero() {
                         <div className="p-4 border-b border-gray-100 bg-white">
                             <h3 className="text-lg font-bold text-tourism-navy">Resumen por inmueble - Indicadores</h3>
                         </div>
-                        <div className="overflow-x-auto w-full">
-                            <table className="w-full text-sm text-left">
+                        <div className="overflow-x-auto w-full max-h-[400px] overflow-y-auto">
+                            <table className="w-full text-sm text-left relative">
                                 <thead className="bg-waiwa-sky text-[#64748b] text-[13px] font-semibold border-b border-gray-100">
                                     <tr>
                                         <th className="px-5 py-4">Inmueble</th>
