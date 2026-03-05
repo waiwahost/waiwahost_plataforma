@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CONCEPTOS_INGRESOS, CONCEPTOS_EGRESOS, CONCEPTOS_DEDUCIBLES } from '../interfaces/movimiento.interface';
+// La validación de compatibilidad concepto+tipo se hace dinámicamente en el Service
 import { PLATAFORMAS_ORIGEN, isPlataformaValida } from '../constants/plataformas';
 
 // Schema para validar fecha en formato YYYY-MM-DD
@@ -89,21 +89,9 @@ const movimientoBaseSchema = z.object({
   plataforma_origen: plataformaOrigenSchema
 });
 
-// Schema para crear movimiento con validación de concepto y plataforma
+// Schema para crear movimiento (la validación de concepto+tipo se hace en el Service)
 export const CreateMovimientoSchema = movimientoBaseSchema
   .refine((data) => {
-    // Validar concepto según tipo
-    if (data.tipo === 'ingreso') {
-      return CONCEPTOS_INGRESOS.includes(data.concepto as any);
-    } else if (data.tipo === 'egreso') {
-      return CONCEPTOS_EGRESOS.includes(data.concepto as any);
-    } else if (data.tipo === 'deducible') {
-      return CONCEPTOS_DEDUCIBLES.includes(data.concepto as any);
-    }
-  }, {
-    message: "El concepto no es válido para el tipo de movimiento especificado",
-    path: ["concepto"]
-  }).refine((data) => {
     // Validar que plataforma_origen solo se use en ingresos de reserva
     if (data.plataforma_origen && (data.tipo !== 'ingreso' || data.concepto !== 'reserva')) {
       return false;
@@ -113,7 +101,7 @@ export const CreateMovimientoSchema = movimientoBaseSchema
     message: "La plataforma de origen solo es válida para movimientos de tipo 'ingreso' con concepto 'reserva'",
     path: ["plataforma_origen"]
   }).refine((data) => {
-    // Validar que metodo_pago solo se use en deducibles
+    // Validar que metodo_pago sea obligatorio para ingresos y egresos
     if (data.tipo !== 'deducible' && !data.metodo_pago) {
       return false;
     }
@@ -123,7 +111,7 @@ export const CreateMovimientoSchema = movimientoBaseSchema
     path: ["metodo_pago"]
   });
 
-// Schema para editar movimiento (todos los campos opcionales)
+// Schema para editar movimiento — la validación de concepto+tipo se hace en el Service
 export const EditMovimientoSchema = z.object({
   fecha: fechaNoFuturaSchema.optional(),
   tipo: z.enum(['ingreso', 'egreso', 'deducible']).optional(),
@@ -136,22 +124,7 @@ export const EditMovimientoSchema = z.object({
   comprobante: z.string().optional().nullable(),
   plataforma_origen: plataformaOrigenSchema
 }).refine((data) => {
-  // Si se especifica tipo y concepto, validar que sean compatibles
-  if (data.tipo && data.concepto) {
-    if (data.tipo === 'ingreso') {
-      return CONCEPTOS_INGRESOS.includes(data.concepto as any);
-    } else if (data.tipo === 'egreso') {
-      return CONCEPTOS_EGRESOS.includes(data.concepto as any);
-    } else if (data.tipo === 'deducible') {
-      return CONCEPTOS_DEDUCIBLES.includes(data.concepto as any);
-    }
-  }
-  return true;
-}, {
-  message: "El concepto no es válido para el tipo de movimiento especificado",
-  path: ["concepto"]
-}).refine((data) => {
-  // Validar que plataforma_origen solo se use en ingresos de reserva
+  // Si se especifica plataforma_origen, validar que tipo e ingreso+reserva sean correctos
   if (data.plataforma_origen && data.tipo && data.concepto &&
     (data.tipo !== 'ingreso' || data.concepto !== 'reserva')) {
     return false;

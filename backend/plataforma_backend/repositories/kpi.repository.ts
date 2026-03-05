@@ -48,7 +48,7 @@ export class KpiRepository {
       FROM reservas
       WHERE estado != 'cancelada'
         AND fecha_inicio >= $1
-        AND fecha_fin <= $2
+        AND fecha_inicio <= $2
         AND id_inmueble IN (${placeholders})
       GROUP BY id_inmueble
     `;
