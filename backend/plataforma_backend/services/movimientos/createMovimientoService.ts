@@ -1,6 +1,7 @@
 import { MovimientosRepository } from '../../repositories/movimientos.repository';
-import { CreateMovimientoData, Movimiento, isConceptoValido } from '../../interfaces/movimiento.interface';
+import { CreateMovimientoData, Movimiento } from '../../interfaces/movimiento.interface';
 import { isPlataformaValida } from '../../constants/plataformas';
+import { ConceptosRepository } from '../../repositories/conceptos.repository';
 
 interface ServiceResponse<T> {
   data: T | null;
@@ -18,14 +19,25 @@ export async function createMovimientoService(
   data: CreateMovimientoData
 ): Promise<ServiceResponse<Movimiento>> {
   try {
-    // Validar concepto según tipo
-    if (!isConceptoValido(data.tipo, data.concepto)) {
+    // Validar concepto dinámicamente contra la tabla conceptos
+    const conceptosRepo = new ConceptosRepository();
+    const { exists: conceptoValido, error: conceptoError } = await conceptosRepo.conceptoExisteParaTipo({
+      slug: data.concepto,
+      tipo: data.tipo,
+      id_empresa: data.id_empresa ? Number(data.id_empresa) : undefined,
+    });
+
+    if (conceptoError) {
+      return { data: null, error: { message: 'Error al validar el concepto', status: 500, details: conceptoError } };
+    }
+
+    if (!conceptoValido) {
       return {
         data: null,
         error: {
-          message: 'Concepto inválido',
+          message: 'Concepto inválido para el tipo de movimiento indicado',
           status: 400,
-          details: `El concepto '${data.concepto}' no es válido para el tipo '${data.tipo}'`
+          details: `El concepto '${data.concepto}' no es válido para el tipo '${data.tipo}'. Consulta los conceptos disponibles en GET /conceptos?tipo=${data.tipo}`
         }
       };
     }

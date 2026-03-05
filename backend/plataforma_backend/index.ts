@@ -25,6 +25,7 @@ import { paisesRoutes } from './routes/paises.routes';
 import { ciudadesRoutes } from './routes/ciudades.routes';
 import { bloqueosRoutes } from './routes/bloqueos.routes';
 import { kpiRoutes } from './routes/kpis.routes';
+import { conceptosRoutes } from './routes/conceptos.routes';
 
 import { errorHandler } from './middlewares/errorHandler';
 
@@ -84,6 +85,7 @@ server.register(paisesRoutes, { prefix: '/paises' });
 server.register(ciudadesRoutes, { prefix: '/ciudades' });
 server.register(bloqueosRoutes, { prefix: '/bloqueos' });
 server.register(kpiRoutes, { prefix: '/kpis' });
+server.register(conceptosRoutes, { prefix: '/conceptos' });
 
 // Error handler
 server.setErrorHandler(errorHandler);
