@@ -6,8 +6,7 @@ import { getKpis } from '../../services/kpi.service';
 import { KpiResponse, BuildingKpis, UnitKpis } from '../../interfaces/Kpi';
 import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { getPropietariosApi } from '../../auth/propietariosApi';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { useReportePDF } from './ReportePDFGenerator';
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -26,7 +25,8 @@ export default function NuevoReporteFinanciero() {
     const [opciones, setOpciones] = useState<IOpcionesReporte | null>(null);
     const [mounted, setMounted] = useState(false);
     const [filterMode, setFilterMode] = useState<'inmueble' | 'propietario'>('inmueble');
-
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const { generarPDF } = useReportePDF();
     const reportRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -153,39 +153,15 @@ export default function NuevoReporteFinanciero() {
     };
 
     const handleDownloadPDF = async () => {
-        if (!reportRef.current) return;
-
+        if (!reportData) return;
+        setPdfLoading(true);
         try {
-            const canvas = await html2canvas(reportRef.current, { scale: 2 });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-
-            // Calculate how many pages we need
-            const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            let heightLeft = imgHeight;
-            let position = 0;
-
-            // Add first page
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
-
-            // Add additional pages if needed
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pdfHeight;
-            }
-
-            pdf.save('reporte_financiero.pdf');
+            await generarPDF(reportData, kpiData, filters.fechaInicio ?? '', filters.fechaFin ?? '');
         } catch (err) {
             console.error('Error generando PDF', err);
             setError('Error al generar el PDF');
+        } finally {
+            setPdfLoading(false);
         }
     };
 
@@ -302,8 +278,9 @@ export default function NuevoReporteFinanciero() {
                             {loading ? <RefreshCw className="animate-spin" /> : <Calendar />} Generar Informe
                         </Button>
                         {reportData && (
-                            <Button variant="outline" onClick={handleDownloadPDF} className="flex gap-2">
-                                <Download /> Descargar PDF
+                            <Button variant="outline" onClick={handleDownloadPDF} disabled={pdfLoading} className="flex gap-2">
+                                {pdfLoading ? <RefreshCw className="animate-spin h-4 w-4" /> : <Download />}
+                                {pdfLoading ? 'Generando PDF...' : 'Descargar PDF'}
                             </Button>
                         )}
                     </div>

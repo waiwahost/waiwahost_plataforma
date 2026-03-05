@@ -1,5 +1,6 @@
 import { MovimientosRepository } from '../../repositories/movimientos.repository';
-import { EditMovimientoData, Movimiento, isConceptoValido } from '../../interfaces/movimiento.interface';
+import { EditMovimientoData, Movimiento } from '../../interfaces/movimiento.interface';
+import { ConceptosRepository } from '../../repositories/conceptos.repository';
 
 interface ServiceResponse<T> {
   data: T | null;
@@ -33,13 +34,24 @@ export async function editMovimientoService(
       };
     }
 
-    // Validar concepto según tipo si se especifican ambos
+    // Validar concepto dinámicamente si se especifican tipo y concepto
     if (data.tipo && data.concepto) {
-      if (!isConceptoValido(data.tipo, data.concepto)) {
+      const conceptosRepo = new ConceptosRepository();
+      const { exists: conceptoValido, error: conceptoError } = await conceptosRepo.conceptoExisteParaTipo({
+        slug: data.concepto,
+        tipo: data.tipo,
+        id_empresa: movimientoActual.id_empresa ? Number(movimientoActual.id_empresa) : undefined,
+      });
+
+      if (conceptoError) {
+        return { data: null, error: { message: 'Error al validar el concepto', status: 500, details: conceptoError } };
+      }
+
+      if (!conceptoValido) {
         return {
           data: null,
           error: {
-            message: 'Concepto inválido',
+            message: 'Concepto inválido para el tipo de movimiento indicado',
             status: 400,
             details: `El concepto '${data.concepto}' no es válido para el tipo '${data.tipo}'`
           }
@@ -50,7 +62,7 @@ export async function editMovimientoService(
     // Si se cambia el inmueble, verificar que existe y pertenece a la empresa
     if (data.id_inmueble) {
       const inmuebleExists = await MovimientosRepository.existsInmuebleInEmpresa(
-        data.id_inmueble, 
+        data.id_inmueble,
         movimientoActual.id_empresa
       );
       if (!inmuebleExists) {
@@ -68,7 +80,7 @@ export async function editMovimientoService(
     // Si se especifica reserva, verificar que existe y pertenece a la empresa
     if (data.id_reserva) {
       const reservaExists = await MovimientosRepository.existsReservaInEmpresa(
-        data.id_reserva, 
+        data.id_reserva,
         movimientoActual.id_empresa
       );
       if (!reservaExists) {

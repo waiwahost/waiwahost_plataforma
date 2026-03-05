@@ -92,7 +92,9 @@ export class ReportesService {
                 reservasParams.push(fechaInicio);
             }
             if (fechaFin) {
-                reservasQuery += ` AND r.fecha_fin <= $${pIndex++}`;
+                // Filtra por fecha de ENTRADA (check-in) dentro del rango.
+                // Una reserva que entra el 27/Feb y sale el 3/Mar SÍ aparece en el reporte de Febrero.
+                reservasQuery += ` AND r.fecha_inicio <= $${pIndex++}`;
                 reservasParams.push(fechaFin);
             }
 
