@@ -1,8 +1,7 @@
 "use client";
-
 import React, { useState, useEffect } from 'react';
 
-import { PanelRightClose, PanelRightOpen } from "lucide-react"
+import { PanelRightClose, PanelRightOpen, Home } from "lucide-react"
 
 import Logo from '../atoms/Logo';
 import UserMenu from '../molecules/UserMenu';
@@ -20,6 +19,8 @@ import Incomes from '../dashboard/Incomes';
 import Deductions from '../dashboard/Deductions';
 import Companies from '../dashboard/Companies';
 import Usuarios from '../dashboard/Usuarios';
+import { useAuth } from '../../auth/AuthContext';
+
 
 const COMPONENTS: Record<string, React.ReactNode> = {
   main: <MainPanel />,
@@ -39,6 +40,13 @@ const COMPONENTS: Record<string, React.ReactNode> = {
 const BaseLayout: React.FC = () => {
   const [activeKey, setActiveKey] = useState('main');
   const [open, setOpen] = useState(false);
+
+  const { user } = useAuth();
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
 
 
   // Cerrar SIdebar Automaticamente en celular
@@ -110,8 +118,20 @@ const BaseLayout: React.FC = () => {
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-8 bg-white dark:bg-background">
-          <div className="w-full">
+        <main className="flex-1 overflow-y-auto bg-white dark:bg-background">
+          {/* Banner de Panel de Propietario */}
+          {isPropietario && (
+            <div className="flex items-center gap-4 px-8 py-3 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-200 border-b border-amber-400 shadow-sm">
+              <div className="flex items-center justify-center w-8 h-8 bg-white/60 rounded-full">
+                <Home className="h-4 w-4 text-amber-800" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-amber-900 text-sm leading-tight">Panel de Propietario</span>
+                <span className="text-amber-800 text-xs opacity-80">Vista de solo lectura — Consulta la disponibilidad de tus inmuebles</span>
+              </div>
+            </div>
+          )}
+          <div className="w-full p-8">
             {COMPONENTS[activeKey]}
           </div>
         </main>

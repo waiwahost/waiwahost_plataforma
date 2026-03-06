@@ -33,6 +33,32 @@ import { IEstadoTarjetaResponse, IPayloadTarjeta } from '@libs/interfaces/Tarjet
 
 
 const Bookings: React.FC = () => {
+  const { user } = useAuth();
+
+  // Detectar rol propietario
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
+
+  // Si es propietario, mostrar panel de acceso restringido
+  if (isPropietario) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-10 max-w-md w-full text-center shadow-sm">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🏠</span>
+          </div>
+          <h2 className="text-xl font-bold text-amber-900 mb-2">Módulo no disponible</h2>
+          <p className="text-amber-700 text-sm">
+            Como propietario, no tienes acceso al módulo de reservas. Para consultar la disponibilidad de tus inmuebles, usa la sección <strong>Disponibilidad</strong>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Hook personalizado para manejar reservas con totales automáticos
   const {
     reservas,
@@ -73,10 +99,10 @@ const Bookings: React.FC = () => {
 
 
 
-  const { user } = useAuth();
-  const canCreate = user?.permisos?.includes('crear_reservas') || true; // TEMPORAL: siempre true para debugging
-  const canEdit = user?.permisos?.includes('editar_reservas') || true; // TEMPORAL: siempre true para debugging
-  const canDelete = user?.permisos?.includes('eliminar_reservas') || true; // TEMPORAL: siempre true para debugging
+  const canCreate = true; // controlado por rol arriba con early return
+  const canEdit = true;
+  const canDelete = true;
+
 
   const filteredReservas = useMemo(() => {
     return reservas.filter(reserva => {

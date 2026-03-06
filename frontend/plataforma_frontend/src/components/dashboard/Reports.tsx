@@ -7,6 +7,7 @@ import { KpiResponse, BuildingKpis, UnitKpis } from '../../interfaces/Kpi';
 import { getInmueblesApi } from '../../auth/getInmueblesApi';
 import { getPropietariosApi } from '../../auth/propietariosApi';
 import { useReportePDF } from './ReportePDFGenerator';
+import { useAuth } from '../../auth/AuthContext';
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -14,6 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from '../atoms/Input';
 
 export default function NuevoReporteFinanciero() {
+    const { user } = useAuth();
+    const isPropietario = user && (
+        String(user.role) === 'PROPIETARIO' ||
+        String(user.role) === '4' ||
+        (user as any).id_roles === 4
+    );
+
     const [filters, setFilters] = useState<ReporteFinancieroFilters>({
         fechaInicio: '',
         fechaFin: '',
@@ -24,6 +32,7 @@ export default function NuevoReporteFinanciero() {
     const [error, setError] = useState<string | null>(null);
     const [opciones, setOpciones] = useState<IOpcionesReporte | null>(null);
     const [mounted, setMounted] = useState(false);
+    // Propietario siempre filtra por inmueble (no puede filtrar por propietario)
     const [filterMode, setFilterMode] = useState<'inmueble' | 'propietario'>('inmueble');
     const [pdfLoading, setPdfLoading] = useState(false);
     const { generarPDF } = useReportePDF();
@@ -226,24 +235,25 @@ export default function NuevoReporteFinanciero() {
                             </div>
                         )}
 
-                        {/* Filter By Selector */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Filtrar por</label>
-                            <Select
-                                value={filterMode}
-                                onValueChange={(val: 'inmueble' | 'propietario') => {
-                                    setFilterMode(val);
-                                    setFilters({ ...filters, inmuebleId: undefined, propietarioId: undefined });
-                                }}
-                            >
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="inmueble">Inmueble</SelectItem>
-                                    <SelectItem value="propietario">Propietario</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
+                        {/* Filter By Selector — oculto para propietarios */}
+                        {!isPropietario && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Filtrar por</label>
+                                <Select
+                                    value={filterMode}
+                                    onValueChange={(val: 'inmueble' | 'propietario') => {
+                                        setFilterMode(val);
+                                        setFilters({ ...filters, inmuebleId: undefined, propietarioId: undefined });
+                                    }}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="inmueble">Inmueble</SelectItem>
+                                        <SelectItem value="propietario">Propietario</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                         {/* Dynamic Dropdown (Property or Owner) */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium">
