@@ -23,10 +23,11 @@ const InmuebleCard: React.FC<{
   formatCurrency: (amount: number) => string;
   canEdit: boolean;
   canDelete: boolean;
+  isPropietario?: boolean;
   isUnit?: boolean;
   unitsCount?: number;
   totalArea?: number;
-}> = ({ inmueble, onEdit, onDelete, onViewDetail, formatCurrency, canEdit, canDelete, isUnit = false, unitsCount = 0, totalArea }) => {
+}> = ({ inmueble, onEdit, onDelete, onViewDetail, formatCurrency, canEdit, canDelete, isPropietario = false, isUnit = false, unitsCount = 0, totalArea }) => {
   const [kpis, setKpis] = React.useState<KpiResponse | null>(null);
   const [loadingKpis, setLoadingKpis] = React.useState(false);
 
@@ -200,34 +201,38 @@ const InmuebleCard: React.FC<{
               >
                 <Eye className="h-[18px] w-[18px]" />
               </button>
-              <button
-                onClick={() => onEdit(inmueble)}
-                disabled={!canEdit}
-                className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                title="Editar"
-              >
-                <Edit2 className="h-[18px] w-[18px]" />
-              </button>
-              <button
-                onClick={() => onDelete(inmueble)}
-                disabled={!canDelete}
-                className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                title="Eliminar"
-              >
-                <Trash2 className="h-[18px] w-[18px]" />
-              </button>
-              <button
-                onClick={async () => {
-                  const baseUrl = process.env.NEXT_PUBLIC_FORM_URL || window.location.origin.replace('3001', '3000');
-                  const link = `${baseUrl}/checkin?inmueble=${inmueble.id_inmueble || inmueble.id}`;
-                  const success = await copyToClipboard(link);
-                  if (success) alert('Enlace de check-in copiado al portapapeles');
-                }}
-                className="p-2 rounded-lg text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-all"
-                title="Copiar Check-in"
-              >
-                <Share2 className="h-[18px] w-[18px]" />
-              </button>
+              {!isPropietario && (
+                <>
+                  <button
+                    onClick={() => onEdit(inmueble)}
+                    disabled={!canEdit}
+                    className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    title="Editar"
+                  >
+                    <Edit2 className="h-[18px] w-[18px]" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(inmueble)}
+                    disabled={!canDelete}
+                    className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-[18px] w-[18px]" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const baseUrl = process.env.NEXT_PUBLIC_FORM_URL || window.location.origin.replace('3001', '3000');
+                      const link = `${baseUrl}/checkin?inmueble=${inmueble.id_inmueble || inmueble.id}`;
+                      const success = await copyToClipboard(link);
+                      if (success) alert('Enlace de check-in copiado al portapapeles');
+                    }}
+                    className="p-2 rounded-lg text-gray-500 hover:text-purple-600 hover:bg-purple-50 transition-all"
+                    title="Copiar Check-in"
+                  >
+                    <Share2 className="h-[18px] w-[18px]" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -238,8 +243,13 @@ const InmuebleCard: React.FC<{
 
 const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDelete, onViewDetail }) => {
   const { user } = useAuth();
-  const canEdit = user?.permisos?.includes('editar_inmuebles') || true;
-  const canDelete = user?.permisos?.includes('eliminar_inmuebles') || true;
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
+  const canEdit = !isPropietario && (user?.permisos?.includes('editar_inmuebles') || true);
+  const canDelete = !isPropietario && (user?.permisos?.includes('eliminar_inmuebles') || true);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -276,6 +286,7 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                   formatCurrency={formatCurrency}
                   canEdit={canEdit}
                   canDelete={canDelete}
+                  isPropietario={!!isPropietario}
                   unitsCount={buildingUnits.length}
                   totalArea={totalArea}
                 />
@@ -292,6 +303,7 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                         formatCurrency={formatCurrency}
                         canEdit={canEdit}
                         canDelete={canDelete}
+                        isPropietario={!!isPropietario}
                         isUnit={true}
                       />
                     ))
@@ -312,6 +324,7 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
               formatCurrency={formatCurrency}
               canEdit={canEdit}
               canDelete={canDelete}
+              isPropietario={!!isPropietario}
             />
           ))}
 
@@ -328,6 +341,7 @@ const InmueblesTable: React.FC<InmueblesTableProps> = ({ inmuebles, onEdit, onDe
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
                 canDelete={canDelete}
+                isPropietario={!!isPropietario}
               />
             ))
           }
