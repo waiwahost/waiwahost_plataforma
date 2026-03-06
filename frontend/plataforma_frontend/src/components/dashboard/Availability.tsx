@@ -14,6 +14,7 @@ import { IReservaForm, IReservaTableData } from "../../interfaces/Reserva";
 import { createReservaApi, getReservaDetalleApi, editReservaApi } from "../../auth/reservasApi";
 import { IBloqueo } from "../../interfaces/Bloqueo";
 import { deleteBloqueoApi } from "../../auth/bloqueosApi";
+import { useAuth } from "../../auth/AuthContext";
 
 // ─────────────────────────────────────────────────
 // Types
@@ -140,6 +141,17 @@ const Availability: React.FC = () => {
   const [notifModal, setNotifModal] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
 
+  // ── Auth / Rol ────────────────────────────────
+  const { user } = useAuth();
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
+
+  // Mini-modal para propietario (solo nombre + valor)
+  const [propietarioModal, setPropietarioModal] = useState<{ open: boolean; nombre: string; valor: number | null }>({ open: false, nombre: '', valor: null });
+
   // ── Derived dates ─────────────────────────────
   // Memoize DAYS_VISIBLE and windowEnd so they don't create new object references on every render
   const DAYS_VISIBLE = useMemo(
@@ -248,6 +260,17 @@ const Availability: React.FC = () => {
 
   // ── Event handlers ────────────────────────────
   const handleBarClick = async (reserva: AvailabilityReserva) => {
+    // Si es propietario: mostrar solo nombre y valor, sin detalles completos
+    if (isPropietario) {
+      if (reserva.estado !== 'bloqueado') {
+        const nombre = reserva.huesped_nombre
+          ? `${reserva.huesped_nombre}${reserva.huesped_apellido ? ' ' + reserva.huesped_apellido : ''}`
+          : 'Reserva';
+        setPropietarioModal({ open: true, nombre, valor: reserva.total_reserva ?? null });
+      }
+      return;
+    }
+
     if (reserva.estado === 'bloqueado') {
       const bloqueoData: IBloqueo = {
         id: parseInt(reserva.id.replace('blk-', '')),
@@ -375,18 +398,22 @@ const Availability: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button
-            onClick={() => { setIsEditMode(false); setIsCreateModalOpen(true); }}
-            className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2"
-          >
-            Crear Reserva
-          </Button>
-          <Button
-            onClick={() => { setSelectedBloqueo(undefined); setIsEditBloqueoMode(false); setIsCreateBloqueoModalOpen(true); }}
-            className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2"
-          >
-            Crear Bloqueo <Lock className="h-4 w-4" />
-          </Button>
+          {!isPropietario && (
+            <>
+              <Button
+                onClick={() => { setIsEditMode(false); setIsCreateModalOpen(true); }}
+                className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2"
+              >
+                Crear Reserva
+              </Button>
+              <Button
+                onClick={() => { setSelectedBloqueo(undefined); setIsEditBloqueoMode(false); setIsCreateBloqueoModalOpen(true); }}
+                className="bg-tourism-teal hover:bg-tourism-teal/80 text-white flex items-center gap-2"
+              >
+                Crear Bloqueo <Lock className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -716,8 +743,33 @@ const Availability: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Mini-modal para propietario: solo nombre y valor */}
+      {propietarioModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70]">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">🏠</span>
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 dark:text-foreground mb-1">Reserva</h3>
+            <p className="text-base font-semibold text-gray-700 dark:text-foreground mb-3">{propietarioModal.nombre}</p>
+            {propietarioModal.valor != null && (
+              <p className="text-2xl font-bold text-[#0A3D2A] dark:text-waiwa-amber mb-5">
+                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(propietarioModal.valor)}
+              </p>
+            )}
+            <Button
+              className="bg-[#0A3D2A] hover:bg-[#0A3D2A]/80 text-white px-8"
+              onClick={() => setPropietarioModal({ open: false, nombre: '', valor: null })}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
+
 };
 
 export default Availability;

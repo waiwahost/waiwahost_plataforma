@@ -28,9 +28,17 @@ const Properties: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const canCreate = user?.permisos?.includes('crear_inmuebles') || true; // TEMPORAL: siempre true para debugging
-  const canEdit = user?.permisos?.includes('editar_inmuebles') || true; // TEMPORAL: siempre true para debugging
-  const canDelete = user?.permisos?.includes('eliminar_inmuebles') || true; // TEMPORAL: siempre true para debugging
+
+  // Detectar rol propietario — oculta acciones de gestión
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
+
+  const canCreate = !isPropietario && (user?.permisos?.includes('crear_inmuebles') || true);
+  const canEdit = !isPropietario && (user?.permisos?.includes('editar_inmuebles') || true);
+  const canDelete = !isPropietario && (user?.permisos?.includes('eliminar_inmuebles') || true);
 
 
   useEffect(() => {
@@ -166,7 +174,7 @@ const Properties: React.FC = () => {
       <CreateInmuebleModal
         open={editModalOpen}
         onClose={() => {
-          setEditModalOpen(false);
+          {setEditModalOpen(false);}
           setInmuebleToEdit(null);
         }}
         onCreate={handleEditSubmit}
