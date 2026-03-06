@@ -58,6 +58,13 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
   const { user } = useAuth();
   const permisos = user?.permisos || [];
 
+  // Detectar rol propietario
+  const isPropietario = user && (
+    String(user.role) === 'PROPIETARIO' ||
+    String(user.role) === '4' ||
+    (user as any).id_roles === 4
+  );
+
   const allowedKeys: Set<string> = new Set(
     (permisos as string[])
       .map((p: string) => PERMISO_MENU_MAP[p])
@@ -84,7 +91,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
         <SidebarGroupContent>
           <SidebarMenuList>
 
-            {menuItems.filter(item => allowedKeys.has(item.key)).map((item) => (
+            {menuItems.filter(item => allowedKeys.has(item.key) && !(isPropietario && item.key === 'bookings')).map((item) => (
               <SidebarMenuItem key={item.key}>
                 <SidebarMenuButton
                   className={`flex items-center gap-2 hover:bg-waiwa-mauve/10 hover:text-waiwa-forest ${activeKey === item.key ? 'bg-waiwa-amber/15 text-waiwa-forest border-r-2 border-waiwa-amber' : ''}`}
