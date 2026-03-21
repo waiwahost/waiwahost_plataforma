@@ -10,6 +10,27 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Custom thin scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-[#13392f] rounded-full;
+  }
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#1a6b58];
+  }
 }
 
 @layer base {
