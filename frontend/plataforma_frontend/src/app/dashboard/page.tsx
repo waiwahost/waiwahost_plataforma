@@ -13,6 +13,7 @@ import NuevoReporteFinanciero from '../../components/dashboard/Reports';
 import Cashbox from '../../components/dashboard/Cashbox';
 import Incomes from '../../components/dashboard/Incomes';
 import Deductions from '../../components/dashboard/Deductions';
+import Facturacion from '../../components/dashboard/Contabilidad/Facturacion';
 
 import { useAuth, User as AuthUser } from '../../auth/AuthContext';
 
@@ -65,9 +66,14 @@ export default function DashboardPage() {
     String(currentUser.rol) === '1'
   );
 
+  const isEmpresa = currentUser && currentUser.id_roles === 2;
+
   const visibleTabs = [...TABS];
   if (isSuperAdmin) {
     visibleTabs.push({ key: 'companies', label: 'Empresas', component: <Companies /> });
+  }
+  if (isSuperAdmin || isEmpresa) {
+    visibleTabs.push({ key: 'facturacion', label: '🏛️ Facturación', component: <Facturacion /> });
   }
 
   return (
