@@ -19,6 +19,7 @@ import Incomes from '../dashboard/Incomes';
 import Deductions from '../dashboard/Deductions';
 import Companies from '../dashboard/Companies';
 import Usuarios from '../dashboard/Usuarios';
+import Facturacion from '../dashboard/Contabilidad/Facturacion';
 import { useAuth } from '../../auth/AuthContext';
 
 
@@ -69,25 +70,26 @@ const BaseLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-white dark:bg-background text-foreground max-w-full overflow-hidden">
       {/* Sidebar a la izquierda, ocupa toda la altura */}
-      <aside className={`${open ? "translate-x-0 w-64" : "-translate-x-full w-0"} 
-    transition-all duration-300 ease-in-out sticky top-0 h-screen flex-shrink-0 border-r border-gray-200 dark:border-[#13392f] bg-gradient-to-br 
-    from-waiwa-forest via-[#0f5245] to-[#1a6b58] shadow-md flex flex-col rounded-tr-2xl rounded-br-2xl overflow-y-auto overflow-x-hidden`}>
-        <div className="border-b border-gray-200 dark:border-[#13392f] bg-white dark:bg-[#0a1f1a] px-3 py-4 flex items-center space-x-3">
-          <div className="bg-[#e7b61d] p-2 rounded-lg">
+      <aside className={`group ${open ? "translate-x-0 w-64 md:w-20 md:hover:w-64" : "-translate-x-full w-0 md:translate-x-0 md:w-20 md:hover:w-64"} 
+    transition-[width,transform] duration-300 ease-in-out sticky top-0 h-screen flex-shrink-0 border-r border-gray-300 dark:border-[#13392f] bg-gradient-to-br 
+    from-waiwa-forest via-[#0f5245] to-[#1a6b58] shadow-lg flex flex-col rounded-tr-2xl rounded-br-2xl overflow-y-auto overflow-x-hidden z-50`}>
+        <div className="border-b border-gray-300 dark:border-[#13392f] bg-white dark:bg-[#0a1f1a] px-3 py-30 h-20 flex items-center shrink-0 md:justify-center md:group-hover:justify-start transition-all duration-300">
+          <div className="bg-[#e7b61d] p-1.5 md:p-1 md:group-hover:p-1.5 rounded-lg shrink-0 transition-all duration-300 flex items-center justify-center">
             <Logo />
           </div>
-          <div>
-            <h1 className="font-bold text-lg text-waiwa-forest dark:text-waiwa-amber">Waiwahost</h1>
-            <p className="text-xs text-gray-500 dark:text-[#a197ad]">Gestión Inmobiliaria</p>
+          <div className="flex flex-col ml-3 md:ml-0 md:group-hover:ml-3 md:max-w-0 md:opacity-0 md:group-hover:max-w-[150px] md:group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300">
+            <h1 className="font-bold text-lg text-waiwa-forest dark:text-waiwa-amber leading-tight">Waiwahost</h1>
+            <p className="text-[10px] text-gray-500 dark:text-[#a197ad] leading-tight">Gestión Inmobiliaria</p>
           </div>
-
         </div>
-        <div className="flex-1 bg-white dark:bg-[#0a1f1a]">
+        <div className="flex-1 bg-white dark:bg-[#0a1f1a] overflow-x-hidden overflow-y-auto custom-scrollbar pb-20">
           <SidebarMenu activeKey={activeKey} onSelect={handleMenuSelect} />
         </div>
-        <div className="border-t border-gray-200 dark:border-[#13392f] bg-white dark:bg-[#0a1f1a] p-4 text-center">
-          <p className="text-xs text-gray-500 dark:text-[#a197ad]">© 2025 Waiwahost</p>
-          <p className="text-xs text-gray-400 dark:text-[#a197ad]/70">Versión 1.1.0</p>
+        <div className="border-t border-gray-200 dark:border-[#13392f] bg-white dark:bg-[#0a1f1a] p-4 text-center shrink-0">
+          <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap overflow-hidden">
+            <p className="text-xs text-gray-500 dark:text-[#a197ad]">© 2025 Waiwahost</p>
+            <p className="text-xs text-gray-400 dark:text-[#a197ad]/70">Versión 1.1.0</p>
+          </div>
         </div>
       </aside>
       {/* Área derecha: header arriba, content abajo */}
@@ -132,7 +134,14 @@ const BaseLayout: React.FC = () => {
             </div>
           )}
           <div className="w-full p-8">
-            {COMPONENTS[activeKey]}
+            {activeKey === 'facturacion' && <Facturacion activeTab="inicio" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_config' && <Facturacion activeTab="config" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_clientes' && <Facturacion activeTab="clientes" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_facturas' && <Facturacion activeTab="facturas" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_documentos' && <Facturacion activeTab="documentos" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_nueva' && <Facturacion activeTab="nueva_factura" onNavigate={handleMenuSelect} />}
+            {activeKey === 'facturacion_nueva_reserva' && <Facturacion activeTab="nueva_factura_reserva" onNavigate={handleMenuSelect} />}
+            {!activeKey.startsWith('facturacion') && COMPONENTS[activeKey]}
           </div>
         </main>
         {/* Footer adaptado visualmente */}

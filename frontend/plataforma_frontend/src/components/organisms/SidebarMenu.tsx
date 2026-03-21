@@ -8,6 +8,11 @@ import {
   CreditCard,
   FileText,
   UserCheck,
+  Receipt,
+  Settings,
+  FileCheck,
+  PackagePlus,
+  Files
 } from 'lucide-react';
 import {
   SidebarGroup,
@@ -80,76 +85,65 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeKey, onSelect }) => {
   const showUsuarios = permisos.includes('ver_usuarios');
 
   // Agregar la opción de Empresas solo para SUPERADMIN
-  // Check typical superadmin indicators based on user object structure
   const isSuperAdmin = user && (String(user.role) === '1' || String(user.role) === 'SUPERADMIN' || (user as any).id_roles === 1);
+  const isEmpresa = user && (user as any).id_roles === 2;
   const showCompanies = isSuperAdmin;
+  const showFacturacion = isSuperAdmin || isEmpresa;
+
+  const renderMenuItem = (key: string, icon: any, title: string) => (
+    <SidebarMenuItem key={key}>
+      <SidebarMenuButton
+        className={`flex items-center transition-all duration-300 md:justify-center md:group-hover:justify-start px-3 md:px-0 md:group-hover:px-3 hover:bg-waiwa-mauve/10 hover:text-waiwa-forest ${activeKey === key ? 'bg-waiwa-amber/15 text-waiwa-forest border-r-2 border-waiwa-amber' : ''}`}
+        onClick={() => onSelect(key)}
+        data-active={activeKey === key}
+      >
+        {React.createElement(icon, { className: "h-8 w-8 shrink-0" })}
+        <span className="overflow-hidden whitespace-nowrap transition-all duration-300 ml-3 md:ml-0 md:group-hover:ml-3 md:max-w-0 md:opacity-0 md:group-hover:max-w-[200px] md:group-hover:opacity-100">{title}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
 
   return (
-    <nav className="flex flex-col gap-0 px-2 rounded-lg">
+    <nav className="flex flex-col gap-0 px-2 mt-4 rounded-lg">
       <SidebarGroup>
-        <SidebarGroupLabel className="text-waiwa-forest font-semibold">Gestión Principal</SidebarGroupLabel>
+        <SidebarGroupLabel className="text-waiwa-forest font-semibold md:max-w-0 md:opacity-0 md:group-hover:max-w-full md:group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300">Gestión Principal</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenuList>
 
             {menuItems.filter(item => allowedKeys.has(item.key) && !(isPropietario && item.key === 'bookings')).map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  className={`flex items-center gap-2 hover:bg-waiwa-mauve/10 hover:text-waiwa-forest ${activeKey === item.key ? 'bg-waiwa-amber/15 text-waiwa-forest border-r-2 border-waiwa-amber' : ''}`}
-                  onClick={() => onSelect(item.key)}
-                  data-active={activeKey === item.key}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              renderMenuItem(item.key, item.icon, item.title)
             ))}
-            {/* Opción Usuarios si corresponde */}
-            {showUsuarios && (
-              <SidebarMenuItem key={usuariosItem.key}>
-                <SidebarMenuButton
-                  className={`flex items-center gap-2 hover:bg-tourism-sage/10 hover:text-tourism-navy ${activeKey === usuariosItem.key ? 'bg-tourism-teal/10 text-tourism-navy border-r-2 border-tourism-teal' : ''}`}
-                  onClick={() => onSelect(usuariosItem.key)}
-                  data-active={activeKey === usuariosItem.key}
-                >
-                  <usuariosItem.icon className="h-4 w-4" />
-                  <span>{usuariosItem.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-            {showCompanies && (
-              <SidebarMenuItem key={companiesItem.key}>
-                <SidebarMenuButton
-                  className={`flex items-center gap-2 hover:bg-tourism-sage/10 hover:text-tourism-navy ${activeKey === companiesItem.key ? 'bg-tourism-teal/10 text-tourism-navy border-r-2 border-tourism-teal' : ''}`}
-                  onClick={() => onSelect(companiesItem.key)}
-                  data-active={activeKey === companiesItem.key}
-                >
-                  <companiesItem.icon className="h-4 w-4" />
-                  <span>{companiesItem.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
+            
+            {showUsuarios && renderMenuItem(usuariosItem.key, usuariosItem.icon, usuariosItem.title)}
+            {showCompanies && renderMenuItem(companiesItem.key, companiesItem.icon, companiesItem.title)}
+
           </SidebarMenuList>
         </SidebarGroupContent>
       </SidebarGroup>
       <SidebarGroup>
-        <SidebarGroupLabel className="text-waiwa-forest font-semibold">Análisis y Finanzas</SidebarGroupLabel>
+        <SidebarGroupLabel className="text-waiwa-forest font-semibold md:max-w-0 md:opacity-0 md:group-hover:max-w-full md:group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300">Análisis y Finanzas</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenuList>
             {analyticsItems.filter(item => allowedKeys.has(item.key)).map((item) => (
-              <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  className={`flex items-center gap-2 hover:bg-waiwa-mauve/10 hover:text-waiwa-forest ${activeKey === item.key ? 'bg-waiwa-amber/15 text-waiwa-forest border-r-2 border-waiwa-amber' : ''}`}
-                  onClick={() => onSelect(item.key)}
-                  data-active={activeKey === item.key}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              renderMenuItem(item.key, item.icon, item.title)
             ))}
           </SidebarMenuList>
         </SidebarGroupContent>
       </SidebarGroup>
+      {showFacturacion && (
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-waiwa-forest font-semibold md:max-w-0 md:opacity-0 md:group-hover:max-w-full md:group-hover:opacity-100 overflow-hidden whitespace-nowrap transition-all duration-300">Facturación</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenuList>
+              {renderMenuItem('facturacion', Home, 'Inicio Facturación')}
+              {renderMenuItem('facturacion_facturas', Receipt, 'Documentos Electrónicos')}
+              {renderMenuItem('facturacion_clientes', Users, 'Terceros y Clientes')}
+              {renderMenuItem('facturacion_documentos', Files, 'Soporte / Notas')}
+              {renderMenuItem('facturacion_config', Settings, 'Configuración DIAN')}
+            </SidebarMenuList>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
     </nav>
   );
 };
