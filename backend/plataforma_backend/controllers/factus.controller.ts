@@ -6,6 +6,10 @@ import {
     notasCreditoService, notasDebitoService, documentosSoporteService, declaracionesTercerosService
 } from '../services/factus.service';
 import {
+    getProductosServiciosService, getProductoServicioByIdService,
+    createProductoServicioService, updateProductoServicioService, deleteProductoServicioService
+} from '../services/factus/productosServiciosFactus.service';
+import {
     FactusConfigSchema, ClienteFacturacionSchema, ClienteFacturacionUpdateSchema,
     ClienteFacturacionQuerySchema, FacturaCreateSchema, FacturaQuerySchema, FacturaIdParamSchema,
     NotaCreditoCreateSchema, NotaDebitoCreateSchema, DocumentoSoporteCreateSchema,
@@ -391,3 +395,61 @@ export const declaracionesTercerosController = {
         return reply.send(successResponse(data));
     },
 };
+
+// =======================================================
+// PRODUCTOS Y SERVICIOS FACTURACIÓN CONTROLLER
+// =======================================================
+export const productosServiciosController = {
+
+    list: async (req: FastifyRequest, reply: FastifyReply) => {
+        const ctx = getCtx(req, reply); if (!ctx) return;
+        const { search, tipo, page, limit } = req.query as any;
+        const { data, error } = await getProductosServiciosService.execute(ctx, {
+            search, tipo,
+            page: page ? Number(page) : 1,
+            limit: limit ? Number(limit) : 50,
+        });
+        if (error) return reply.status(error.status || 500).send(errorResponse({ message: error.message, code: error.status, error: error.details }));
+        return reply.send(successResponse(data));
+    },
+
+    getById: async (req: FastifyRequest, reply: FastifyReply) => {
+        const ctx = getCtx(req, reply); if (!ctx) return;
+        const { id } = req.params as any;
+        if (!id || isNaN(Number(id))) return reply.status(400).send(errorResponse({ message: 'ID inválido', code: 400 }));
+        const { data, error } = await getProductoServicioByIdService.execute(ctx, Number(id));
+        if (error) return reply.status(error.status || 500).send(errorResponse({ message: error.message, code: error.status, error: error.details }));
+        return reply.send(successResponse(data));
+    },
+
+    create: async (req: FastifyRequest, reply: FastifyReply) => {
+        const ctx = getCtx(req, reply); if (!ctx) return;
+        const body = req.body as any;
+        if (!body?.codigo_referencia || !body?.nombre) {
+            return reply.status(400).send(errorResponse({ message: 'codigo_referencia y nombre son requeridos', code: 400 }));
+        }
+        const { data, error } = await createProductoServicioService.execute(ctx, body);
+        if (error) return reply.status(error.status || 500).send(errorResponse({ message: error.message, code: error.status, error: error.details }));
+        return reply.status(201).send(successResponse(data, 201));
+    },
+
+    update: async (req: FastifyRequest, reply: FastifyReply) => {
+        const ctx = getCtx(req, reply); if (!ctx) return;
+        const { id } = req.params as any;
+        if (!id || isNaN(Number(id))) return reply.status(400).send(errorResponse({ message: 'ID inválido', code: 400 }));
+        const body = req.body as any;
+        const { data, error } = await updateProductoServicioService.execute(ctx, Number(id), body);
+        if (error) return reply.status(error.status || 500).send(errorResponse({ message: error.message, code: error.status, error: error.details }));
+        return reply.send(successResponse(data));
+    },
+
+    softDelete: async (req: FastifyRequest, reply: FastifyReply) => {
+        const ctx = getCtx(req, reply); if (!ctx) return;
+        const { id } = req.params as any;
+        if (!id || isNaN(Number(id))) return reply.status(400).send(errorResponse({ message: 'ID inválido', code: 400 }));
+        const { data, error } = await deleteProductoServicioService.execute(ctx, Number(id));
+        if (error) return reply.status(error.status || 500).send(errorResponse({ message: error.message, code: error.status, error: error.details }));
+        return reply.send(successResponse(data));
+    },
+};
+
