@@ -282,3 +282,61 @@ export interface RangoNumeracion {
     next_number?: number;
     is_active: boolean;
 }
+
+// --- Productos y Servicios de Facturación ---
+export interface ProductoServicioFacturacion {
+    id?: number;
+    id_empresa: number;
+    tipo: 'producto' | 'servicio';
+    categoria?: string | null;
+    codigo_referencia: string;
+    nombre: string;
+    descripcion_larga?: string | null;
+    // Unidad de medida DIAN (unit_measure_id en Factus)
+    unidad_medida_id: number;
+    unidad_medida_nombre?: string;
+    // Código estándar DIAN (standard_code_id en Factus)
+    // 1=UNSPSC, 2=Partida Arancelaria, 10=Estándar adopado por contribuyente
+    standard_code_id: number;
+    // Tributo (tribute_id) y cargo (tax_rate)
+    tribute_id: number;
+    impuesto_porcentaje?: number;
+    // Exclusión IVA (is_excluded en Factus: 0=no, 1=sí)
+    is_excluded: 0 | 1;
+    // Precios
+    precio_incluye_iva?: boolean;
+    precio_venta_1?: number;
+    precio_venta_2?: number;
+    // Retenciones (withholding_taxes en Factus)
+    retenciones?: RetencionItem[];
+    estado?: 'activo' | 'inactivo';
+    creado_en?: Date;
+    actualizado_en?: Date;
+}
+
+export interface RetencionItem {
+    code: string;             // Código retención (ej: '06' = Retención en la fuente)
+    withholding_tax_rate: number; // Porcentaje retención
+}
+
+export interface ProductoServicioCreate {
+    id_empresa: number;
+    tipo: 'producto' | 'servicio';
+    categoria?: string;
+    codigo_referencia: string;
+    nombre: string;
+    descripcion_larga?: string;
+    unidad_medida_id?: number;
+    unidad_medida_nombre?: string;
+    standard_code_id?: number;
+    tribute_id?: number;
+    impuesto_porcentaje?: number;
+    is_excluded?: 0 | 1;
+    precio_incluye_iva?: boolean;
+    precio_venta_1?: number;
+    precio_venta_2?: number;
+    retenciones?: RetencionItem[];
+}
+
+export interface ProductoServicioUpdate extends Partial<ProductoServicioCreate> {}
+

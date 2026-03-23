@@ -532,3 +532,65 @@ export async function enviarDeclaracionTerceroDian(id: number): Promise<{ succes
         return { success: false, message: error instanceof Error ? error.message : 'Error al enviar' };
     }
 }
+
+// ============================================================
+// PRODUCTOS Y SERVICIOS DE FACTURACIÓN
+// ============================================================
+export async function getProductosServicios(filters: { search?: string; tipo?: string; page?: number; limit?: number } = {}): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+        const params = new URLSearchParams();
+        if (filters.search) params.set('search', filters.search);
+        if (filters.tipo) params.set('tipo', filters.tipo);
+        if (filters.page) params.set('page', String(filters.page));
+        if (filters.limit) params.set('limit', String(filters.limit));
+        const qs = params.toString();
+        const data = await apiFetch(`${base}/productos-servicios${qs ? `?${qs}` : ''}`);
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'Error al obtener productos/servicios' };
+    }
+}
+
+export async function createProductoServicio(payload: {
+    tipo: 'producto' | 'servicio';
+    categoria?: string;
+    codigo_referencia: string;
+    nombre: string;
+    descripcion_larga?: string;
+    unidad_medida_id?: number;
+    unidad_medida_nombre?: string;
+    standard_code_id?: number;
+    tribute_id?: number;
+    impuesto_porcentaje?: number;
+    is_excluded?: 0 | 1;
+    precio_incluye_iva?: boolean;
+    precio_venta_1?: number;
+    precio_venta_2?: number;
+    retenciones?: Array<{ code: string; withholding_tax_rate: number }>;
+}): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+        const data = await apiFetch(`${base}/productos-servicios`, { method: 'POST', body: JSON.stringify(payload) });
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'Error al crear producto/servicio' };
+    }
+}
+
+export async function updateProductoServicio(id: number, payload: Record<string, any>): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+        const data = await apiFetch(`${base}/productos-servicios/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'Error al actualizar producto/servicio' };
+    }
+}
+
+export async function deleteProductoServicio(id: number): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+        const data = await apiFetch(`${base}/productos-servicios/${id}`, { method: 'DELETE' });
+        return { success: true, data };
+    } catch (error) {
+        return { success: false, message: error instanceof Error ? error.message : 'Error al eliminar producto/servicio' };
+    }
+}
+
