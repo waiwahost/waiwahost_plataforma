@@ -731,3 +731,121 @@ export class DeclaracionesTercerosRepository {
         }
     }
 }
+
+import { ProductoServicioCreate, ProductoServicioUpdate } from '../interfaces/factus.interface';
+
+// ===================================================
+// PRODUCTOS Y SERVICIOS FACTURACIÓN REPOSITORY
+// ===================================================
+export class ProductosServiciosRepository {
+
+    async getAll(id_empresa: number, filters: { search?: string; tipo?: string; page?: number; limit?: number } = {}): Promise<{ data: any[]; total: number; error: any }> {
+        try {
+            const { search, tipo, page = 1, limit = 50 } = filters;
+            const offset = (page - 1) * limit;
+            let baseQuery = `FROM productos_servicios_facturacion WHERE id_empresa = $1 AND estado = 'activo'`;
+            const params: any[] = [id_empresa];
+            let idx = 2;
+
+            if (search) {
+                baseQuery += ` AND (nombre ILIKE $${idx} OR codigo_referencia ILIKE $${idx})`;
+                params.push(`%${search}%`);
+                idx++;
+            }
+            if (tipo) {
+                baseQuery += ` AND tipo = $${idx}`;
+                params.push(tipo);
+                idx++;
+            }
+
+            const countRes = await pool.query(`SELECT COUNT(*) ${baseQuery}`, params);
+            const total = parseInt(countRes.rows[0].count, 10);
+            const { rows } = await pool.query(
+                `SELECT * ${baseQuery} ORDER BY nombre ASC LIMIT $${idx} OFFSET $${idx + 1}`,
+                [...params, limit, offset]
+            );
+            return { data: rows, total, error: null };
+        } catch (error: any) {
+            return { data: [], total: 0, error };
+        }
+    }
+
+    async getById(id: number, id_empresa: number): Promise<{ data: any; error: any }> {
+        try {
+            const { rows } = await pool.query(
+                `SELECT * FROM productos_servicios_facturacion WHERE id = $1 AND id_empresa = $2`,
+                [id, id_empresa]
+            );
+            return { data: rows[0] || null, error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
+    }
+
+    async create(data: ProductoServicioCreate & { id_empresa: number }): Promise<{ data: any; error: any }> {
+        try {
+            const { rows } = await pool.query(
+                `INSERT INTO productos_servicios_facturacion
+                (id_empresa, tipo, categoria, codigo_referencia, nombre, descripcion_larga,
+                 unidad_medida_id, unidad_medida_nombre, standard_code_id,
+                 tribute_id, impuesto_porcentaje, is_excluded,
+                 precio_incluye_iva, precio_venta_1, precio_venta_2, retenciones)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                RETURNING *`,
+                [
+                    data.id_empresa, data.tipo || 'servicio', data.categoria || null,
+                    data.codigo_referencia, data.nombre, data.descripcion_larga || null,
+                    data.unidad_medida_id || 94, data.unidad_medida_nombre || '94 - Unidad',
+                    data.standard_code_id || 10, data.tribute_id || 21,
+                    data.impuesto_porcentaje || 0, data.is_excluded || 0,
+                    data.precio_incluye_iva || false, data.precio_venta_1 || 0,
+                    data.precio_venta_2 || 0, JSON.stringify(data.retenciones || []),
+                ]
+            );
+            return { data: rows[0], error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
+    }
+
+    async update(id: number, id_empresa: number, data: ProductoServicioUpdate): Promise<{ data: any; error: any }> {
+        try {
+            const fields: string[] = [];
+            const values: any[] = [];
+            let idx = 1;
+            const allowed = [
+                'tipo', 'categoria', 'codigo_referencia', 'nombre', 'descripcion_larga',
+                'unidad_medida_id', 'unidad_medida_nombre', 'standard_code_id',
+                'tribute_id', 'impuesto_porcentaje', 'is_excluded',
+                'precio_incluye_iva', 'precio_venta_1', 'precio_venta_2',
+            ];
+            for (const key of allowed) {
+                if ((data as any)[key] !== undefined) { fields.push(`${key} = $${idx++}`); values.push((data as any)[key]); }
+            }
+            if (data.retenciones !== undefined) { fields.push(`retenciones = $${idx++}`); values.push(JSON.stringify(data.retenciones)); }
+            fields.push(`actualizado_en = NOW()`);
+            if (fields.length === 1) return { data: null, error: { message: 'No hay campos para actualizar' } };
+
+            const { rows } = await pool.query(
+                `UPDATE productos_servicios_facturacion SET ${fields.join(', ')} WHERE id = $${idx} AND id_empresa = $${idx + 1} RETURNING *`,
+                [...values, id, id_empresa]
+            );
+            return { data: rows[0] || null, error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
+    }
+
+    async softDelete(id: number, id_empresa: number): Promise<{ data: any; error: any }> {
+        try {
+            const { rows } = await pool.query(
+                `UPDATE productos_servicios_facturacion SET estado = 'inactivo', actualizado_en = NOW() WHERE id = $1 AND id_empresa = $2 RETURNING id`,
+                [id, id_empresa]
+            );
+            return { data: rows[0] || null, error: null };
+        } catch (error: any) {
+            return { data: null, error };
+        }
+    }
+}
+

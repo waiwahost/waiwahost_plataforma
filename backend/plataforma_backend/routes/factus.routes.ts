@@ -8,6 +8,7 @@ import {
     notasDebitoController,
     documentosSoporteController,
     declaracionesTercerosController,
+    productosServiciosController,
 } from '../controllers/factus.controller';
 
 export async function factusRoutes(server: FastifyInstance) {
@@ -111,4 +112,18 @@ export async function factusRoutes(server: FastifyInstance) {
     server.post('/declaraciones-terceros/auto', { preHandler: [authMiddleware] }, declaracionesTercerosController.generarDesdeMovimientos);
     // POST /factus/declaraciones-terceros/:id/enviar
     server.post('/declaraciones-terceros/:id/enviar', { preHandler: [authMiddleware] }, declaracionesTercerosController.enviarDian);
+
+    // ==========================================
+    // PRODUCTOS Y SERVICIOS DE FACTURACIÓN
+    // ==========================================
+    // GET /factus/productos-servicios → Listar (query: search, tipo, page, limit)
+    server.get('/productos-servicios', { preHandler: [authMiddleware] }, productosServiciosController.list);
+    // GET /factus/productos-servicios/:id → Obtener por ID
+    server.get('/productos-servicios/:id', { preHandler: [authMiddleware] }, productosServiciosController.getById);
+    // POST /factus/productos-servicios → Crear
+    server.post('/productos-servicios', { preHandler: [authMiddleware] }, productosServiciosController.create);
+    // PUT /factus/productos-servicios/:id → Actualizar
+    server.put('/productos-servicios/:id', { preHandler: [authMiddleware] }, productosServiciosController.update);
+    // DELETE /factus/productos-servicios/:id → Eliminar (soft)
+    server.delete('/productos-servicios/:id', { preHandler: [authMiddleware] }, productosServiciosController.softDelete);
 }

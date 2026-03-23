@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calculator, Trash2, PlusCircle, Paperclip } from 'lucide-react';
-import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, getTributosFactus, createFactura, enviarFacturaDian } from '../../../auth/factusApi';export default function NuevaFactura({ isFromReserva = false, onCancel }: { isFromReserva?: boolean, onCancel?: () => void }) {
+import { Search, Trash2, PlusCircle, Paperclip } from 'lucide-react';
+
+const formatCOP = (val: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(val);
+};
+import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, getTributosFactus, createFactura, enviarFacturaDian } from '../../../auth/factusApi';
+import { getReservasApi } from '../../../auth/reservasApi';
+import ProductoServicioModal from './ProductoServicioModal';
+
+
+export default function NuevaFactura({ isFromReserva = false, onCancel }: { isFromReserva?: boolean, onCancel?: () => void }) {
   const [items, setItems] = useState([
     { id: 1, p: '', desc: '', cant: 1, valorU: 0, descP: 0, impC: '', impR: '', total: 0, isThirdParty: false, mandante_id: '' }
   ]);
   const [formasPago, setFormasPago] = useState([
-    { id: 1, forma: '', valor: 0 }
+    { id: 1, forma: '10', valor: 0 }
   ]);
 
   const [reservaIdInput, setReservaIdInput] = useState('');
@@ -15,6 +29,14 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
   const [errorReserva, setErrorReserva] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState<any>(null);
   const [showReservaModal, setShowReservaModal] = useState(isFromReserva);
+
+  // Reservas para el select
+  const [reservas, setReservas] = useState<any[]>([]);
+  const [reservaSeleccionadaId, setReservaSeleccionadaId] = useState<number | ''>('');
+
+  // Modal seleccionar/crear producto-servicio
+  const [showProductoModal, setShowProductoModal] = useState(false);
+  const [productoModalIdx, setProductoModalIdx] = useState<number>(0);
 
   const [numeraciones, setNumeraciones] = useState<any[]>([]);
   const [numeracionSeleccionada, setNumeracionSeleccionada] = useState<string>('');
@@ -41,6 +63,10 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
     getTributosFactus().then(res => {
         if(res.success && res.data) setTributos(res.data);
     });
+    // Cargar reservas para el selector
+    getReservasApi().then(data => {
+        if (Array.isArray(data)) setReservas(data);
+    }).catch(() => {});
   }, []);
 
   const handleBuscarReserva = async () => {
@@ -53,6 +79,53 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
       setReservaData(res.data);
     } else {
       setErrorReserva(res.message || 'No se encontró la reserva');
+    }
+  };
+
+  const abrirModalProducto = (idx: number) => {
+    setProductoModalIdx(idx);
+    setShowProductoModal(true);
+  };
+
+  // Callback desde ProductoServicioModal: popula la fila de la factura
+  const onProductoSeleccionado = (prod: { codigo_referencia: string; nombre: string; precio_venta_1?: number; tribute_id?: number }) => {
+    const newItems = [...items];
+    newItems[productoModalIdx].p = prod.codigo_referencia || '';
+    newItems[productoModalIdx].desc = prod.nombre || '';
+    if (prod.precio_venta_1 && prod.precio_venta_1 > 0) newItems[productoModalIdx].valorU = prod.precio_venta_1;
+    if (prod.tribute_id) newItems[productoModalIdx].impC = String(prod.tribute_id);
+    setItems(newItems);
+    setShowProductoModal(false);
+  };
+
+
+  // Al seleccionar una reserva del select, autocompletar cliente con datos de esa reserva
+  const handleSeleccionarReserva = async (idReserva: number | '') => {
+    setReservaSeleccionadaId(idReserva);
+    if (!idReserva) return;
+    setLoadingReserva(true);
+    const res = await getFacturaDesdeReserva(Number(idReserva));
+    setLoadingReserva(false);
+    if (res.success && res.data) {
+      setReservaData(res.data);
+      // Autocompletar con cliente (huésped) si no hay uno seleccionado
+      const clienteSugerido = res.data.cliente_sugerido;
+      if (clienteSugerido) {
+        // Buscar en la lista local de clientes_facturacion por documento
+        const match = clientes.find((c: any) =>
+          c.numero_documento === clienteSugerido.documento_identidad ||
+          c.numero_documento === clienteSugerido.numero_documento
+        );
+        if (match) setClienteSeleccionado(match);
+      }
+      // Autocompletar ítem con descripción y precio de la reserva
+      if (res.data.reserva && items.length === 1 && items[0].desc === '') {
+        const newItems = [...items];
+        newItems[0].desc = `Alojamiento Reserva #${res.data.reserva.id}`;
+        newItems[0].valorU = res.data.reserva.precio_total || 0;
+        newItems[0].total = res.data.reserva.precio_total || 0;
+        setItems(newItems);
+      }
     }
   };
 
@@ -79,6 +152,10 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
   const handleGuardarFactura = async (enviarDian: boolean = false) => {
     if (!clienteSeleccionado) { alert("Seleccione un cliente obligatoriamente."); return; }
     if (!numeracionSeleccionada) { alert("Cargando o falta numeración."); return; }
+    if (Math.abs(totalFormasPago - totales.neto) > 0.01) {
+      alert("La suma de las formas de pago no coincide con el Total Neto de la factura.");
+      return;
+    }
 
     setIsSaving(true);
     
@@ -120,13 +197,22 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
       });
 
       const today = new Date().toISOString().split('T')[0];
+      
+      const medios_pago = formasPago.map((fp) => ({
+          medio_pago_id: Number(fp.forma) || 10,
+          forma_pago_id: 1, // 1: Contado
+          valor: fp.valor,
+          fecha_vencimiento: today
+      }));
 
       const payload: any = {
         id_cliente: Number(clienteSeleccionado.id),
         id_rango_numeracion: Number(numeracionSeleccionada),
         fecha_emision: today,
         observaciones: "Factura generada desde Plataforma Waiwa",
-        items: payloadItems
+        items: payloadItems,
+        medios_pago: medios_pago,
+        ...(reservaSeleccionadaId ? { id_reserva: Number(reservaSeleccionadaId) } : {})
       };
 
       console.log("PAYLOAD LOCAL BACKEND A ENVIAR:", payload);
@@ -184,6 +270,24 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
     }
   };
 
+  const handleFormaPagoChange = (index: number, field: string, value: any) => {
+    const newFormas = [...formasPago];
+    (newFormas[index] as any)[field] = value;
+    setFormasPago(newFormas);
+  };
+
+  const agregarFormaPago = () => {
+    setFormasPago([...formasPago, { id: Date.now(), forma: '10', valor: 0 }]);
+  };
+
+  const eliminarFormaPago = (index: number) => {
+    if (formasPago.length > 1) {
+      setFormasPago(formasPago.filter((_, i) => i !== index));
+    }
+  };
+
+  const totalFormasPago = formasPago.reduce((acc, fp) => acc + (Number(fp.valor) || 0), 0);
+
   const totales = items.reduce((acc, it) => {
     const cant = Number(it.cant) || 0;
     const valorU = Number(it.valorU) || 0;
@@ -195,6 +299,12 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
     acc.neto += (bas - desc);
     return acc;
   }, { bruto: 0, desc: 0, neto: 0 });
+
+  useEffect(() => {
+    if (formasPago.length === 1 && Math.abs(formasPago[0].valor - totales.neto) > 0.01) {
+       setFormasPago([{ ...formasPago[0], valor: totales.neto }]);
+    }
+  }, [totales.neto]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const btnSecondary = {
     background: 'transparent',
@@ -304,6 +414,30 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
           </div>
         </div>
 
+        {/* Reserva vinculada (opcional) */}
+        <div className="flex items-center">
+          <label className="w-24 text-sm text-[#94a3b8] leading-tight">Reserva</label>
+          <div className="flex-1 border-l-2 border-blue-500">
+            <select
+              style={inputStyle}
+              value={reservaSeleccionadaId}
+              onChange={(e) => handleSeleccionarReserva(e.target.value ? Number(e.target.value) : '')}
+              disabled={loadingReserva}
+            >
+              <option value="">Sin reserva (opcional)</option>
+              {reservas.map((r: any) => (
+                <option key={r.id_reserva || r.id} value={r.id_reserva || r.id}>
+                  {r.codigo_reserva || `#${r.id_reserva || r.id}`}{r.nombre_inmueble || r.inmueble_nombre ? ` — ${r.nombre_inmueble || r.inmueble_nombre}` : ''}
+                </option>
+              ))}
+            </select>
+            {loadingReserva && <div className="text-[10px] text-blue-400 mt-1">Cargando datos de reserva...</div>}
+            {reservaSeleccionadaId && !loadingReserva && (
+              <div className="text-[10px] text-emerald-400 mt-1">✓ Factura vinculada a Reserva #{reservaSeleccionadaId}</div>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center">
           <label className="w-24 text-sm text-[#94a3b8]">Forma Pago</label>
           <div className="flex-1 border-l-2 border-red-500">
@@ -352,8 +486,20 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
               <tr key={item.id} className="border-b border-[#1e293b]">
                 <td className="p-2 text-center">{idx + 1}</td>
                 <td className="p-2 relative">
-                  <input style={inputStyle} placeholder="Buscar" value={item.p} onChange={(e) => handleItemChange(idx, 'p', e.target.value)} />
-                  <Search size={14} className="absolute right-4 top-4 text-[#64748b]" />
+                  <input
+                    style={inputStyle}
+                    placeholder="Buscar o crear..."
+                    value={item.p}
+                    onChange={(e) => handleItemChange(idx, 'p', e.target.value)}
+                    readOnly
+                    onClick={() => abrirModalProducto(idx)}
+                    className="cursor-pointer"
+                  />
+                  <Search
+                    size={14}
+                    className="absolute right-4 top-4 text-[#3b82f6] cursor-pointer hover:text-blue-400"
+                    onClick={() => abrirModalProducto(idx)}
+                  />
                 </td>
                 <td className="p-2"><input style={inputStyle} value={item.desc} onChange={(e) => handleItemChange(idx, 'desc', e.target.value)} /></td>
                 <td className="p-2 text-center align-top pt-4">
@@ -400,7 +546,7 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
                     <option value="">Ninguno</option>
                   </select>
                 </td>
-                <td className="p-2"><input style={{...inputStyle, textAlign:'right', background:'#2d3748'}} readOnly value={item.total.toFixed(2)} /></td>
+                <td className="p-2"><input style={{...inputStyle, textAlign:'right', background:'#2d3748'}} readOnly value={formatCOP(item.total)} /></td>
                 <td className="p-2 text-center text-red-400 cursor-pointer hover:text-red-300" onClick={() => eliminarFila(idx)}>
                   <Trash2 size={16} />
                 </td>
@@ -419,9 +565,14 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
       <div className="flex justify-between mb-12">
         <div className="w-1/2 pr-8">
           <h3 className="text-[#60a5fa] font-semibold mb-4 text-base">Formas de pago</h3>
-          {formasPago.map((fp) => (
+          {formasPago.map((fp, idx) => (
             <div key={fp.id} className="flex gap-4 items-center mb-2 pb-2 border-b border-[#1e293b]/50">
-              <select style={inputStyle} className="flex-1">
+              <select 
+                style={inputStyle} 
+                className="flex-1"
+                value={fp.forma}
+                onChange={(e) => handleFormaPagoChange(idx, 'forma', e.target.value)}
+              >
                 <option value="">Selecciona medio de pago</option>
                 <option value="10">Efectivo</option>
                 <option value="42">Consignación bancaria</option>
@@ -429,18 +580,24 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
                 <option value="49">Tarjeta débito</option>
                 <option value="1">Instrumento no definido</option>
               </select>
-              <input style={{...inputStyle, width: '120px', textAlign:'right'}} defaultValue="0.00" />
-              <Trash2 size={16} className="text-red-400 cursor-pointer" />
+              <input 
+                style={{...inputStyle, width: '120px', textAlign:'right'}} 
+                type="number" 
+                step="0.01"
+                value={fp.valor || ''}
+                onChange={(e) => handleFormaPagoChange(idx, 'valor', e.target.value)}
+              />
+              <Trash2 size={16} className="text-red-400 cursor-pointer" onClick={() => eliminarFormaPago(idx)} />
             </div>
           ))}
-          <button className="text-[#84cc16] text-sm flex items-center gap-1 mt-2 hover:underline">
+          <button className="text-[#84cc16] text-sm flex items-center gap-1 mt-2 hover:underline" onClick={agregarFormaPago}>
             <PlusCircle size={14} /> Agregar otra forma de pago
           </button>
 
           <div className="mt-6 flex items-center gap-4">
              <div className="text-base font-semibold">Total formas de pagos:</div>
-             <div className="text-lg font-bold text-white flex items-center gap-2">
-               0.00 <span className="text-[#84cc16] text-xl">✓</span>
+             <div className={`text-lg font-bold flex items-center gap-2 ${Math.abs(totalFormasPago - totales.neto) < 0.01 ? 'text-white' : 'text-red-400'}`}>
+               {formatCOP(totalFormasPago)} <span className="text-[#84cc16] text-xl">{Math.abs(totalFormasPago - totales.neto) < 0.01 ? '✓' : '⚠️'}</span>
              </div>
           </div>
         </div>
@@ -448,19 +605,19 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
         <div className="w-1/3 text-sm">
           <div className="flex justify-between py-2">
             <span className="text-[#94a3b8]">Total Bruto:</span>
-            <span>{totales.bruto.toFixed(2)}</span>
+            <span>{formatCOP(totales.bruto)}</span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-[#94a3b8]">Descuentos:</span>
-            <span>{totales.desc.toFixed(2)}</span>
+            <span>{formatCOP(totales.desc)}</span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-[#94a3b8]">Subtotal:</span>
-            <span>{(totales.bruto - totales.desc).toFixed(2)}</span>
+            <span>{formatCOP(totales.bruto - totales.desc)}</span>
           </div>
           <div className="flex justify-between py-3 mt-4 border-t border-[#1e293b]">
             <span className="text-base font-semibold">Total Neto:</span>
-            <span className="text-lg font-bold">{totales.neto.toFixed(2)}</span>
+            <span className="text-lg font-bold text-[#84cc16]">{formatCOP(totales.neto)}</span>
           </div>
         </div>
       </div>
@@ -568,6 +725,15 @@ import { getFacturaDesdeReserva, getNumeracionFactus, getClientesFacturacion, ge
           </div>
         </div>
       )}
+
+      {/* Modal Productos / Servicios — componente separado */}
+      {showProductoModal && (
+        <ProductoServicioModal
+          onClose={() => setShowProductoModal(false)}
+          onSeleccionar={onProductoSeleccionado}
+        />
+      )}
+
 
     </div>
   );
